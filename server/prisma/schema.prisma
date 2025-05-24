@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTarget = ["native"]
+  output   = "node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id         String    @id @default(uuid())
+  name       String
+  email      String    @unique
+  password   String
+  role       Role
+  status     Status    @default(ACTIVE)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  courses    Course[]  @relation("TeacherCourses")
+  bookings   Booking[] @relation("StudentBookings")
+}
+
+model Course {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  teacher     User      @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacherId   String
+  bookings    Booking[] @relation("CourseBookings")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id          String    @id @default(uuid())
+  bookingDate DateTime
+  status      BookingStatus @default(PENDING)
+  student     User      @relation(fields: [studentId], references: [id], name: "StudentBookings")
+  studentId   String
+  course      Course    @relation(fields: [courseId], references: [id], name: "CourseBookings")
+  courseId    String
+  payment     Payment?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  amount        Float
+  paymentDate   DateTime
+  paymentStatus PaymentStatus @default(PAID)
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+  bookingId     String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PAID
+  FAILED
+  REFUNDED
+}
