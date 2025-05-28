@@ -11,7 +11,7 @@ const paymentSchema = z.object({
   paymentDate:   z
     .string()
     .refine(val => !isNaN(Date.parse(val)), { message: 'Must be a valid date/time' }),
-  paymentStatus: z.enum(['PAID', 'FAILED', 'REFUNDED']),
+  status: z.enum(['PAID', 'FAILED', 'REFUNDED']),
 });
 
 export default function PaymentForm({ onSubmit }) {
@@ -25,7 +25,7 @@ export default function PaymentForm({ onSubmit }) {
       bookingId:     '',
       amount:        "",
       paymentDate:   new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:mm
-      paymentStatus: 'PAID',
+      status: 'PAID',
     },
   });
 
@@ -92,18 +92,18 @@ export default function PaymentForm({ onSubmit }) {
       {/* Status */}
       <div>
         <select
-          {...register('paymentStatus')}
+          {...register('status')}
           className={`w-full p-2 border rounded ${
-            errors.paymentStatus ? 'border-red-500' : 'border-gray-300'
+            errors.status ? 'border-red-500' : 'border-gray-300'
           }`}
         >
           <option value="PAID">PAID</option>
           <option value="FAILED">FAILED</option>
           <option value="REFUNDED">REFUNDED</option>
         </select>
-        {errors.paymentStatus && (
+        {errors.status && (
           <p className="text-red-600 text-sm mt-1">
-            {errors.paymentStatus.message}
+            {errors.status.message}
           </p>
         )}
       </div>

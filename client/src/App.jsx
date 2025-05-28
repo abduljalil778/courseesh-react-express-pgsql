@@ -11,6 +11,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import RegisterPage from './pages/RegisterPage';
 import Layout from './components/Layout';
 import Spinner from './components/Spinner';
+import StudentBooking from './pages/StudentBooking';
+import CourseDetail from './pages/CourseDetail';
+
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -27,6 +30,7 @@ function PrivateRoute({ children, roles }) {
 }
 
 export default function App() {
+
   return (
     <ErrorBoundary>
       <AuthProvider>
@@ -47,6 +51,14 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/admin/courses/:courseId"
+              element={
+                <PrivateRoute roles={['ADMIN']}>
+                  <CourseDetail />
+                </PrivateRoute>
+              }
+            />
 
             {/* Teacher-only */}
             <Route
@@ -57,6 +69,11 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            {/* <Route path='/teacher/schedules' element={
+              <PrivateRoute roles={['TEACHER']}>
+                <TeacherSchedule/>
+              </PrivateRoute>
+            }/> */}
 
             {/* Student-only */}
             <Route
@@ -64,6 +81,33 @@ export default function App() {
               element={
                 <PrivateRoute roles={['STUDENT']}>
                   <StudentDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Course Detail */}
+            <Route
+              path="/student/courses/:courseId"
+              element={
+                <PrivateRoute roles={['STUDENT']}>
+                  <CourseDetail />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Payment method */}
+            {/* <Route path='student/payment/:bookingId' element={
+              <PrivateRoute roles={['STUDENT']}>
+                <Payment/>
+              </PrivateRoute>
+            }/> */}
+
+            {/* Student Booking form */}
+            <Route
+              path="/student/book/:courseId"
+              element={
+                <PrivateRoute roles={['STUDENT']}>
+                  <StudentBooking />
                 </PrivateRoute>
               }
             />
@@ -82,6 +126,8 @@ export default function App() {
               <PrivateRoute roles={['TEACHER']}>
                 <TeacherBookings/>
               </PrivateRoute>}/>
+            
+            
           </Routes>
         </BrowserRouter>
       </AuthProvider>

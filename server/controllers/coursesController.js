@@ -35,7 +35,18 @@ export const getCourseById = async (req, res) => {
   try {
     const course = await prisma.course.findUnique({
       where: { id },
-      include: { teacher: { select: { id: true, name: true, email: true } } }
+      select: {
+      id: true,
+      title: true,
+      description: true,
+      price: true,
+      numberOfSessions: true,
+      curriculum: true,
+      classLevel: true,
+      teacher: {
+        select: { id: true, name: true, email: true }
+      }
+    }
     });
     if (!course) {
       return res.status(404).json({ message: `Course with id=${id} not found` });
@@ -53,20 +64,23 @@ export const getCourseById = async (req, res) => {
  * Body: { title, description, price }
  */
 export const createCourse = async (req, res) => {
-  const { title, description, price } = req.body;
-  if (!title || !description || price == null) {
-    return res.status(400).json({ message: 'title, description and price are required' });
+  const { title, description, price, classLevel, curriculum, numberOfSessions } = req.body;
+  if (![title, description, price, classLevel, numberOfSessions].every(v => v !== undefined)) {
+    return next(new AppError('Missing required fields', 400));
   }
 
   try {
     const course = await prisma.course.create({
-      data: {
-        title,
-        description,
-        price: parseFloat(price),
-        teacherId: req.user.id
-      }
-    });
+    data: {
+      title,
+      description,
+      price,
+      classLevel,
+      curriculum,              // optional
+      numberOfSessions,
+      teacherId: req.user.id,  // assuming you’re auth’ing the teacher
+    },
+  });
     return res.status(201).json(course);
   } catch (err) {
     console.error('createCourse:', err);
@@ -79,7 +93,7 @@ export const createCourse = async (req, res) => {
  * Protected: TEACHER or ADMIN (and teacher must own the course if TEACHER)
  * Body: { title?, description?, price? }
  */
-export const updateCourse = async (req, res) => {
+export const updateCourse = async (req, res, next) => {
   const { id } = req.params;
   const updates = {};
   ['title', 'description', 'price'].forEach(field => {

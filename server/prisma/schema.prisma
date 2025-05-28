@@ -5,9 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  binaryTarget = ["native"]
-  output   = "node_modules/.prisma/client"
+  provider     = "prisma-client-js"
 }
 
 datasource db {
@@ -15,53 +13,73 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id         String    @id @default(uuid())
-  name       String
-  email      String    @unique
-  password   String
-  role       Role
-  status     Status    @default(ACTIVE)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  courses    Course[]  @relation("TeacherCourses")
-  bookings   Booking[] @relation("StudentBookings")
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role
+  status    Status    @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  courses   Course[]  @relation("TeacherCourses")
+  bookings  Booking[] @relation("StudentBookings")
 }
 
 model Course {
-  id          String    @id @default(uuid())
+  id          String      @id @default(uuid())
   title       String
   description String
   price       Float
-  teacher     User      @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  numberOfSessions Int @default(1)
+  classLevel  ClassLevel  
+  curriculum  Curriculum? // null for UTBK
+  teacher     User        @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId   String
-  bookings    Booking[] @relation("CourseBookings")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]   @relation("CourseBookings")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Booking {
-  id          String    @id @default(uuid())
-  bookingDate DateTime
-  status      BookingStatus @default(PENDING)
-  student     User      @relation(fields: [studentId], references: [id], name: "StudentBookings")
+  id          String        @id @default(uuid())
+  student     User          @relation(fields: [studentId], references: [id], name: "StudentBookings")
   studentId   String
-  course      Course    @relation(fields: [courseId], references: [id], name: "CourseBookings")
+  course      Course        @relation(fields: [courseId], references: [id], name: "CourseBookings")
   courseId    String
+  sessions    BookingSession[]
+  address     String
   payment     Payment?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  bookingStatus      BookingStatus @default(PENDING)
+  paymentId   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model BookingSession {
+  id           String @id @default(ulid())
+  booking      Booking   @relation(fields: [bookingId], references: [id])
+  bookingId    String
+  sessionDate  DateTime
+  createdAt    DateTime  @default(now())
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
 
 model Payment {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  bookingId     String        @unique
+  status        PaymentStatus @default(PENDING)
   amount        Float
-  paymentDate   DateTime
-  paymentStatus PaymentStatus @default(PAID)
-  booking       Booking  @relation(fields: [bookingId], references: [id])
-  bookingId     String   @unique
-  createdAt     DateTime @default(now())
+  method        PaymentMethod @default(FULL)
+  installments  Int?
+  createdAt     DateTime      @default(now())
   updatedAt     DateTime @updatedAt
 }
 
@@ -82,8 +100,30 @@ enum BookingStatus {
   CANCELLED
 }
 
-enum PaymentStatus {
-  PAID
-  FAILED
-  REFUNDED
+enum PaymentMethod {
+  FULL
+  INSTALLMENT
+}
+
+
+
+enum ClassLevel {
+  GRADE1
+  GRADE2
+  GRADE3
+  GRADE4
+  GRADE5
+  GRADE6
+  GRADE7
+  GRADE8
+  GRADE9
+  GRADE10
+  GRADE11
+  GRADE12
+  UTBK
+}
+
+enum Curriculum {
+  MERDEKA
+  K13_REVISI
 }

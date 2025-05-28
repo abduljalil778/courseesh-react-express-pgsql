@@ -35,7 +35,7 @@ export default function MyBookings() {
         }).then(async (result) => {
           if (result.isConfirmed) {
             try {
-              await api.put(`/bookings/${id}`, { status: 'CANCELLED' });
+              await api.put(`/bookings/${id}`, { bookingStatus: 'CANCELLED' });
               load();
               Swal.fire({
                 text: "Canceled",

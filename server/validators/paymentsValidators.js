@@ -14,12 +14,14 @@ export const createPaymentValidator = [
   body('amount')
     .isFloat({ gt: 0 })
     .withMessage('amount must be a positive number'),
-  body('paymentDate')
-    .isISO8601()
-    .withMessage('paymentDate must be a valid ISO8601 date string'),
-  body('paymentStatus')
-    .isIn(['PAID', 'FAILED', 'REFUNDED'])
-    .withMessage('paymentStatus must be one of PAID, FAILED, REFUNDED')
+  body('method')
+    .optional()
+    .isIn(['FULL', 'INSTALLMENT'])
+    .withMessage('method must be FULL or INSTALLMENT'),
+  body('installments')
+    .optional()
+    .isInt({ min: 2, max: 6 })
+    .withMessage('installments must be an integer between 2 and 6'),
 ];
 
 export const updatePaymentValidator = [

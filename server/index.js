@@ -11,6 +11,7 @@ import courseRoutes from './routes/courses.js';
 import bookingRoutes from './routes/bookings.js';
 import paymentRoutes from './routes/payments.js';
 import userRoutes from './routes/users.js';
+import scheduleRoutes from './routes/schedules.js';
 import errorController from './controllers/errorController.js';
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/bookings',bookingRoutes);
 app.use('/api/payments',paymentRoutes);
 app.use('/api/users', userRoutes);
+// app.use('/api/schedules', scheduleRoutes);
 
 // ERROR HANDLER
 // catch unhandled routes

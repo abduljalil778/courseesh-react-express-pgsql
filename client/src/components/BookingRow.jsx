@@ -9,9 +9,9 @@ export default function BookingRow({ booking, onCancel }) {
       <td className="px-4 py-2">
         {dayjs(booking.bookingDate).format('YYYY-MM-DD HH:mm')}
       </td>
-      <td className="px-4 py-2">{booking.status}</td>
+      <td className="px-4 py-2">{booking.bookingStatus}</td>
       <td className="px-4 py-2">
-        {booking.status === 'PENDING' && (
+        {booking.bookingStatus === 'PENDING' && (
           <button
             onClick={() => onCancel(booking.id)}
             className="text-red-600 underline"

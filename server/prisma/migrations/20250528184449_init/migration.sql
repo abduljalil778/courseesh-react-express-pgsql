@@ -8,7 +8,16 @@ CREATE TYPE "Status" AS ENUM ('ACTIVE', 'INACTIVE');
 CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'FAILED', 'REFUNDED');
+CREATE TYPE "PaymentMethod" AS ENUM ('FULL', 'INSTALLMENT');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED');
+
+-- CreateEnum
+CREATE TYPE "ClassLevel" AS ENUM ('GRADE1', 'GRADE2', 'GRADE3', 'GRADE4', 'GRADE5', 'GRADE6', 'GRADE7', 'GRADE8', 'GRADE9', 'GRADE10', 'GRADE11', 'GRADE12', 'UTBK');
+
+-- CreateEnum
+CREATE TYPE "Curriculum" AS ENUM ('MERDEKA', 'K13_REVISI');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -30,6 +39,9 @@ CREATE TABLE "Course" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
+    "numberOfSessions" INTEGER NOT NULL DEFAULT 1,
+    "classLevel" "ClassLevel" NOT NULL,
+    "curriculum" "Curriculum",
     "teacherId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -40,10 +52,11 @@ CREATE TABLE "Course" (
 -- CreateTable
 CREATE TABLE "Booking" (
     "id" TEXT NOT NULL,
-    "bookingDate" TIMESTAMP(3) NOT NULL,
-    "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
     "studentId" TEXT NOT NULL,
     "courseId" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "bookingStatus" "BookingStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -51,12 +64,23 @@ CREATE TABLE "Booking" (
 );
 
 -- CreateTable
+CREATE TABLE "BookingSession" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "sessionDate" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BookingSession_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Payment" (
     "id" TEXT NOT NULL,
-    "amount" DOUBLE PRECISION NOT NULL,
-    "paymentDate" TIMESTAMP(3) NOT NULL,
-    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PAID',
     "bookingId" TEXT NOT NULL,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "amount" DOUBLE PRECISION NOT NULL,
+    "method" "PaymentMethod" NOT NULL DEFAULT 'FULL',
+    "installments" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -77,6 +101,9 @@ ALTER TABLE "Booking" ADD CONSTRAINT "Booking_studentId_fkey" FOREIGN KEY ("stud
 
 -- AddForeignKey
 ALTER TABLE "Booking" ADD CONSTRAINT "Booking_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BookingSession" ADD CONSTRAINT "BookingSession_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

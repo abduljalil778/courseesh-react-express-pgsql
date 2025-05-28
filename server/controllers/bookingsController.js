@@ -1,5 +1,5 @@
 // server/controllers/bookingsController.js
-import pkg from '@prisma/client';
+import pkg, { BookingStatus } from '@prisma/client';
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
@@ -13,19 +13,13 @@ export const getAllBookings = async (req, res) => {
   try {
     let where = {};
     if (req.user.role === 'TEACHER') {
-      // where = { course: { teacherId: req.user.id } };
       where = {
-        course: {
-          is: {teacherId: req.user.id}
-        }
-      }
+        course: { is: { teacherId: req.user.id } }
+      };
     } else if (req.user.role === 'STUDENT') {
       where = { studentId: req.user.id };
     }
-    // const bookings = await prisma.booking.findMany({
-    //   where,
-    //   include: { course: true, student: { select: { email: true } } }
-    // });
+
     const bookings = await prisma.booking.findMany({
       where,
       include: {
@@ -41,17 +35,20 @@ export const getAllBookings = async (req, res) => {
               select: { id: true, name: true, email: true }
             }
           }
+        },
+        sessions: {
+          select: { sessionDate: true }
         }
-        // …add other relations here if you like…
       }
     });
-    res.json(bookings);
 
+    return res.json(bookings);
   } catch (err) {
     console.error('getAllBookings:', err);
     return res.status(500).json({ message: 'Server error fetching bookings' });
   }
 };
+
 
 /**
  * GET /api/bookings/:id
@@ -91,29 +88,67 @@ export const getBookingById = async (req, res) => {
  * STUDENT only
  * Body: { courseId, bookingDate }
  */
-export const createBooking = async (req, res) => {
-  const { courseId, bookingDate } = req.body;
-  if (!courseId || !bookingDate) {
-    return res.status(400).json({ message: 'courseId and bookingDate are required' });
+
+export const createBooking = async (req, res, next) => {
+  const { courseId, address, sessionDates, paymentMethod, installments } = req.body;
+  if (!sessionDates || !address || !courseId) {
+    return next(new AppError('Missing required fields', 400));
   }
+
   try {
-    // optional: check course exists
-    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    // 1) fetch the course
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { price: true, numberOfSessions: true }
+    });
     if (!course) {
-      return res.status(404).json({ message: `Course id=${courseId} not found` });
+      return next(new AppError(`Course ${courseId} not found`, 404));
     }
+
+    // 2) validate session count
+    if (sessionDates.length !== course.numberOfSessions) {
+      return next(new AppError(
+        `You must pick exactly ${course.numberOfSessions} session dates`,
+        400
+      ));
+    }
+
+    // 3) compute payment amount
+    let amount = course.price;
+    if (paymentMethod === 'INSTALLMENT') {
+      amount = parseFloat((course.price / installments).toFixed(2));
+    }
+
+    // 4) build your nested create data
+    //    only add `method` and `installments` if INSTALLMENT
+    const paymentData = { amount };
+    if (paymentMethod === 'INSTALLMENT') {
+      paymentData.method       = 'INSTALLMENT';
+      paymentData.installments = installments;
+    }
+    //  (no need to add method/installments for full, Prisma will default)
 
     const booking = await prisma.booking.create({
       data: {
         courseId,
         studentId: req.user.id,
-        bookingDate: new Date(bookingDate)
+        address,
+        sessions: {
+          create: sessionDates.map(d => ({ sessionDate: new Date(d) }))
+        },
+        payment: {
+          create: paymentData
+        }
+      },
+      include: {
+        sessions: true,
+        payment:  true
       }
     });
-    return res.status(201).json(booking);
+
+    res.status(201).json(booking);
   } catch (err) {
-    console.error('createBooking:', err);
-    return res.status(500).json({ message: 'Server error creating booking' });
+    next(err);
   }
 };
 
@@ -123,13 +158,13 @@ export const createBooking = async (req, res) => {
  * Body: { status }
  */
 export const updateBooking = async (req, res) => {
-  const { id } = req.params;
+  // const { id } = req.params.id;
   const { status } = req.body;
   if (!status) {
     return res.status(400).json({ message: 'status is required' });
   }
   try {
-    const booking = await prisma.booking.findUnique({ where: { id } });
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
     if (!booking) {
       return res.status(404).json({ message: `Booking id=${id} not found` });
     }
@@ -137,8 +172,8 @@ export const updateBooking = async (req, res) => {
       return res.status(403).json({ message: 'Cannot modify someone else’s booking' });
     }
     const updated = await prisma.booking.update({
-      where: { id },
-      data: { status }
+      where: { id: req.params.id },
+      data: { bookingStatus: status }
     });
     return res.json(updated);
   } catch (err) {

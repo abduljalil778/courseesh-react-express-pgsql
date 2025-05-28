@@ -40,10 +40,11 @@ import catchAsync from '../utils/catchAsync.js';
 
 const router = express.Router();
 
+router.use(authenticate);
+
 // List all payments (ADMIN only)
 router.get(
   '/',
-  authenticate,
   authorize('ADMIN'),
   catchAsync(getAllPayments)
 );
@@ -51,8 +52,6 @@ router.get(
 // Get a single payment (ADMIN only)
 router.get(
   '/:id',
-  authenticate,
-  authorize('ADMIN'),
   paymentIdValidator,
   runValidation,
   catchAsync(getPaymentById)
@@ -61,8 +60,6 @@ router.get(
 // Create a payment (ADMIN only)
 router.post(
   '/',
-  authenticate,
-  authorize('ADMIN'),
   createPaymentValidator,
   runValidation,
   catchAsync(createPayment)
@@ -71,8 +68,6 @@ router.post(
 // Update a payment (ADMIN only)
 router.put(
   '/:id',
-  authenticate,
-  authorize('ADMIN'),
   updatePaymentValidator,
   runValidation,
   catchAsync(updatePayment)
@@ -81,8 +76,6 @@ router.put(
 // Delete a payment (ADMIN only)
 router.delete(
   '/:id',
-  authenticate,
-  authorize('ADMIN'),
   paymentIdValidator,
   runValidation,
   catchAsync(deletePayment)

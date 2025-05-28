@@ -1,35 +1,36 @@
+// src/pages/AdminDashboard.jsx
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Spinner from '../components/Spinner';
-import PaymentForm from '../components/PaymentForm';
 import Swal from 'sweetalert2';
 import UserForm from '../components/UserForm';
+import PaymentStatusForm from '../components/PaymentStatusForm';
 
 export default function AdminDashboard() {
-  const [users, setUsers]           = useState([]);
-  const [courses, setCourses]       = useState([]);
-  const [bookings, setBookings]     = useState([]);
-  const [payments, setPayments]     = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
+  const [users, setUsers]         = useState([]);
+  const [courses, setCourses]     = useState([]);
+  const [bookings, setBookings]   = useState([]);
+  const [payments, setPayments]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
   const [editingUser, setEditingUser] = useState(null);
 
-  // load both users+payments
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [userRes, courseRes, bookingRes, paymentRes] = await Promise.all([
+      const [u, c, b, p] = await Promise.all([
         api.get('/users'),
         api.get('/courses'),
         api.get('/bookings'),
-        api.get('/payments')
+        api.get('/payments'),
       ]);
-      setUsers(userRes.data);
-      setCourses(courseRes.data);
-      setBookings(bookingRes.data);
-      setPayments(paymentRes.data);
-    } catch {
+      setUsers(u.data);
+      setCourses(c.data);
+      setBookings(b.data);
+      setPayments(p.data);
+    } catch (err) {
+      console.error(err);
       setError('Failed to load admin data.');
     } finally {
       setLoading(false);
@@ -41,45 +42,36 @@ export default function AdminDashboard() {
   }, []);
 
   // create or update user
-  const handleUserSubmit = async (data) => {
-    if (editingUser) {
-      await api.put(`/users/${editingUser.id}`, data);
-    } else {
-      await api.post('/users', data);
+  const handleUserSubmit = async data => {
+    try {
+      if (editingUser) {
+        await api.put(`/users/${editingUser.id}`, data);
+      } else {
+        await api.post('/users', data);
+      }
+      setEditingUser(null);
+      loadData();
+    } catch {
+      Swal.fire('Error','Could not save user','error');
     }
-    setEditingUser(null);
-    loadData();
   };
 
   // delete user
-  const handleUserDelete = async (id) => {
-    if (confirm('Delete this user?')) {
+  const handleUserDelete = async id => {
+    if (!confirm('Delete this user?')) return;
+    try {
       await api.delete(`/users/${id}`);
-      // if we were editing them, cancel edit
       if (editingUser?.id === id) setEditingUser(null);
       loadData();
-    }
-  };
-
-  // create payment
-  const handleCreatePayment = async data => {
-    try {
-      await api.post('/payments', data);
-      loadData();
     } catch {
-      Swal.fire({
-        icon: "error",
-        text: "Something went wrong!",
-        title: "Oops...",
-        footer: "failed to create payment"
-      })
+      Swal.fire('Error','Could not delete user','error');
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Spinner size={64} />
+        <Spinner size={64}/>
       </div>
     );
   }
@@ -99,21 +91,24 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-8">
-      {/* User Management */}
+    <div className="p-6 space-y-12">
+      {/* ——— User Management ——— */}
       <section>
         <h2 className="text-2xl font-bold mb-4">
           {editingUser ? 'Edit User' : 'Add New User'}
         </h2>
         <UserForm
           initial={editingUser || {}}
-          onSubmit={handleUserSubmit}
           submitLabel={editingUser ? 'Update User' : 'Create User'}
+          onSubmit={handleUserSubmit}
         />
         <h3 className="text-xl font-semibold mt-6">All Users</h3>
         <ul className="mt-2 space-y-2">
           {users.map(u => (
-            <li key={u.id} className="flex justify-between items-center p-2 border rounded">
+            <li
+              key={u.id}
+              className="flex justify-between items-center p-2 border rounded"
+            >
               <div>
                 <p>
                   <strong>{u.name}</strong> ({u.email}) — {u.role} — {u.status}
@@ -161,48 +156,71 @@ export default function AdminDashboard() {
       {/* ——— Bookings Overview ——— */}
       <section>
         <h2 className="text-2xl font-bold mb-4">All Bookings</h2>
-
         {bookings.length === 0 ? (
           <p>No bookings have been made yet.</p>
         ) : (
           <ul className="space-y-3">
             {bookings.map(b => (
               <li key={b.id} className="border p-4 rounded">
+                <p><strong>Booking ID:</strong> {b.id}</p>
                 <p>
-                  <strong>Booking ID:</strong> {b.id}
+                  <strong>Student:</strong> {b.student.name} (
+                  {b.student.email})
                 </p>
                 <p>
-                  <strong>Student:</strong> {b.student.email} ({b.student.name})
+                  <strong>Course:</strong> {b.course.title} by{' '}
+                  {b.course.teacher.name}
                 </p>
-                <p>
-                  <strong>Course:</strong> {b.course.title} by {b.course.teacher.name}
-                </p>
-                <p>
-                  <strong>Date:</strong>{' '}
-                  {new Date(b.bookingDate).toLocaleString()}
-                </p>
-                <p>
-                  <strong>Status:</strong> {b.status}
-                </p>
+                <p><strong>Price:</strong> ${b.course.price.toFixed(2)}</p>
+                <p><strong>Status:</strong> {b.bookingStatus}</p>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* Payment Management */}
+      {/* ——— Payment Management ——— */}
       <section>
-        <h2 className="text-2xl font-bold mb-4">New Payment</h2>
-        <PaymentForm onSubmit={handleCreatePayment} />
-
-        <h3 className="text-xl font-semibold mt-8">All Payments</h3>
-        <ul className="mt-2 space-y-1">
-          {payments.map(p => (
-            <li key={p.id}>
-              {p.booking.student.email} paid ${p.amount} for {p.booking.course.title}
-            </li>
-          ))}
-        </ul>
+        <h2 className="text-2xl font-bold mb-4">All Payments</h2>
+        {payments.length === 0 ? (
+          <p>No payments have been recorded yet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {payments.map(p => (
+              <li
+                key={p.id}
+                className="p-4 border rounded flex items-center justify-between"
+              >
+                <div>
+                  <p>
+                    <strong>Payment ID:</strong> {p.id}
+                  </p>
+                  <p>
+                    <strong>Booking:</strong> {p.bookingId} – ${p.amount.toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Method:</strong> {p.method} –{' '}
+                    <strong>Status:</strong> {p.status}
+                  </p>
+                </div>
+                <div className="w-48">
+                  <PaymentStatusForm
+                    paymentId={p.id}
+                    currentStatus={p.status}
+                    onSubmit={async (id, newStatus) => {
+                      try {
+                        await api.put(`/payments/${id}`, { status: newStatus });
+                        loadData();
+                      } catch {
+                        Swal.fire('Error','Could not update payment','error');
+                      }
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

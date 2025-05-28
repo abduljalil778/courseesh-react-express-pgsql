@@ -20,6 +20,10 @@ export default function Navbar() {
       {user.role === 'TEACHER' && (
       <Link to="/teacher/bookings" className="mr-4">My Bookings</Link>
       )}
+
+      {/* {user.role === 'TEACHER' && (
+      <Link to="/teacher/schedules" className="mr-4">My Schedule</Link>
+      )} */}
       <button onClick={logout} className="text-red-600">Logout</button>
 
     </nav>
