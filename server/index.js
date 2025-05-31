@@ -5,13 +5,12 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
-import AppError from './utils/appError.js';
+import AppError from './utils/AppError.mjs';
 import authRoutes from './routes/auth.js';
 import courseRoutes from './routes/courses.js';
 import bookingRoutes from './routes/bookings.js';
 import paymentRoutes from './routes/payments.js';
 import userRoutes from './routes/users.js';
-import scheduleRoutes from './routes/schedules.js';
 import errorController from './controllers/errorController.js';
 
 dotenv.config();

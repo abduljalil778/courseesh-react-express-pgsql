@@ -1,111 +1,151 @@
 // server/controllers/usersController.js
 import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+const { PrismaClient, Prisma } = pkg;
 const prisma = new PrismaClient();
 import bcrypt from 'bcryptjs';
+import AppError from '../utils/AppError.mjs';
 
 // GET /api/users
-export const getAllUsers = async (req, res) => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      status: true,
-      createdAt: true
-    }
-  });
-  res.json(users);
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+    res.json(users);
+  } catch (err) {
+    next(new AppError(err.message))
+  }
 };
 
 // GET /api/users/:id
-export const getUserById = async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: req.params.id
-    }, select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      status: true,
-      createdAt: true
+export const getUserById = async (req, res, next) => {
+  try {
+    const {id} = req.params
+    const user = await prisma.user.findUnique({
+      where: {
+        id: {id}
+      }, select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true
+      }
+    });
+    if (!user) {
+      return new AppError(({message: 'User not found'}))
     }
-  });
-  if (!user) {
-    return res.status(404).json(({message: 'User not found'}))
+    res.json(user)
+  } catch (err) {
+    next(new AppError(err.message))
   }
 }
 
 // POST /api/users
-export const createUser = async (req, res) => {
-  const {name, email, password, role} = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashed,
-      role,
-    }
-  });
-  res.status(201).json({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-  })
-}
-
-// PUT /api/users/:id
-export const updateUser = async (req, res) => {
+export const createUser = async (req, res, next) => {
+  const {name, email, password, phone, role, status} = req.body;
   try {
-    // 1️⃣ Pull the ID and the fields out of the request
-    const userId = req.params.id;
-    const { name, email, role, status } = req.body;
-
-    // 2️⃣ Build a “data” object that only contains the fields you actually sent
-    const data = {};
-    if (name   != null) data.name   = name;
-    if (email  != null) data.email  = email;
-    if (role   != null) data.role   = role;
-    if (status != null) data.status = status;
-
-    // 3️⃣ If the admin submitted no fields at all, bail out
-    if (Object.keys(data).length === 0) {
-      return res.status(400).json({ message: 'No fields to update' });
-    }
-
-    // 4️⃣ Perform the update
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data,
-      select: { id:true, name:true, email:true, role:true, status:true }
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        password: hashed,
+        role,
+        status: status || 'ACTIVE',
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      }
     });
-
-    return res.json(user);
+    res.status(201).json(user)
+    
   } catch (err) {
-    // 5️⃣ Catch duplicate-email errors (optional)
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002' &&
-      err.meta?.target?.includes('email')
-    ) {
-      return res.status(400).json({ message: 'Email already in use' });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const field = err.meta?.target?.join(', ');
+      return new AppError({ message: `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.` });
     }
-    // Otherwise, let your global error handler deal with it
-    return next(err);
+    next(new AppError(err.message));
   }
 }
 
-// DELETE /api/users/:id
-export const deleteUser = async (req, res) => {
-  await prisma.user.delete({
-    where: {
-      id: req.params.id
+// PUT /api/users/:id
+export const updateUser = async (req, res, next) => {
+  try {
+    const id = req.params;
+    const { name, email, phone, password, role, status } = req.body;
+    const data = {};
+    if (name   != undefined) data.name   = name;
+    if (email  != undefined) data.email  = email;
+    if (role   != undefined) data.role   = role;
+    if (status != undefined) data.status = status;
+    if (phone  != undefined) data.phone  = phone === '' ? null : phone; // simpan null jika tidak diisi
+
+    
+    if (Object.keys(data).length === 0) {
+      return new AppError({ message: 'No fields provided to update' })
     }
-  })
-  res.status(204).send()
-}
+
+    const updatedUser = await prisma.user.update({
+      where: id,
+      data: data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json(updatedUser);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === 'P2002') { // Unique constraint (misal email)
+        const field = err.meta?.target?.join(', ');
+        return new AppError({ message: `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.` });
+      }
+      if (err.code === 'P2025') { // Record to update not found
+        return new AppError({ message: 'User not found' });
+      }
+    }
+    next(new AppError(err.message));
+  }
+};
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return new AppError({ message: 'User not found' });
+    }
+    next(err);
+  }
+};

@@ -4,26 +4,48 @@ export const userIdValidator = [
     param('id').isUUID().withMessage('User ID must be a valid UUID'),
 ]
 
+const PHONE_REGEX = /^\+?[0-9]{10,15}$/; // Regex untuk nomor telepon (10-15 digit, bisa diawali +)
+
 export const createUserValidator = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password ≥6 chars'),
-  body('role')
-    .isIn(['ADMIN','TEACHER','STUDENT'])
-    .withMessage('Role must be ADMIN, TEACHER, or STUDENT'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('phone').optional({ checkFalsy: true }).trim().if(body('phone').notEmpty()).matches(PHONE_REGEX).withMessage('Invalid phone number format (e.g., 081234567890 or +6281234567890, 10-15 digits).'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('role').trim().notEmpty().withMessage('Role is required.').isIn(['ADMIN', 'TEACHER', 'STUDENT']).withMessage('Role must be ADMIN, TEACHER, or STUDENT'),
 ];
 
 export const updateUserValidator = [
-  param('id').isUUID().withMessage('User ID must be a valid UUID'),
-  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-  body('email').optional().isEmail().withMessage('Valid email is required'),
+  param('id').trim().isUUID().withMessage('User ID must be a valid UUID'),
+
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be an empty string if provided'),
+
+  body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required if provided'),
+
+  body('phone')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .customSanitizer(value => (value === '' ? null : value))
+    .if((value) => value !== null)
+    .matches(PHONE_REGEX)
+    .withMessage('Invalid phone number format. Leave empty or send null to remove.'),
+
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters if provided'),
+
   body('role')
     .optional()
-    .isIn(['ADMIN','TEACHER','STUDENT'])
-    .withMessage('Role must be ADMIN, TEACHER, or STUDENT'),
+    .trim()
+    .notEmpty().withMessage('Role cannot be empty if provided.')
+    .isIn(['ADMIN', 'TEACHER', 'STUDENT'])
+    .withMessage('Role must be ADMIN, TEACHER, or STUDENT if provided'),
+
   body('status')
     .optional()
-    .isIn(['ACTIVE','INACTIVE'])
-    .withMessage('Status must be ACTIVE or INACTIVE'),
+    .trim()
+    .notEmpty().withMessage('Status cannot be empty if provided.')
+    .isIn(['ACTIVE', 'INACTIVE'])
+    .withMessage('Status must be ACTIVE or INACTIVE if provided'),
 ];
 

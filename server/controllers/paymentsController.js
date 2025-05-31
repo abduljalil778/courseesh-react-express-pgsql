@@ -1,159 +1,175 @@
+// server/controllers/paymentController.js
 import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import AppError from '../utils/AppError.mjs';
+const { PrismaClient, Prisma, PaymentStatus } = pkg; // Impor PaymentStatus dan Prisma
 const prisma = new PrismaClient();
 
 /**
  * GET /api/payments
- * ADMIN only
+ * ADMIN only: Mengambil semua record Payment (cicilan individual atau pembayaran penuh)
+ * Pertimbangkan filter berdasarkan bookingId, studentId, status, dll.
  */
-export const getAllPayments = async (req, res) => {
+export const getAllPayments = async (req, res, next) => {
   try {
+    // Contoh: admin bisa filter payments berdasarkan bookingId jika diberikan query param
+    const { bookingId: queryBookingId } = req.query;
+    const whereClause = {};
+    if (queryBookingId) {
+        whereClause.bookingId = queryBookingId;
+    }
+
     const payments = await prisma.payment.findMany({
+      where: whereClause, // Terapkan filter jika ada
       include: {
         booking: {
-          include: {
-            student: { select: { id: true, name: true, email: true } },
-            course:  { select: { id: true, title: true } }
-          }
-        }
-      }
+          select: {
+            id: true,
+            student: { select: { id: true, name: true, email: true, phone: true } },
+            course: { select: { id: true, title: true, price: true } },
+            paymentMethod: true, // Tampilkan metode pembayaran dari booking
+            totalInstallments: true, // Tampilkan total cicilan dari booking
+          },
+        },
+      },
+      orderBy: [ // Urutkan
+        { bookingId: 'asc' },
+        { installmentNumber: 'asc' }
+      ]
     });
     return res.json(payments);
   } catch (err) {
-    console.error('getAllPayments:', err);
-    return res.status(500).json({ message: 'Server error fetching payments' });
+    console.error('getAllPayments Error:', err);
+    next(new AppError(err.message));
   }
 };
 
 /**
  * GET /api/payments/:id
- * ADMIN only
+ * ADMIN only: Mengambil satu record Payment (cicilan) berdasarkan ID uniknya.
  */
-export const getPaymentById = async (req, res) => {
-  const { id } = req.params;
+export const getPaymentById = async (req, res, next) => {
+  const { id } = req.params; // Ini adalah ID dari record Payment (cicilan)
   try {
     const payment = await prisma.payment.findUnique({
       where: { id },
       include: {
         booking: {
           include: {
-            student: { select: { id: true, name: true, email: true } },
-            course:  { select: { id: true, title: true } }
-          }
-        }
-      }
+            student: { select: { id: true, name: true, email: true, phone: true } },
+            course: { select: { id: true, title: true, price: true } },
+          },
+        },
+      },
     });
     if (!payment) {
-      return res.status(404).json({ message: `Payment id=${id} not found` });
+      return new AppError({ message: `Payment record with ID ${id} not found` });
     }
     return res.json(payment);
   } catch (err) {
-    console.error('getPaymentById:', err);
-    return res.status(500).json({ message: 'Server error fetching payment' });
+    console.error(`getPaymentById Error (ID: ${id}):`, err);
+    next(new AppError(err.message));
   }
 };
 
 /**
- * POST /api/payments
+ * POST /api/payments (MEMBUAT RECORD PAYMENT/CICILAN MANUAL)
  * ADMIN only
- * Body: { bookingId, amount, paymentDate, paymentStatus }
+ * Endpoint ini mungkin kurang relevan jika semua cicilan dibuat saat booking.
+ * Jika tetap ada, ini untuk admin menambahkan record pembayaran/cicilan secara manual.
+ * Body: { bookingId, installmentNumber, amount, dueDate?, status? }
  */
-export const createPayment = async (req, res) => {
-  const { bookingId, method, installments } = req.body;
-  if (!bookingId || !method) {
-    return res.status(400).json({ message: 'booking ID and method are required' });
-  }
+export const createPayment = async (req, res, next) => {
+  const { bookingId, installmentNumber, amount, dueDate, status } = req.body;
 
-  if (method === "INSTAlLMENT") {
-    if (typeof installments !== "number") {
-      installments < 2 || installments > 6
-    }
-    return res.status(400).json({message: 'Installment bust be range 2 - 6'})
-  }
   try {
-    // ensure booking exists
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: {
-      course: true
-    } });
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) {
-      return res.status(404).json({ message: `Booking id=${bookingId} not found` });
+      return new AppError({ message: `Booking with ID ${bookingId} not found` });
     }
 
-    const total = booking.course.price * booking.course.numberOfSessions;
+    // Cek apakah cicilan dengan nomor tersebut sudah ada untuk booking ini (opsional)
+    const existingInstallment = await prisma.payment.findFirst({
+        where: { bookingId, installmentNumber: Number(installmentNumber) }
+    });
+    if (existingInstallment) {
+        return new AppError({ message: `Installment number ${installmentNumber} already exists for this booking.`});
+    }
+
 
     const payment = await prisma.payment.create({
       data: {
         bookingId,
-        amount: total,
-        method,
-        installments: method === "INSTALLMENT" ? installments : undefined
-      }
+        installmentNumber: Number(installmentNumber),
+        amount: Number(amount),
+        dueDate: dueDate ? new Date(dueDate) : null,
+        status: status || PaymentStatus.PENDING,
+      },
     });
     return res.status(201).json(payment);
   } catch (err) {
-    console.error('createPayment:', err);
-    return res.status(500).json({ message: 'Server error creating payment' });
+    console.error('createPayment Error:', err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') { // Foreign key constraint failed
+        return new AppError({ message: `Invalid bookingId: ${bookingId}` });
+    }
+    next(new AppError(err.message));
   }
 };
 
 /**
  * PUT /api/payments/:id
- * ADMIN only
- * Body: { amount?, paymentDate?, paymentStatus? }
+ * ADMIN only: Memperbarui satu record Payment (cicilan), terutama statusnya.
+ * Body: { status?, amount?, dueDate?, paidAt? }
  */
-export const updatePayment = async (req, res) => {
-  const { id } = req.params;
-  const updates = {};
+export const updatePayment = async (req, res, next) => {
+  const { id } = req.params; // ID dari record Payment (cicilan)
+  const { status, amount, dueDate, paidAt } = req.body;
 
-  // only these four fields actually exist on the model:
-  ['amount', 'method', 'installments', 'status'].forEach((field) => {
-    if (req.body[field] != null) {
-      switch (field) {
-        case 'amount':
-          updates.amount = parseFloat(req.body.amount);
-          break;
-        default:
-          updates[field] = req.body[field];
-      }
+  const dataToUpdate = {};
+  if (status !== undefined) {
+    if (!Object.values(PaymentStatus).includes(status)) {
+        return new AppError({ message: `Invalid payment status. Valid are: ${Object.values(PaymentStatus).join(', ')}` });
     }
-  });
+    dataToUpdate.status = status;
+  }
+  if (amount !== undefined) dataToUpdate.amount = parseFloat(amount);
+  if (dueDate !== undefined) dataToUpdate.dueDate = dueDate ? new Date(dueDate) : null;
+  if (paidAt !== undefined) dataToUpdate.paidAt = paidAt ? new Date(paidAt) : null;
+  // Anda bisa menambahkan field lain yang relevan untuk diupdate di sini
 
-  if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ message: 'Nothing to update' });
+  if (Object.keys(dataToUpdate).length === 0) {
+    return new AppError({ message: 'No fields provided for update' });
   }
 
   try {
-    const existing = await prisma.payment.findUnique({ where: { id } });
-    if (!existing) {
-      return res.status(404).json({ message: `Payment id=${id} not found` });
-    }
-
-    const updated = await prisma.payment.update({
+    const updatedPayment = await prisma.payment.update({
       where: { id },
-      data: updates,
+      data: dataToUpdate,
     });
-    return res.json(updated);
+    return res.json(updatedPayment);
   } catch (err) {
-    console.error('updatePayment:', err);
-    return res.status(500).json({ message: 'Server error updating payment' });
+    console.error(`updatePayment Error (ID: ${id}):`, err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return new AppError({ message: `Payment record with ID ${id} not found` });
+    }
+    next(err);
   }
 };
 
 /**
  * DELETE /api/payments/:id
- * ADMIN only
+ * ADMIN only: Menghapus satu record Payment (cicilan).
+ * Pertimbangkan konsekuensinya terhadap status booking keseluruhan.
  */
-export const deletePayment = async (req, res) => {
-  const { id } = req.params;
+export const deletePayment = async (req, res, next) => {
+  const { id } = req.params; // ID dari record Payment (cicilan)
   try {
-    const existing = await prisma.payment.findUnique({ where: { id } });
-    if (!existing) {
-      return res.status(404).json({ message: `Payment id=${id} not found` });
-    }
     await prisma.payment.delete({ where: { id } });
     return res.status(204).send();
   } catch (err) {
-    console.error('deletePayment:', err);
-    return res.status(500).json({ message: 'Server error deleting payment' });
+    console.error(`deletePayment Error (ID: ${id}):`, err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return new AppError({ message: `Payment record with ID ${id} not found` });
+    }
+    next(new AppError(err.message));
   }
 };

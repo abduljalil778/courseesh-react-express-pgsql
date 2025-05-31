@@ -1,5 +1,5 @@
 // src/controllers/errorController.js
-import AppError from '../utils/appError.js';
+import AppError from '../utils/AppError.mjs';
 
 export default (err, req, res, next) => {
   // set defaults

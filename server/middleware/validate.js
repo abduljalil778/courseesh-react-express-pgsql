@@ -1,6 +1,6 @@
 // src/middleware/validate.js
 import { validationResult } from 'express-validator';
-import AppError from '../utils/appError.js';
+import AppError from '../utils/AppError.mjs';
 
 export const runValidation = (req, res, next) => {
   const errors = validationResult(req);

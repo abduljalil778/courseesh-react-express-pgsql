@@ -17,6 +17,7 @@ model User {
   id        String    @id @default(uuid())
   name      String
   email     String    @unique
+  phone     String?
   password  String
   role      Role
   status    Status    @default(ACTIVE)
@@ -42,18 +43,19 @@ model Course {
 }
 
 model Booking {
-  id          String        @id @default(uuid())
-  student     User          @relation(fields: [studentId], references: [id], name: "StudentBookings")
-  studentId   String
-  course      Course        @relation(fields: [courseId], references: [id], name: "CourseBookings")
-  courseId    String
-  sessions    BookingSession[]
-  address     String
-  payment     Payment?
-  bookingStatus      BookingStatus @default(PENDING)
-  paymentId   String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  student           User          @relation(fields: [studentId], references: [id], name: "StudentBookings")
+  studentId         String
+  course            Course        @relation(fields: [courseId], references: [id], name: "CourseBookings")
+  courseId          String
+  sessions          BookingSession[]
+  address           String
+  bookingStatus     BookingStatus @default(PENDING)
+  paymentMethod     PaymentMethod @default(FULL)
+  totalInstallments Int?
+  payments          Payment[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model BookingSession {
@@ -64,23 +66,24 @@ model BookingSession {
   createdAt    DateTime  @default(now())
 }
 
+model Payment {
+  id                String        @id @default(uuid())
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  bookingId         String        
+  installmentNumber Int
+  status            PaymentStatus @default(PENDING)
+  amount            Float
+  dueDate           DateTime?
+  paymentGatewayRef String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
   REFUNDED
-}
-
-model Payment {
-  id            String        @id @default(uuid())
-  booking       Booking       @relation(fields: [bookingId], references: [id])
-  bookingId     String        @unique
-  status        PaymentStatus @default(PENDING)
-  amount        Float
-  method        PaymentMethod @default(FULL)
-  installments  Int?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime @updatedAt
 }
 
 enum Role {
