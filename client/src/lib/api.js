@@ -73,3 +73,10 @@ export const updatePayment = async (paymentId, paymentData) => {
   return await api.put(`/payments/${paymentId}`, paymentData);
 }
 
+export const submitOrUpdateSessionReport = async (sessionId, reportData) => {
+  return await api.put(`/bookingsessions/${sessionId}/report`, reportData);
+};
+
+export const submitOverallBookingReport = async (bookingId, reportData) => {
+  return await api.put(`/bookings/${bookingId}/overall-report`, reportData);
+};

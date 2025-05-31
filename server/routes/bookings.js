@@ -1,3 +1,4 @@
+// src/routes/bookings.js
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import {
@@ -5,12 +6,14 @@ import {
   getBookingById,
   createBooking,
   updateBooking,
-  deleteBooking
+  deleteBooking,
+  submitOverallBookingReport
 } from '../controllers/bookingsController.js';
 import {
   bookingIdValidator,
   createBookingValidator,
-  updateBookingValidator
+  updateBookingValidator,
+  submitOverallReportValidator,
 } from '../validators/bookingsValidators.js';
 import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
@@ -31,6 +34,16 @@ router.get(
   runValidation,
   catchAsync(getBookingById)
 );
+
+// submit overal booking report
+router.put(
+  `/:id/overall-report`,
+  authorize('TEACHER', 'ADMIN'),
+  bookingIdValidator,
+  submitOverallReportValidator,
+  runValidation,
+  catchAsync(submitOverallBookingReport)
+)
 
 // Create booking (STUDENT only)
 router.post(

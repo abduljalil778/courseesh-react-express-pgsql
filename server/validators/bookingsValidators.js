@@ -62,3 +62,9 @@ export const updateBookingValidator = [
     .isIn(['PENDING', 'CONFIRMED', 'CANCELLED'])
     .withMessage('Booking status must be one of PENDING, CONFIRMED, CANCELLED'),
 ];
+
+export const submitOverallReportValidator = [
+  param('id').isUUID().withMessage('Booking ID must be a valid UUID'),
+  body('overallTeacherReport').optional().isString().trim().notEmpty().withMessage('Overall report cannot be empty if provided'),
+  body('finalGrade').optional().isString().trim().notEmpty().withMessage('Final grade cannot be empty if provided'),
+];

@@ -54,29 +54,37 @@ model Booking {
   paymentMethod     PaymentMethod @default(FULL)
   totalInstallments Int?
   payments          Payment[]
+  overallTeacherReport String?   
+  finalGrade           String?   
+  courseCompletionDate DateTime? 
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }
 
 model BookingSession {
   id           String @id @default(ulid())
-  booking      Booking   @relation(fields: [bookingId], references: [id])
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingId    String
   sessionDate  DateTime
+  status            SessionStatus? @default(SCHEDULED)
+  teacherReport     String?        
+  studentAttendance Boolean?       
+  sessionCompletedAt DateTime?     
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Payment {
   id                String        @id @default(uuid())
-  booking           Booking       @relation(fields: [bookingId], references: [id])
-  bookingId         String        
+  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId         String
   installmentNumber Int
   status            PaymentStatus @default(PENDING)
   amount            Float
   dueDate           DateTime?
   paymentGatewayRef String?
   createdAt         DateTime      @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime      @updatedAt
 }
 
 enum PaymentStatus {
@@ -101,6 +109,7 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
+  COMPLETED
 }
 
 enum PaymentMethod {
@@ -130,3 +139,12 @@ enum Curriculum {
   MERDEKA
   K13_REVISI
 }
+
+enum SessionStatus {
+  SCHEDULED 
+  COMPLETED 
+  CANCELLED_TEACHER 
+  CANCELLED_STUDENT
+  STUDENT_ABSENT
+}
+

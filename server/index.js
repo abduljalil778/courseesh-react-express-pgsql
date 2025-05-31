@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import courseRoutes from './routes/courses.js';
 import bookingRoutes from './routes/bookings.js';
 import paymentRoutes from './routes/payments.js';
+import bookingSessionRoutes from './routes/bookingSessions.js';
 import userRoutes from './routes/users.js';
 import errorController from './controllers/errorController.js';
 
@@ -43,7 +44,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/bookings',bookingRoutes);
 app.use('/api/payments',paymentRoutes);
 app.use('/api/users', userRoutes);
-// app.use('/api/schedules', scheduleRoutes);
+app.use('/api/bookingsessions', bookingSessionRoutes);
 
 // ERROR HANDLER
 // catch unhandled routes

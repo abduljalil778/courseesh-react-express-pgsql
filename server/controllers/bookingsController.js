@@ -2,7 +2,7 @@
 import pkg from '@prisma/client';
 const { PrismaClient, Prisma, BookingStatus, PaymentMethod, PaymentStatus: PrismaPaymentStatusEnum } = pkg; // Impor semua enum yang dibutuhkan
 const prisma = new PrismaClient();
-import AppError from '../utils/AppError.mjs'; // Pastikan path ini benar
+import AppError from '../utils/AppError.mjs'; 
 
 /**
  * GET /api/bookings
@@ -18,7 +18,7 @@ export const getAllBookings = async (req, res, next) => {
 
     const bookings = await prisma.booking.findMany({
       where,
-      include: {
+      include: { // 'include' digunakan untuk relasi
         student: {
           select: { id: true, name: true, email: true, phone: true },
         },
@@ -33,14 +33,24 @@ export const getAllBookings = async (req, res, next) => {
           },
         },
         sessions: {
-          select: { sessionDate: true },
+          select: { // Field yang ingin diambil dari BookingSession
+            id: true,
+            sessionDate: true,
+            status: true,
+            teacherReport: true,
+            studentAttendance: true,
+            sessionCompletedAt: true,
+            updatedAt: true,
+          },
           orderBy: { sessionDate: 'asc' },
         },
-        payments: { // <--- PERBAIKAN: payment -> payments
+        payments: {
           select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
           orderBy: { installmentNumber: 'asc' }
         },
       },
+      // Field skalar dari Booking (overallTeacherReport, finalGrade, dll.) akan otomatis terambil
+      // karena tidak ada klausa 'select' di level utama query ini.
       orderBy: {
         createdAt: 'desc',
       },
@@ -49,7 +59,72 @@ export const getAllBookings = async (req, res, next) => {
     return res.json(bookings);
   } catch (err) {
     console.error('getAllBookings Error:', err);
-    next(new AppError(err.message, 500)); // Gunakan AppError dengan benar
+    next(new AppError(err.message, 500));
+  }
+};
+
+/**
+ * PUT /api/bookings/:bookingId/overall-report
+ * Teacher submits an overall report for a booking.
+ */
+export const submitOverallBookingReport = async (req, res, next) => {
+  const { id: bookingId } = req.params;
+  const { overallTeacherReport, finalGrade } = req.body; // Mungkin juga bookingStatus baru
+  const loggedInTeacherId = req.user.id;
+
+  // Validasi Input
+  if (overallTeacherReport === undefined && finalGrade === undefined) {
+    return next(new AppError('At least overallTeacherReport or finalGrade must be provided.', 400));
+  }
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        course: { select: { teacherId: true } },
+        // Cek apakah semua sesi sudah COMPLETED sebelum submit overall report (opsional)
+        // sessions: { select: { status: true } } 
+      },
+    });
+
+    if (!booking) {
+      return next(new AppError('Booking not found', 404));
+    }
+
+    if (booking.course?.teacherId !== loggedInTeacherId) {
+      return next(new AppError('You are not authorized to submit an overall report for this booking', 403));
+    }
+
+    // Opsional: Cek apakah semua sesi sudah COMPLETED
+    // const allSessionsCompleted = booking.sessions.every(s => s.status === SessionStatus.COMPLETED);
+    // if (!allSessionsCompleted && !req.user.role === 'ADMIN') { // Admin mungkin bisa override
+    //   return next(new AppError('Not all sessions are completed. Cannot submit overall report yet.', 400));
+    // }
+
+    const dataToUpdate = {};
+    if (overallTeacherReport !== undefined) dataToUpdate.overallTeacherReport = overallTeacherReport;
+    if (finalGrade !== undefined) dataToUpdate.finalGrade = finalGrade;
+    
+    // Mungkin juga update bookingStatus ke COMPLETED atau sejenisnya dan courseCompletionDate
+    dataToUpdate.bookingStatus = BookingStatus.COMPLETED; // Ganti dengan status yang sesuai
+    dataToUpdate.courseCompletionDate = new Date();
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: dataToUpdate,
+      // Include data yang relevan untuk respons
+      include: {
+        student: { select: {id: true, name: true, email: true, phone: true}},
+        course: {select: {id: true, title: true}},
+        sessions: {orderBy: {sessionDate: 'asc'}},
+        payments: {orderBy: {installmentNumber: 'asc'}}
+      }
+    });
+
+    res.json(updatedBooking);
+  } catch (err) {
+    console.error(`Error submitting overall booking report for booking ID ${bookingId}:`, err);
+    next(new AppError(err.message || 'Failed to submit overall booking report', 500));
   }
 };
 
@@ -64,12 +139,7 @@ export const getBookingById = async (req, res, next) => {
       include: {
         course: { include: { teacher: true } },
         student: { select: { id: true, name: true, email: true, phone: true } },
-        payments: true, // <--- PERBAIKAN: payment -> payments (true akan mengambil semua field default)
-        // atau untuk lebih spesifik:
-        // payments: {
-        //   select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
-        //   orderBy: { installmentNumber: 'asc' }
-        // },
+        payments: true,
         sessions: { orderBy: { sessionDate: 'asc' } },
       },
     });
