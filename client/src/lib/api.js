@@ -80,3 +80,20 @@ export const submitOrUpdateSessionReport = async (sessionId, reportData) => {
 export const submitOverallBookingReport = async (bookingId, reportData) => {
   return await api.put(`/bookings/${bookingId}/overall-report`, reportData);
 };
+
+export const getAllTeacherPayoutsAdmin = async (filters = {}) => {
+  return await api.get('/teacher-payouts', { params: filters });
+};
+
+export const updateTeacherPayoutAdmin = async (payoutId, payoutData) => {
+  return await api.put(`/teacher-payouts/${payoutId}`, payoutData); 
+};
+
+// jika diperlukan untuk mengambil detail satu payout sebelum update (opsional)
+export const getTeacherPayoutByIdAdmin = async (payoutId) => {
+  return await api.get(`/teacher-payouts/${payoutId}`);
+};
+
+export const getMyPayoutsTeacher = async () => {
+  return await api.get('/my-payouts');
+}

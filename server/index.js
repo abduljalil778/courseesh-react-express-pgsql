@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-
 import AppError from './utils/AppError.mjs';
 import authRoutes from './routes/auth.js';
 import courseRoutes from './routes/courses.js';
@@ -12,6 +11,8 @@ import bookingRoutes from './routes/bookings.js';
 import paymentRoutes from './routes/payments.js';
 import bookingSessionRoutes from './routes/bookingSessions.js';
 import userRoutes from './routes/users.js';
+import teacherRoutes from './routes/teachers.js';
+import teacherPayoutRoutes from './routes/teacherPayouts.js';
 import errorController from './controllers/errorController.js';
 
 dotenv.config();
@@ -45,6 +46,8 @@ app.use('/api/bookings',bookingRoutes);
 app.use('/api/payments',paymentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookingsessions', bookingSessionRoutes);
+app.use('/api/teachers', teacherRoutes);
+app.use('/api', teacherPayoutRoutes);
 
 // ERROR HANDLER
 // catch unhandled routes

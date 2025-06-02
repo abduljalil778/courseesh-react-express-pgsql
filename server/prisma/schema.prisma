@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider     = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -14,64 +14,66 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  name      String
-  email     String    @unique
-  phone     String?
-  password  String
-  role      Role
-  status    Status    @default(ACTIVE)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  courses   Course[]  @relation("TeacherCourses")
-  bookings  Booking[] @relation("StudentBookings")
+  id               String          @id @default(uuid())
+  name             String
+  email            String          @unique
+  phone            String?
+  password         String
+  role             Role
+  status           Status          @default(ACTIVE)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  courses          Course[]        @relation("TeacherCourses")
+  bookings         Booking[]       @relation("StudentBookings")
+  payoutsAsTeacher TeacherPayout[] @relation("TeacherPayouts")
 }
 
 model Course {
-  id          String      @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  numberOfSessions Int @default(1)
-  classLevel  ClassLevel  
-  curriculum  Curriculum? // null for UTBK
-  teacher     User        @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
-  teacherId   String
-  bookings    Booking[]   @relation("CourseBookings")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  title            String
+  description      String
+  price            Float
+  numberOfSessions Int         @default(1)
+  classLevel       ClassLevel
+  curriculum       Curriculum? // null for UTBK
+  teacher          User        @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacherId        String
+  bookings         Booking[]   @relation("CourseBookings")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model Booking {
-  id                String        @id @default(uuid())
-  student           User          @relation(fields: [studentId], references: [id], name: "StudentBookings")
-  studentId         String
-  course            Course        @relation(fields: [courseId], references: [id], name: "CourseBookings")
-  courseId          String
-  sessions          BookingSession[]
-  address           String
-  bookingStatus     BookingStatus @default(PENDING)
-  paymentMethod     PaymentMethod @default(FULL)
-  totalInstallments Int?
-  payments          Payment[]
-  overallTeacherReport String?   
-  finalGrade           String?   
-  courseCompletionDate DateTime? 
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                   String           @id @default(uuid())
+  student              User             @relation(fields: [studentId], references: [id], name: "StudentBookings")
+  studentId            String
+  course               Course           @relation(fields: [courseId], references: [id], name: "CourseBookings")
+  courseId             String
+  sessions             BookingSession[]
+  address              String
+  bookingStatus        BookingStatus    @default(PENDING)
+  paymentMethod        PaymentMethod    @default(FULL)
+  totalInstallments    Int?
+  payments             Payment[]
+  teacherPayout        TeacherPayout?
+  overallTeacherReport String?
+  finalGrade           String?
+  courseCompletionDate DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 }
 
 model BookingSession {
-  id           String @id @default(ulid())
-  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId    String
-  sessionDate  DateTime
-  status            SessionStatus? @default(SCHEDULED)
-  teacherReport     String?        
-  studentAttendance Boolean?       
-  sessionCompletedAt DateTime?     
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String         @id @default(ulid())
+  booking            Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId          String
+  sessionDate        DateTime
+  status             SessionStatus? @default(SCHEDULED)
+  teacherReport      String?
+  studentAttendance  Boolean?
+  sessionCompletedAt DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
 model Payment {
@@ -85,6 +87,47 @@ model Payment {
   paymentGatewayRef String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
+}
+
+model TeacherPayout {
+  id        String  @id @default(uuid())
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String  @unique
+
+  teacher   User   @relation("TeacherPayouts", fields: [teacherId], references: [id])
+  teacherId String
+
+  coursePriceAtBooking Float
+  serviceFeePercentage Float
+  serviceFeeAmount     Float
+  honorariumAmount     Float
+
+  status               PayoutStatus @default(PENDING_PAYMENT)
+  payoutTransactionRef String?
+  payoutDate           DateTime?
+  adminNotes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApplicationSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  dataType    String   @default("STRING") // contoh: STRING, NUMBER, BOOLEAN
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum PayoutStatus {
+  PENDING_CALCULATION
+  PENDING_PAYMENT
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
 }
 
 enum PaymentStatus {
@@ -117,8 +160,6 @@ enum PaymentMethod {
   INSTALLMENT
 }
 
-
-
 enum ClassLevel {
   GRADE1
   GRADE2
@@ -141,10 +182,9 @@ enum Curriculum {
 }
 
 enum SessionStatus {
-  SCHEDULED 
-  COMPLETED 
-  CANCELLED_TEACHER 
+  SCHEDULED
+  COMPLETED
+  CANCELLED_TEACHER
   CANCELLED_STUDENT
   STUDENT_ABSENT
 }
-

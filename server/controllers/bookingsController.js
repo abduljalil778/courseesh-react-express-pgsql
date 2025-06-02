@@ -1,6 +1,6 @@
 // server/controllers/bookingsController.js
 import pkg from '@prisma/client';
-const { PrismaClient, Prisma, BookingStatus, PaymentMethod, PaymentStatus: PrismaPaymentStatusEnum } = pkg; // Impor semua enum yang dibutuhkan
+const { PrismaClient, Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus: PrismaPaymentStatusEnum } = pkg;
 const prisma = new PrismaClient();
 import AppError from '../utils/AppError.mjs'; 
 
@@ -69,62 +69,83 @@ export const getAllBookings = async (req, res, next) => {
  */
 export const submitOverallBookingReport = async (req, res, next) => {
   const { id: bookingId } = req.params;
-  const { overallTeacherReport, finalGrade } = req.body; // Mungkin juga bookingStatus baru
-  const loggedInTeacherId = req.user.id;
-
-  // Validasi Input
-  if (overallTeacherReport === undefined && finalGrade === undefined) {
-    return next(new AppError('At least overallTeacherReport or finalGrade must be provided.', 400));
-  }
+  const { overallTeacherReport, finalGrade } = req.body;
+  const loggedInTeacherId = req.user.id; // Ini adalah teacher yang melakukan aksi
 
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { select: { teacherId: true } },
-        // Cek apakah semua sesi sudah COMPLETED sebelum submit overall report (opsional)
-        // sessions: { select: { status: true } } 
+        course: { select: { teacherId: true, price: true } }, // teacherId kursus, bukan teacher yang login
+        payments: { select: { status: true } },
       },
     });
 
-    if (!booking) {
-      return next(new AppError('Booking not found', 404));
-    }
-
-    if (booking.course?.teacherId !== loggedInTeacherId) {
+    if (!booking) return next(new AppError('Booking not found', 404));
+    if (booking.course?.teacherId !== loggedInTeacherId) { // Pastikan teacher yang login adalah teacher kursus
       return next(new AppError('You are not authorized to submit an overall report for this booking', 403));
     }
 
-    // Opsional: Cek apakah semua sesi sudah COMPLETED
-    // const allSessionsCompleted = booking.sessions.every(s => s.status === SessionStatus.COMPLETED);
-    // if (!allSessionsCompleted && !req.user.role === 'ADMIN') { // Admin mungkin bisa override
-    //   return next(new AppError('Not all sessions are completed. Cannot submit overall report yet.', 400));
-    // }
+    const dataForBookingUpdate = {};
+    if (overallTeacherReport !== undefined) dataForBookingUpdate.overallTeacherReport = overallTeacherReport;
+    if (finalGrade !== undefined) dataForBookingUpdate.finalGrade = finalGrade;
+    dataForBookingUpdate.bookingStatus = BookingStatus.COMPLETED;
+    // dataForBookingUpdate.courseCompletionDate = new Date();
 
-    const dataToUpdate = {};
-    if (overallTeacherReport !== undefined) dataToUpdate.overallTeacherReport = overallTeacherReport;
-    if (finalGrade !== undefined) dataToUpdate.finalGrade = finalGrade;
-    
-    // Mungkin juga update bookingStatus ke COMPLETED atau sejenisnya dan courseCompletionDate
-    dataToUpdate.bookingStatus = BookingStatus.COMPLETED; // Ganti dengan status yang sesuai
-    dataToUpdate.courseCompletionDate = new Date();
+    const allPaymentsPaid = booking.payments.every(p => p.status === PrismaPaymentStatusEnum.PAID);
 
-    const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: dataToUpdate,
-      // Include data yang relevan untuk respons
-      include: {
-        student: { select: {id: true, name: true, email: true, phone: true}},
-        course: {select: {id: true, title: true}},
-        sessions: {orderBy: {sessionDate: 'asc'}},
-        payments: {orderBy: {installmentNumber: 'asc'}}
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedBookingResult = await tx.booking.update({
+        where: { id: bookingId },
+        data: dataForBookingUpdate,
+      });
+
+      if (dataForBookingUpdate.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
+        const existingPayout = await tx.teacherPayout.findUnique({
+          where: { bookingId: booking.id },
+        });
+
+        if (!existingPayout) {
+          let serviceFeePercentage = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE;
+          // Jika model ApplicationSetting diaktifkan:
+          const feeSetting = await tx.applicationSetting.findUnique({ where: { key: "DEFAULT_SERVICE_FEE_PERCENTAGE" } });
+          if (feeSetting && !isNaN(parseFloat(feeSetting.value))) serviceFeePercentage = parseFloat(feeSetting.value);
+
+          const coursePrice = booking.course.price;
+          const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
+          const honorariumAmount = parseFloat((coursePrice - serviceFeeAmount).toFixed(2));
+
+          await tx.teacherPayout.create({
+            data: {
+              bookingId: booking.id,
+              teacherId: booking.course.teacherId, // Gunakan teacherId dari kursus
+              coursePriceAtBooking: coursePrice,
+              serviceFeePercentage,
+              serviceFeeAmount,
+              honorariumAmount,
+              status: PayoutStatus.PENDING_PAYMENT,
+            },
+          });
+        }
       }
+
+      // Ambil kembali booking dengan semua detailnya untuk respons
+      return tx.booking.findUnique({
+        where: { id: updatedBookingResult.id },
+        include: {
+          student: { select: { id: true, name: true, email: true, phone: true } },
+          course: { select: { id: true, title: true, teacher: { select: { id: true, name: true } } } }, // Include teacher di course
+          sessions: { orderBy: { sessionDate: 'asc' } },
+          payments: { orderBy: { installmentNumber: 'asc' } },
+          teacherPayout: true, // Include TeacherPayout yang baru dibuat atau sudah ada
+        },
+      });
     });
 
-    res.json(updatedBooking);
+    res.json(result);
   } catch (err) {
     console.error(`Error submitting overall booking report for booking ID ${bookingId}:`, err);
-    next(new AppError(err.message || 'Failed to submit overall booking report', 500));
+    next(new AppError(err.message || 'Failed to submit overall booking report', err.statusCode || 500));
   }
 };
 
@@ -176,16 +197,8 @@ export const createBooking = async (req, res, next) => {
     paymentMethod, // Ini adalah enum PaymentMethod
     installments,  // Ini adalah jumlah cicilan (angka)
   } = req.body;
+
   const loggedInUserId = req.user.id;
-
-  // --- Validasi Input Dasar (Idealnya dengan express-validator) ---
-  if (!courseId || !studentFullName || !studentEmail || !address || !sessionDates || !paymentMethod) {
-    return next(new AppError('Missing required fields (courseId, studentFullName, studentEmail, address, sessionDates, paymentMethod required)', 400));
-  }
-  if (paymentMethod === PaymentMethod.INSTALLMENT && (!installments || Number(installments) < 2 || Number(installments) > 6 /* Sesuaikan batas max cicilan */)) {
-    return next(new AppError('Number of installments must be a number between 2 and (misal) 6 for installment payment', 400));
-  }
-
   try {
     const course = await prisma.course.findUnique({
       where: { id: courseId },

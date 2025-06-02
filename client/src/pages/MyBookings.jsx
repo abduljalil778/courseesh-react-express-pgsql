@@ -11,7 +11,7 @@ import { formatCurrencyIDR } from '../utils/formatCurrency';
 // Komponen kecil untuk menampilkan detail cicilan
 const InstallmentDetail = ({ payment }) => (
   <div className={`text-xs p-1 my-0.5 rounded ${payment.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-    Pay. {payment.installmentNumber}: {formatCurrencyIDR(payment.amount)} - <strong>{payment.status}</strong>
+    Inst. {payment.installmentNumber}: {formatCurrencyIDR(payment.amount)} - <strong>{payment.status}</strong>
     {payment.dueDate && payment.status === 'PENDING' && (
       <span className="ml-1 text-gray-600">(Due: {format(parseISO(payment.dueDate), 'dd MMM yyyy')})</span>
     )}

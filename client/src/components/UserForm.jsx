@@ -4,10 +4,18 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Spinner from './Spinner';
 
+const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
+
 // Skema dasar untuk field yang sama
 const baseUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Enter a valid email address'),
+  phone: z.string() 
+    .optional()
+    .or(z.literal(''))
+    .refine(value => !value || PHONE_REGEX.test(value), { 
+      message: 'Invalid phone number format (e.g., 0812... or +62812..., 10-15 digits).',
+    }),
   role: z.enum(['ADMIN', 'TEACHER', 'STUDENT'], {
     errorMap: () => ({ message: 'Please select a valid role.' }),
   }),
@@ -34,6 +42,7 @@ const updateUserSchema = baseUserSchema.extend({
 const defaultCreateValues = {
   name: '',
   email: '',
+  phone: '',
   password: '',
   role: 'STUDENT',
   status: 'ACTIVE',
@@ -60,9 +69,10 @@ export default function UserForm({
       ? {
           name: initialData.name || '',
           email: initialData.email || '',
+          phone: initialData.phone || '',
           role: initialData.role || 'STUDENT',
           status: initialData.status || 'ACTIVE',
-          password: '', // Password dikosongkan di form edit, user harus mengetik jika ingin mengubah
+          password: '',
         }
       : defaultCreateValues,
   });
@@ -71,8 +81,9 @@ export default function UserForm({
     const dataToSubmit = { ...data };
 
     if (isEditMode) {
-      // Jika mode edit dan password kosong, jangan kirim field password
-      // (artinya password tidak diubah)
+      if (dataToSubmit.phone === '') {
+      dataToSubmit.phone = null;
+    }
       if (!dataToSubmit.password) {
         delete dataToSubmit.password;
       }
@@ -109,6 +120,19 @@ export default function UserForm({
           className={`w-full p-2 border rounded ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} shadow-sm sm:text-sm`}
         />
         {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>}
+      </div>
+
+      {/* Phone */}
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        <input
+          id="phone"
+          type="tel"
+          {...register('phone')}
+          placeholder="phone"
+          className={`w-full p-2 border rounded ${errors.phone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} shadow-sm sm:text-sm`}
+        />
+        {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone.message}</p>}
       </div>
 
       {/* Password */}
