@@ -6,13 +6,14 @@ import StudentDashboard from './pages/StudentDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import MyBookings from './pages/MyBookings';
-import TeacherBookings from './pages/TeacherBookings';
+import TeacherBookingRequests from './pages/TeacherBookingRequests';
 import ErrorBoundary from './components/ErrorBoundary';
-import RegisterPage from './pages/RegisterPage';
 import Layout from './components/Layout';
 import Spinner from './components/Spinner';
 import StudentBooking from './pages/StudentBooking';
 import CourseDetail from './pages/CourseDetail';
+import MyPayouts from './pages/MyPayouts';
+import TeacherScheduleAndReports from './pages/TeacherScheduleAndReport';
 
 
 function PrivateRoute({ children, roles }) {
@@ -38,7 +39,6 @@ export default function App() {
           <Navbar/>
           <Routes>
             <Route element={<Layout/>}/>
-              <Route path='/register' element={<RegisterPage/>}/>
               <Route path="/login" element={<LoginPage />} />
 
 
@@ -69,11 +69,27 @@ export default function App() {
                 </PrivateRoute>
               }
             />
-            {/* <Route path='/teacher/schedules' element={
+            <Route
+              path='/teacher/my-payouts'
+              element={
+                <PrivateRoute roles={['TEACHER']}>
+                  <MyPayouts/>
+                </PrivateRoute>
+              }
+            />
+            <Route path="/teacher/bookings" element={
               <PrivateRoute roles={['TEACHER']}>
-                <TeacherSchedule/>
-              </PrivateRoute>
-            }/> */}
+                <TeacherBookingRequests/>
+              </PrivateRoute>}
+            />
+            <Route
+              path='/teacher/schedules'
+              element={
+                <PrivateRoute roles={['TEACHER']}>
+                  <TeacherScheduleAndReports/>
+                </PrivateRoute>
+              }
+            />
 
             {/* Student-only */}
             <Route
@@ -121,11 +137,7 @@ export default function App() {
                 <MyBookings/>
               </PrivateRoute>}/>
 
-            {/* Teacher bookings */}
-            <Route path="/teacher/bookings" element={
-              <PrivateRoute roles={['TEACHER']}>
-                <TeacherBookings/>
-              </PrivateRoute>}/>
+            
             
             
           </Routes>

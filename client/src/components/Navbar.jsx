@@ -18,12 +18,19 @@ export default function Navbar() {
 
       {/* booking list for teacher */}
       {user.role === 'TEACHER' && (
-      <Link to="/teacher/bookings" className="mr-4">My Bookings</Link>
+      <Link to="/teacher/bookings" className="mr-4">Bookings Requests</Link>
       )}
 
-      {/* {user.role === 'TEACHER' && (
-      <Link to="/teacher/schedules" className="mr-4">My Schedule</Link>
-      )} */}
+      {/* schedule & report */}
+      {user.role === 'TEACHER' && (
+      <Link to="/teacher/schedules" className="mr-4">Schedule & Report</Link>
+      )}
+
+      {/* payout page for teacher */}
+      {user.role === 'TEACHER' && (
+        <Link to="/teacher/my-payouts" className="mr-4">My Payouts</Link>
+      )}
+
       <button onClick={logout} className="text-red-600">Logout</button>
 
     </nav>

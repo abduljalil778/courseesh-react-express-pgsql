@@ -95,5 +95,5 @@ export const getTeacherPayoutByIdAdmin = async (payoutId) => {
 };
 
 export const getMyPayoutsTeacher = async () => {
-  return await api.get('/my-payouts');
+  return await api.get('/teachers/my-payouts');
 }

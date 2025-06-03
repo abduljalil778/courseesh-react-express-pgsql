@@ -4,24 +4,12 @@ const { PrismaClient, Prisma } = pkg;
 const prisma = new PrismaClient();
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/AppError.mjs';
+import { findAllUsers } from '../libs/usersRepository.js';
 
 // GET /api/users
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        email: true,
-        role: true,
-        status: true,
-        createdAt: true
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
+    const users = await findAllUsers()
     res.json(users);
   } catch (err) {
     next(new AppError(err.message))

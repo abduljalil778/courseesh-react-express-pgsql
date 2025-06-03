@@ -10,12 +10,7 @@ const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
 const baseUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Enter a valid email address'),
-  phone: z.string() 
-    .optional()
-    .or(z.literal(''))
-    .refine(value => !value || PHONE_REGEX.test(value), { 
-      message: 'Invalid phone number format (e.g., 0812... or +62812..., 10-15 digits).',
-    }),
+  phone: z.string().regex(PHONE_REGEX, 'Enter a valid phone number'),
   role: z.enum(['ADMIN', 'TEACHER', 'STUDENT'], {
     errorMap: () => ({ message: 'Please select a valid role.' }),
   }),
