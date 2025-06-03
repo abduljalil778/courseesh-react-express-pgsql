@@ -14,6 +14,7 @@ import StudentBooking from './pages/StudentBooking';
 import CourseDetail from './pages/CourseDetail';
 import MyPayouts from './pages/MyPayouts';
 import TeacherScheduleAndReports from './pages/TeacherScheduleAndReport';
+import RegisterPage from './pages/RegisterPage';
 
 
 function PrivateRoute({ children, roles }) {
@@ -40,6 +41,7 @@ export default function App() {
           <Routes>
             <Route element={<Layout/>}/>
               <Route path="/login" element={<LoginPage />} />
+              <Route path='register' element={<RegisterPage/>}/>
 
 
             {/* Admin-only */}

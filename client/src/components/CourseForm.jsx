@@ -1,42 +1,25 @@
 // src/components/CourseForm.jsx
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CLASS_LEVELS, CURRICULA } from '../config';
+import {courseSchema} from '../schemas/courseSchema';
 
-// Definisikan skema Zod di luar komponen agar tidak dibuat ulang pada setiap render
-const courseSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  price: z
-    .number({ invalid_type_error: 'Price must be a number' })
-    .positive('Price must be greater than 0')
-    .or(z.literal(0).transform(() => 0)), // Izinkan 0 atau angka positif
-  numberOfSessions: z
-    .number({ invalid_type_error: 'Number of sessions is required' })
-    .int('Number of sessions must be an integer')
-    .min(1, 'At least 1 session is required'),
-  classLevel: z.enum(CLASS_LEVELS, {
-    errorMap: () => ({ message: 'Please select a valid class level' }),
-  }),
-  curriculum: z.enum(CURRICULA).optional().or(z.literal('')), // Izinkan string kosong jika opsional
-});
 
 // Nilai default untuk form saat membuat course baru
 const defaultValuesForCreate = {
   title: '',
   description: '',
-  price: undefined, // Biarkan placeholder muncul, atau set 0 jika lebih disukai
+  price: undefined,
   numberOfSessions: 1,
   classLevel: CLASS_LEVELS[0] || '', // Default ke level pertama atau string kosong
   curriculum: '', // Default ke string kosong untuk 'Select curriculum'
 };
 
 export default function CourseForm({
-  initialData = null, // Ubah nama prop agar konsisten dan beri nilai default null
+  initialData = null,
   onSubmit,
-  onCancel, // Tambahkan prop onCancel
+  onCancel, 
   submitLabel = 'Submit',
 }) {
   const {
@@ -77,10 +60,7 @@ export default function CourseForm({
   }, [initialData, reset]);
 
   const handleFormSubmit = async (data) => {
-    // Tidak perlu reset(data) di sini, biarkan parent (TeacherDashboard)
-    // yang mengontrol state form melalui prop initialData setelah submit.
-    // Parent akan memuat ulang data atau membersihkan editingCourse,
-    // yang akan memicu useEffect di atas untuk mereset form jika perlu.
+    
     await onSubmit(data);
   };
 

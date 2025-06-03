@@ -1,121 +1,144 @@
+// client/src/pages/RegisterPage.jsx
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate, Link } from 'react-router-dom';
+import { api } from '../lib/api'; // Asumsi Anda punya api.js untuk axios instance
+import { registerSchema } from '../schemas/registerSchema'; // Path ke skema Zod Anda
+import Spinner from '../components/Spinner'; // Impor Spinner
+import Swal from 'sweetalert2';
+
 export default function RegisterPage() {
 
+    const navigate = useNavigate();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'STUDENT',
+        },
+    });
 
-    return (
-        <>
-        <div className="animate-fade-in bg-gray-800 bg-opacity-80 p-8 rounded-xl shadow-custom border border-gray-700 backdrop-blur-sm w-full max-w-md">
-        <div className="text-center mb-8">
-            <div className="inline-block p-3 bg-gradient rounded-full mb-4">
-            <i className="fas fa-user-plus text-3xl text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white">Contact Management</h1>
-            <p className="text-gray-300 mt-2">Create a new account</p>
-        </div>
-        <form>
-            <div className="mb-4">
-            <label
-                htmlFor="username"
-                className="block text-gray-300 text-sm font-medium mb-2"
-            >
-                Username
-            </label>
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-user text-gray-500" />
-                </div>
-                <input
-                type="text"
-                id="username"
-                name="username"
-                className="w-full pl-10 pr-3 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="Choose a username"
-                required=""
-                />
-            </div>
-            </div>
-            <div className="mb-4">
-            <label
-                htmlFor="name"
-                className="block text-gray-300 text-sm font-medium mb-2"
-            >
-                Full Name
-            </label>
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-id-card text-gray-500" />
-                </div>
-                <input
-                type="text"
-                id="name"
-                name="name"
-                className="w-full pl-10 pr-3 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="Enter your full name"
-                required=""
-                />
-            </div>
-            </div>
-            <div className="mb-4">
-            <label
-                htmlFor="password"
-                className="block text-gray-300 text-sm font-medium mb-2"
-            >
-                Password
-            </label>
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-lock text-gray-500" />
-                </div>
-                <input
-                type="password"
-                id="password"
-                name="password"
-                className="w-full pl-10 pr-3 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="Create a password"
-                required=""
-                />
-            </div>
-            </div>
-            <div className="mb-6">
-            <label
-                htmlFor="confirm_password"
-                className="block text-gray-300 text-sm font-medium mb-2"
-            >
-                Confirm Password
-            </label>
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-check-double text-gray-500" />
-                </div>
-                <input
-                type="password"
-                id="confirm_password"
-                name="confirm_password"
-                className="w-full pl-10 pr-3 py-3 bg-gray-700 bg-opacity-50 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="Confirm your password"
-                required=""
-                />
-            </div>
-            </div>
-            <div className="mb-6">
-            <button
-                type="submit"
-                className="w-full bg-gradient text-white py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 font-medium shadow-lg transform hover:-translate-y-0.5"
-            >
-                <i className="fas fa-user-plus mr-2" /> Register
-            </button>
-            </div>
-            <div className="text-center text-sm text-gray-400">
-            Already have an account?
-            <a
-                href="index.html"
-                className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200"
-            >
-                Sign in
-            </a>
-            </div>
-        </form>
+    const onSubmit = async (data) => {
+    try {
+      // Hapus confirmPassword karena tidak diperlukan oleh backend
+      const { confirmPassword, ...payload } = data;
+      await api.post('/auth/register', payload);
+      Swal.fire({
+        icon: 'success',
+        title: 'Registration Successful!',
+        text: 'You can now log in with your new account.',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      navigate('/login');
+    } catch (err) {
+      console.error("Registration error:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Registration Failed',
+        text: err.response?.data?.message || 'An error occurred during registration.',
+      });
+    }
+  };
+
+  return (
+    <>
+    <div className="animate-fade-in min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="p-8 bg-white shadow-xl rounded-lg space-y-6 w-full max-w-md"
+        >
+        <h1 className="text-3xl font-bold text-center text-gray-800">Create Account</h1>
+        
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <input
+            id="name"
+            type="text"
+            {...register('name')}
+            placeholder="Enter your full name"
+            className={`w-full p-3 border rounded-md shadow-sm ${errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          />
+          {errors.name && (
+            <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
+          )}
         </div>
 
-        </>
-    )
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <input
+            id="email"
+            type="email"
+            {...register('email')}
+            placeholder="you@example.com"
+            className={`w-full p-3 border rounded-md shadow-sm ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          />
+          {errors.email && (
+            <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input
+            id="password"
+            type="password"
+            {...register('password')}
+            placeholder="Min. 6 characters"
+            className={`w-full p-3 border rounded-md shadow-sm ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          />
+          {errors.password && (
+            <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            {...register('confirmPassword')}
+            placeholder="Re-enter your password"
+            className={`w-full p-3 border rounded-md shadow-sm ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          />
+          {errors.confirmPassword && (
+            <p className="text-red-600 text-sm mt-1">{errors.confirmPassword.message}</p>
+          )}
+        </div>
+        
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center"
+        >
+          {isSubmitting ? (
+            <>
+              <Spinner size={20} className="mr-2" /> Registering...
+            </>
+          ) : (
+            'Register'
+          )}
+        </button>
+
+        <div className="text-center text-sm">
+          <p className="text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Sign In
+            </Link>
+          </p>
+        </div>
+      </form>
+    </div>
+    </>
+  )
 }

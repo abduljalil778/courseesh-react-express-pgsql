@@ -1,39 +1,9 @@
 // src/components/UserForm.jsx
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { createUserSchema, updateUserSchema } from '../schemas/userSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Spinner from './Spinner';
 
-const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
-
-// Skema dasar untuk field yang sama
-const baseUserSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Enter a valid email address'),
-  phone: z.string().regex(PHONE_REGEX, 'Enter a valid phone number'),
-  role: z.enum(['ADMIN', 'TEACHER', 'STUDENT'], {
-    errorMap: () => ({ message: 'Please select a valid role.' }),
-  }),
-  status: z.enum(['ACTIVE', 'INACTIVE'], {
-    errorMap: () => ({ message: 'Please select a valid status.' }),
-  }),
-});
-
-// Skema untuk membuat user baru (password wajib)
-const createUserSchema = baseUserSchema.extend({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-// Skema untuk mengupdate user (password opsional)
-const updateUserSchema = baseUserSchema.extend({
-  password: z
-    .string()
-    .min(6, 'Password must be at least 6 characters if provided')
-    .optional()
-    .or(z.literal('')), // Izinkan string kosong, akan dihapus sebelum submit jika kosong
-});
-
-// Nilai default untuk form saat membuat user baru
 const defaultCreateValues = {
   name: '',
   email: '',
