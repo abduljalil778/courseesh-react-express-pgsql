@@ -97,3 +97,11 @@ export const getTeacherPayoutByIdAdmin = async (payoutId) => {
 export const getMyPayoutsTeacher = async () => {
   return await api.get('/teachers/my-payouts');
 }
+
+export const createCourseReview = async (bookingId, reviewData) => {
+  return await api.post(`/bookings/${bookingId}/review`, reviewData);
+}
+
+export const getCourseReviews = async (courseId) => {
+  return await api.get(`/courses/${courseId}/reviews`);
+}

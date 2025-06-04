@@ -15,6 +15,7 @@ import CourseDetail from './pages/CourseDetail';
 import MyPayouts from './pages/MyPayouts';
 import TeacherScheduleAndReports from './pages/TeacherScheduleAndReport';
 import RegisterPage from './pages/RegisterPage';
+import StudentCourseProgress from './pages/StudentCourseProgress';
 
 
 function PrivateRoute({ children, roles }) {
@@ -103,6 +104,16 @@ export default function App() {
               }
             />
 
+            {/* Student Course List */}
+            <Route
+            path='/student/my-courses'
+            element={
+              <PrivateRoute roles={['STUDENT']}>
+                <StudentCourseProgress />
+              </PrivateRoute>
+            }
+            />
+
             {/* Course Detail */}
             <Route
               path="/student/courses/:courseId"
@@ -134,7 +145,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
             
             {/* my bookings */}
-            <Route path="/my-bookings" element={
+            <Route path="/student/my-bookings" element={
               <PrivateRoute roles={['STUDENT']}>
                 <MyBookings/>
               </PrivateRoute>}/>

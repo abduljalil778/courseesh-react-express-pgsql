@@ -21,3 +21,9 @@ export const submitSessionReportValidator = [
     .isIn(Object.values(SessionStatus)) // Validasi berdasarkan enum SessionStatus
     .withMessage(`Invalid session status. Valid statuses are: ${Object.values(SessionStatus).join(', ')}`),
 ];
+
+export const studentAttendanceValidator = [
+  body('attended')
+    .isBoolean({ strict: true }) // Pastikan nilainya true atau false
+    .withMessage('Attendance status must be a boolean (true or false).'),
+];

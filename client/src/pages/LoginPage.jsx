@@ -84,7 +84,6 @@ export default function LoginPage() {
               ) : (
                 <i className="fas fa-eye"></i>
               )}
-              {/* Alternatif teks: {showPassword ? 'Hide' : 'Show'} */}
             </button>
           </div>
           {errors.password && (

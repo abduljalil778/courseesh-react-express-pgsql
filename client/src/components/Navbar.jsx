@@ -13,8 +13,15 @@ export default function Navbar() {
 
       {/* booking list fir student */}
       {user.role === 'STUDENT' && (
-      <Link to="/my-bookings" className="mr-4">My Bookings</Link>
+      <Link to="/student/my-bookings" className="mr-4">My Bookings</Link>
       )}
+
+      {/* course student list */}
+      {user.role === 'STUDENT' && (
+      <Link to="/student/my-courses" className="mr-4">My Courses</Link>
+      )}
+
+      {/* course progress for student */}
 
       {/* booking list for teacher */}
       {user.role === 'TEACHER' && (

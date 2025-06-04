@@ -38,7 +38,7 @@ router.get(
 // submit overal booking report
 router.put(
   `/:id/overall-report`,
-  authorize('TEACHER', 'ADMIN'),
+  // authorize('TEACHER', 'ADMIN'),
   bookingIdValidator,
   submitOverallReportValidator,
   runValidation,

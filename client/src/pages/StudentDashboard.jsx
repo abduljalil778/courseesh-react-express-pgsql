@@ -1,33 +1,35 @@
-// src/pages/StudentDashboard.jsx
+// client/src/pages/StudentDashboard.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAllCourses } from '../lib/api'; // Gunakan fungsi API
+import { useNavigate } from 'react-router-dom'; // Pastikan useNavigate diimpor
+import { getAllCourses, getCourseReviews } from '../lib/api'; // Impor getCourseReviews jika ingin pre-fetch atau gunakan di modal (Opsi 2)
 import Spinner from '../components/Spinner';
-import { CLASS_LEVELS, CURRICULA } from '../config'; // Pastikan path benar
+import { CLASS_LEVELS, CURRICULA } from '../config';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
+// Komponen StarRating juga diperlukan jika menampilkan review di modal (Opsi 2)
+// import { format, parseISO } from 'date-fns'; 
+// const StarRating = ({ rating }) => { ... };
 
 
 export default function StudentDashboard() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null); // State untuk error fetching
+  const [error, setError] = useState(null);
 
-  // State untuk filter
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterCurriculum, setFilterCurriculum] = useState('');
 
-  // State untuk modal detail kursus
-  const [selectedCourse, setSelectedCourse] = useState(null); // Kursus yang dipilih untuk modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // State untuk modal detail kursus TIDAK LAGI DIPERLUKAN JIKA NAVIGASI
+  // const [selectedCourse, setSelectedCourse] = useState(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook untuk navigasi
 
   const fetchCourses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getAllCourses(); // Menggunakan fungsi API
+      const response = await getAllCourses();
       setCourses(response.data || []);
     } catch (err) {
       console.error('Failed to load courses:', err);
@@ -60,20 +62,19 @@ export default function StudentDashboard() {
     });
   }, [courses, searchTerm, filterClass, filterCurriculum]);
 
-  const handleViewDetailsClick = (course) => {
-    setSelectedCourse(course);
-    setIsModalOpen(true);
+  // UBAH FUNGSI INI
+  const handleViewDetailsClick = (courseId) => {
+    navigate(`/student/courses/${courseId}`); // Navigasi ke halaman CourseDetail
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedCourse(null); // Reset selected course
-  };
+  // HAPUS FUNGSI INI JIKA MODAL TIDAK DIGUNAKAN LAGI
+  // const handleCloseModal = () => {
+  //   setIsModalOpen(false);
+  //   setSelectedCourse(null);
+  // };
 
-  const handleBookNowInModal = (courseId) => {
-    handleCloseModal(); // Tutup modal dulu
-    navigate(`/student/book/${courseId}`); // Navigasi ke halaman booking
-  };
+  // handleBookNowInModal juga tidak relevan jika modal dihapus
+  // const handleBookNowInModal = (courseId) => { ... };
 
   if (isLoading && courses.length === 0) {
     return (
@@ -87,6 +88,7 @@ export default function StudentDashboard() {
     <>
       <div className="p-4 md:p-6 lg:p-8 space-y-8">
         {/* Search & Filters */}
+        {/* ... (kode filter Anda tetap sama) ... */}
         <div className="p-4 bg-gray-50 rounded-lg shadow space-y-4 md:space-y-0 md:flex md:gap-4 md:items-center">
           <input
             type="text"
@@ -107,7 +109,7 @@ export default function StudentDashboard() {
               <option value="">All Classes</option>
               {CLASS_LEVELS.map(level => (
                 <option key={level} value={level}>
-                  {level.replace('GRADE_', 'Kelas ')}{level === 'UTBK' ? ' (UTBK)' : ''}
+                  {level.replace('GRADE_', 'Kelas ')}{level === 'UTBK' ? '' : ''}
                 </option>
               ))}
             </select>
@@ -128,16 +130,13 @@ export default function StudentDashboard() {
             )}
           </div>
         </div>
-        
-        {/* Error Display */}
+
         {error && (
           <div className="p-4 text-center text-red-700 bg-red-100 border border-red-300 rounded-md shadow">
             <p className="font-semibold">Could not load courses:</p>
             <p>{error} <button onClick={fetchCourses} className="ml-2 font-semibold text-blue-600 underline hover:text-blue-800">Retry</button></p>
           </div>
         )}
-
-        {/* Course Grid */}
         {!isLoading && filteredCourses.length === 0 && !error && (
           <p className="py-10 text-center text-xl text-gray-500">
             No courses match your criteria. Try adjusting your search or filters.
@@ -148,8 +147,6 @@ export default function StudentDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCourses.map(course => (
               <div key={course.id} className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300">
-                {/* Anda bisa menambahkan gambar kursus di sini jika ada */}
-                {/* <img src={course.imageUrl || '/placeholder-image.jpg'} alt={course.title} className="w-full h-48 object-cover"/> */}
                 <div className="p-5 flex flex-col flex-grow">
                   <h2 className="text-xl font-semibold text-gray-800 mb-2 leading-tight Htruncate_custom">{course.title}</h2>
                   <p className="text-xs text-gray-500 mb-1">
@@ -160,7 +157,7 @@ export default function StudentDashboard() {
                   </p>
                   <p className="text-2xl font-bold text-indigo-600 mb-4">{formatCurrencyIDR(course.price)}</p>
                   <button
-                    onClick={() => handleViewDetailsClick(course)}
+                    onClick={() => handleViewDetailsClick(course.id)} // Kirim course.id
                     className="mt-auto w-full bg-indigo-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
                   >
                     View Details
@@ -170,39 +167,16 @@ export default function StudentDashboard() {
             ))}
           </div>
         )}
-         {isLoading && courses.length > 0 && ( // Spinner loading halus jika sedang refresh
-            <div className="text-center py-4">
-                <Spinner size={32} />
-                <p className="text-sm text-gray-500">Refreshing courses...</p>
-            </div>
+        {isLoading && courses.length > 0 && (
+          <div className="text-center py-4">
+            <Spinner size={32} />
+            <p className="text-sm text-gray-500">Refreshing courses...</p>
+          </div>
         )}
       </div>
 
-      {/* Modal untuk Detail Kursus */}
-      {isModalOpen && selectedCourse && (
-        <div className="modal-backdrop" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button onClick={handleCloseModal} className="modal-close-button" aria-label="Close modal">&times;</button>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">{selectedCourse.title}</h2>
-            <div className="space-y-3 text-gray-700">
-              <p><strong>Teacher:</strong> {selectedCourse.teacher?.name || 'N/A'}</p>
-              <p><strong>Description:</strong> {selectedCourse.description}</p>
-              <p><strong>Class Level:</strong> {selectedCourse.classLevel.replace('GRADE_', 'Kelas ')}</p>
-              {selectedCourse.classLevel !== 'UTBK' && <p><strong>Curriculum:</strong> {selectedCourse.curriculum}</p>}
-              <p><strong>Number of Sessions:</strong> {selectedCourse.numberOfSessions}</p>
-              <p className="text-2xl font-semibold text-indigo-600">Price: {formatCurrencyIDR(selectedCourse.price)}</p>
-            </div>
-            <div className="mt-8 pt-6 border-t border-gray-200 text-right">
-              <button
-                onClick={() => handleBookNowInModal(selectedCourse.id)}
-                className="bg-green-600 text-white py-2.5 px-6 rounded-md font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-              >
-                Book Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL TIDAK LAGI DIPERLUKAN JIKA NAVIGASI KE HALAMAN DETAIL */}
+      {/* {isModalOpen && selectedCourse && ( ... kode modal ... )} */}
     </>
   );
 }

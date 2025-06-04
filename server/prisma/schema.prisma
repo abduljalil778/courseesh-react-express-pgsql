@@ -26,21 +26,24 @@ model User {
   courses          Course[]        @relation("TeacherCourses")
   bookings         Booking[]       @relation("StudentBookings")
   payoutsAsTeacher TeacherPayout[] @relation("TeacherPayouts")
+  studentReviews   CourseReview[]  @relation("StudentReviews")
+  teacherFeedback  CourseReview[]  @relation("TeacherReviews") // Feedback yang diterima guru
 }
 
 model Course {
-  id               String      @id @default(uuid())
+  id               String         @id @default(uuid())
   title            String
   description      String
   price            Float
-  numberOfSessions Int         @default(1)
+  numberOfSessions Int            @default(1)
   classLevel       ClassLevel
   curriculum       Curriculum? // null for UTBK
-  teacher          User        @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacher          User           @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId        String
-  bookings         Booking[]   @relation("CourseBookings")
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  bookings         Booking[]      @relation("CourseBookings")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  reviews          CourseReview[]
 }
 
 model Booking {
@@ -61,6 +64,7 @@ model Booking {
   courseCompletionDate DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
+  review               CourseReview? // Relasi one-to-one dengan review
 }
 
 model BookingSession {
@@ -69,6 +73,7 @@ model BookingSession {
   bookingId          String
   sessionDate        DateTime
   status             SessionStatus? @default(SCHEDULED)
+  isUnlocked         Boolean        @default(false)
   teacherReport      String?
   studentAttendance  Boolean?
   sessionCompletedAt DateTime?
@@ -119,6 +124,26 @@ model ApplicationSetting {
   dataType    String   @default("STRING") // contoh: STRING, NUMBER, BOOLEAN
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model CourseReview {
+  id        String   @id @default(cuid())
+  rating    Int 
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  bookingId String  @unique
+
+  student   User   @relation("StudentReviews", fields: [studentId], references: [id])
+  studentId String
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId String
+
+  teacher   User   @relation("TeacherReviews", fields: [teacherId], references: [id])
+  teacherId String
 }
 
 enum PayoutStatus {

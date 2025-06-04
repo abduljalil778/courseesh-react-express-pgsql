@@ -20,7 +20,7 @@ export const getAllBookings = async (req, res, next) => {
       where,
       include: { // 'include' digunakan untuk relasi
         student: {
-          select: { id: true, name: true, email: true, phone: true },
+          select: { id: true, name: true, email: true, phone: true, },
         },
         course: {
           select: {
@@ -40,13 +40,14 @@ export const getAllBookings = async (req, res, next) => {
             teacherReport: true,
             studentAttendance: true,
             sessionCompletedAt: true,
+            isUnlocked: true,
             updatedAt: true,
           },
           orderBy: { sessionDate: 'asc' },
         },
         payments: {
           select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
-          orderBy: { installmentNumber: 'asc' }
+          orderBy: { installmentNumber: 'asc' },
         },
       },
       // Field skalar dari Booking (overallTeacherReport, finalGrade, dll.) akan otomatis terambil
@@ -76,7 +77,7 @@ export const submitOverallBookingReport = async (req, res, next) => {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { select: { teacherId: true, price: true } }, // teacherId kursus, bukan teacher yang login
+        course: { select: { teacherId: true, price: true, } }, // teacherId kursus, bukan teacher yang login
         payments: { select: { status: true } },
       },
     });
@@ -132,12 +133,62 @@ export const submitOverallBookingReport = async (req, res, next) => {
       // Ambil kembali booking dengan semua detailnya untuk respons
       return tx.booking.findUnique({
         where: { id: updatedBookingResult.id },
-        include: {
-          student: { select: { id: true, name: true, email: true, phone: true } },
-          course: { select: { id: true, title: true, teacher: { select: { id: true, name: true } } } }, // Include teacher di course
-          sessions: { orderBy: { sessionDate: 'asc' } },
-          payments: { orderBy: { installmentNumber: 'asc' } },
-          teacherPayout: true, // Include TeacherPayout yang baru dibuat atau sudah ada
+        select: { // Gunakan select di level Booking untuk mengambil field address dari Booking
+          id: true,
+          studentId: true,
+          courseId: true,
+          address: true, // Ambil address dari Booking
+          bookingStatus: true,
+          paymentMethod: true,
+          totalInstallments: true,
+          overallTeacherReport: true,
+          finalGrade: true,
+          courseCompletionDate: true,
+          createdAt: true,
+          updatedAt: true,
+          student: { // Pilih field dari student, tanpa address
+            select: { 
+              id: true, 
+              name: true, 
+              email: true, 
+              phone: true 
+            } 
+          },
+          course: { 
+            select: { 
+              id: true, 
+              title: true, 
+              teacher: { 
+                select: { id: true, name: true } 
+              } 
+            } 
+          },
+          sessions: { // Select field yang dibutuhkan dari sessions
+            select: {
+                id: true,
+                sessionDate: true,
+                status: true,
+                teacherReport: true,
+                studentAttendance: true,
+                isUnlocked: true,
+                sessionCompletedAt: true,
+                updatedAt: true
+            },
+            orderBy: { sessionDate: 'asc' } 
+          },
+          payments: { // Select field yang dibutuhkan dari payments
+            select: {
+                id: true,
+                status: true,
+                amount: true,
+                installmentNumber: true,
+                dueDate: true
+            },
+            orderBy: { installmentNumber: 'asc' } 
+          },
+          teacherPayout: true, // Bisa juga di-select field spesifik jika perlu
+          // Jika ada relasi Review, tambahkan juga di sini
+          // review: true, 
         },
       });
     });
@@ -157,11 +208,62 @@ export const getBookingById = async (req, res, next) => {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id },
-      include: {
-        course: { include: { teacher: true } },
-        student: { select: { id: true, name: true, email: true, phone: true } },
-        payments: true,
-        sessions: { orderBy: { sessionDate: 'asc' } },
+      select: { // Gunakan select eksplisit
+        id: true,
+        studentId: true,
+        courseId: true,
+        address: true, // Ambil address dari Booking
+        bookingStatus: true,
+        paymentMethod: true,
+        totalInstallments: true,
+        overallTeacherReport: true,
+        finalGrade: true,
+        courseCompletionDate: true,
+        createdAt: true,
+        updatedAt: true,
+        course: { 
+          include: { 
+            teacher: {
+              select: { id: true, name: true, email: true } // Pilih field spesifik dari teacher
+            }
+          } 
+        },
+        student: { 
+          select: { // Pilih field dari student, tanpa address
+            id: true, 
+            name: true, 
+            email: true, 
+            phone: true 
+          } 
+        },
+        payments: { // Pilih field dari payments
+            select: {
+                id: true,
+                status: true,
+                amount: true,
+                installmentNumber: true,
+                dueDate: true,
+                paidAt: true, // Jika ada
+                paymentGatewayRef: true // Jika ada
+            },
+            orderBy: { installmentNumber: 'asc'}
+        },
+        sessions: { // Pilih field dari sessions
+          select: {
+            id: true,
+            sessionDate: true,
+            status: true,
+            teacherReport: true,
+            studentAttendance: true,
+            isUnlocked: true, 
+            sessionCompletedAt: true,
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: { sessionDate: 'asc' }
+        },
+        review: true, // Jika sudah ada relasi review
+        teacherPayout: true, // Jika perlu
       },
     });
 
@@ -172,7 +274,7 @@ export const getBookingById = async (req, res, next) => {
     if (
       req.user.role === 'ADMIN' ||
       (req.user.role === 'STUDENT' && booking.studentId === req.user.id) ||
-      (req.user.role === 'TEACHER' && booking.course.teacherId === req.user.id)
+      (req.user.role === 'TEACHER' && booking.courseId.teacherId === req.user.id)
     ) {
       return res.json(booking);
     }

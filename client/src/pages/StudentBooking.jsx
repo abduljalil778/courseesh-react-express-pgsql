@@ -16,6 +16,8 @@ export default function StudentBooking() {
   const [isLoadingCourse, setIsLoadingCourse] = useState(true);
   const [error, setError] = useState(null);
 
+  const ALLOWED_INSTALLMENTS = [2, 3]; // Jumlah cicilan yang diizinkan
+
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -243,7 +245,7 @@ export default function StudentBooking() {
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number (e.g., 081234567890)
+              Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -251,6 +253,7 @@ export default function StudentBooking() {
               name="phone"
               value={form.phone}
               onChange={handleChange}
+              required
               placeholder="Enter your phone number"
               className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -342,10 +345,11 @@ export default function StudentBooking() {
                 className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white sm:text-sm"
                 required
               >
-                {[2, 3, 4, 5, 6].map(n => (
+                {ALLOWED_INSTALLMENTS.map(n => (
                   <option key={n} value={n}>{n} installments</option>
                 ))}
               </select>
+              {/* Mungkin perlu update Zod schema jika ada di frontend untuk validasi awal */}
             </div>
           )}
           <button

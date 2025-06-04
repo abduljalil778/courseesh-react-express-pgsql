@@ -1,7 +1,7 @@
 // server/controllers/paymentController.js
 import pkg from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
-const { PrismaClient, Prisma, PaymentStatus } = pkg; // Impor PaymentStatus dan Prisma
+const { PrismaClient, Prisma, PaymentStatus, BookingStatus, PaymentMethod } = pkg; // Impor PaymentStatus dan Prisma
 const prisma = new PrismaClient();
 
 /**
@@ -121,7 +121,7 @@ export const createPayment = async (req, res, next) => {
  * Body: { status?, amount?, dueDate?, paidAt? }
  */
 export const updatePayment = async (req, res, next) => {
-  const { id } = req.params; // ID dari record Payment (cicilan)
+  const { id: paymentId } = req.params;
   const { status, amount, dueDate, paidAt } = req.body;
 
   const dataToUpdate = {};
@@ -137,21 +137,97 @@ export const updatePayment = async (req, res, next) => {
   // Anda bisa menambahkan field lain yang relevan untuk diupdate di sini
 
   if (Object.keys(dataToUpdate).length === 0) {
-    return new AppError({ message: 'No fields provided for update' });
+    return next(new AppError('No fields provided for update', 400));
   }
 
   try {
-    const updatedPayment = await prisma.payment.update({
-      where: { id },
-      data: dataToUpdate,
+    const updatedPayment = await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.update({
+        where: { id: paymentId },
+        data: dataToUpdate,
+        include: { // Include booking untuk mendapatkan detail kursus dan pembayaran lain
+          booking: {
+            include: {
+              course: { select: { numberOfSessions: true } },
+              payments: { select: { status: true } },
+              sessions: { select: { id: true, sessionDate: true }, orderBy: { sessionDate: 'asc' } }
+            }
+          }
+        }
+      });
+
+      // Logika untuk membuka sesi jika pembayaran LUNAS dan metode adalah CICILAN
+      if (payment.status === PaymentStatus.PAID && payment.booking.paymentMethod === PaymentMethod.INSTALLMENT) {
+        const bookingDetails = payment.booking;
+        const totalCourseSessions = bookingDetails.course.numberOfSessions;
+        const totalInstallmentsInBooking = bookingDetails.totalInstallments;
+
+        if (totalCourseSessions > 0 && totalInstallmentsInBooking > 0) {
+          const paidInstallmentsCount = bookingDetails.payments.filter(p => p.status === PaymentStatus.PAID).length;
+          
+          // Jumlah sesi yang terbuka per cicilan (akan bulat karena angka sesi dan cicilan sudah standar)
+          const sessionsPerInstallmentPaid = totalCourseSessions / totalInstallmentsInBooking;
+          const cumulativeSessionsToUnlock = sessionsPerInstallmentPaid * paidInstallmentsCount;
+
+          const sessionIdsToUnlock = bookingDetails.sessions
+            .slice(0, Math.min(cumulativeSessionsToUnlock, bookingDetails.sessions.length)) // Pastikan tidak melebihi jumlah sesi aktual
+            .map(s => s.id);
+
+          if (sessionIdsToUnlock.length > 0) {
+            await tx.bookingSession.updateMany({
+              where: {
+                bookingId: bookingDetails.id,
+                id: { in: sessionIdsToUnlock }
+              },
+              data: { isUnlocked: true }
+            });
+          }
+
+          // Jika semua cicilan sudah lunas & semua sesi telah dibuka, 
+          // dan booking masih PENDING/CONFIRMED, mungkin update status booking menjadi CONFIRMED jika sebelumnya PENDING
+          // atau biarkan guru yang mengubahnya jadi COMPLETED nanti.
+          const allInstallmentsPaid = bookingDetails.payments.every(p => p.status === PaymentStatus.PAID);
+          if (allInstallmentsPaid && bookingDetails.bookingStatus === BookingStatus.PENDING) {
+             // Opsional: Otomatis konfirmasi booking jika semua lunas & status masih pending.
+             // await tx.booking.update({
+             //   where: { id: bookingDetails.id },
+             //   data: { bookingStatus: BookingStatus.CONFIRMED }
+             // });
+          }
+        }
+      } else if (payment.status === PaymentStatus.PAID && payment.booking.paymentMethod === PaymentMethod.FULL) {
+        // Jika pembayaran penuh lunas, buka semua sesi
+        await tx.bookingSession.updateMany({
+            where: { bookingId: payment.bookingId },
+            data: { isUnlocked: true }
+        });
+        // Opsional: Otomatis konfirmasi booking jika PENDING
+        // if (payment.booking.bookingStatus === BookingStatus.PENDING) {
+        //     await tx.booking.update({
+        //         where: { id: payment.bookingId },
+        //         data: { bookingStatus: BookingStatus.CONFIRMED }
+        //     });
+        // }
+      }
+      // Penting untuk mengembalikan payment yang sudah diupdate, atau data yang relevan
+      return payment; 
+    }); // Akhir transaksi
+
+    // Ambil kembali payment yang diupdate dengan relasi yang mungkin berubah
+    // untuk respons yang akurat, atau cukup kembalikan hasil transaksi.
+    // Ini contoh sederhana:
+    const finalPaymentDetails = await prisma.payment.findUnique({
+        where: {id: updatedPayment.id},
+        include: { booking: { include: { course: true, student: true, sessions: true, payments: true }}}
     });
-    return res.json(updatedPayment);
+
+    return res.json(finalPaymentDetails);
   } catch (err) {
-    console.error(`updatePayment Error (ID: ${id}):`, err);
+    console.error(`updatePayment Error (ID: ${paymentId}):`, err);
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      return new AppError({ message: `Payment record with ID ${id} not found` });
+      return next(new AppError(`Payment record with ID ${paymentId} not found`, 404));
     }
-    next(err);
+    next(new AppError(err.message || 'Could not update payment', 500));
   }
 };
 

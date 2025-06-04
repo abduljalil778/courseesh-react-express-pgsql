@@ -2,6 +2,8 @@
 import { body, param } from 'express-validator';
 
 const PHONE_REGEX = /^\+?[0-9]{10,15}$/; // Samakan dengan yang mungkin Anda gunakan di frontend/Zod
+const ALLOWED_INSTALLMENT_VALUES = [2, 3];
+
 
 export const bookingIdValidator = [
   param('id')
@@ -14,8 +16,6 @@ export const createBookingValidator = [
   body('courseId')
     .trim() // Tambahkan trim
     .isUUID().withMessage('courseId must be a valid UUID'),
-
-  // --- TAMBAHKAN VALIDASI UNTUK DATA SISWA ---
   body('studentFullName')
     .trim()
     .notEmpty().withMessage('Student full name is required'),
@@ -28,8 +28,6 @@ export const createBookingValidator = [
     .if(body('studentPhone').notEmpty()) // Hanya validasi jika phone ada isinya setelah trim
     .matches(PHONE_REGEX)
     .withMessage('Invalid student phone number format (e.g., 08123... or +62812..., 10-15 digits).'),
-  // --- AKHIR VALIDASI DATA SISWA ---
-
   body('address')
     .trim() // Tambahkan trim
     .isString().notEmpty().withMessage('Address is required'),
@@ -37,18 +35,16 @@ export const createBookingValidator = [
     .isArray({ min: 1 }).withMessage('At least one session date is required'),
   body('sessionDates.*') // Validasi setiap item dalam array
     .isISO8601().toDate().withMessage('Each session date must be a valid date format (YYYY-MM-DD)'),
-    // .toDate() akan mengkonversi string tanggal valid menjadi objek Date
-
   body('paymentMethod')
     .trim()
     .isIn(['FULL', 'INSTALLMENT'])
     .withMessage('paymentMethod must be FULL or INSTALLMENT'),
-
   body('installments')
-    .if(body('paymentMethod').equals('INSTALLMENT')) // Hanya valid jika paymentMethod adalah INSTALLMENT
-    .notEmpty().withMessage('Number of installments is required for installment payment method.') // Pastikan ada nilainya
-    .isInt({ min: 2, max: 6 }) // Sesuaikan max jika perlu
-    .withMessage('Installments must be a number between 2 and 6'),
+  .if(body('paymentMethod').equals('INSTALLMENT'))
+  .notEmpty().withMessage('Number of installments is required for installment payment method.')
+  .isInt().withMessage('Installments must be a number.') // Pastikan integer
+  .isIn(ALLOWED_INSTALLMENT_VALUES) // Validasi nilai yang diizinkan
+  .withMessage(`Installments must be one of: ${ALLOWED_INSTALLMENT_VALUES.join(', ')}`),
 ];
 
 export const updateBookingValidator = [

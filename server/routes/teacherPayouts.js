@@ -17,11 +17,11 @@ import {runValidation} from '../middleware/validate.js';
 const router = express.Router();
 
 router.use(authenticate);
-router.use(authorize('ADMIN'))
 
 // List all teacher payouts
 router.get(
     '/teacher-payouts',
+    authorize('ADMIN'),
     listPayoutsQueryValidator,
     runValidation,
     catchAsync(getAllTeacherPayouts)
@@ -30,6 +30,7 @@ router.get(
 // get teacher payout by id
 router.get(
     '/teacher-payouts/:payoutId',
+    authorize('ADMIN'),
     payoutIdParamValidator,
     runValidation,
     catchAsync(getTeacherPayoutById)
@@ -38,6 +39,7 @@ router.get(
 // Update teacher payout
 router.put(
     '/teacher-payouts/:payoutId',
+    authorize('ADMIN'),
     payoutIdParamValidator,
     updatePayoutStatusValidator,
     runValidation,

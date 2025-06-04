@@ -13,6 +13,7 @@ import {
 } from '../validators/courseValidators.js';
 import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
+import {getReviewsForCourse} from '../controllers/reviewsController.js';
 
 const router = express.Router();
 router.use(authenticate)
@@ -40,6 +41,13 @@ router.delete(
   '/:id',
   authorize('TEACHER','ADMIN'),
   catchAsync(deleteCourse)
+);
+
+// Mendapatkan semua review untuk sebuah course (bisa diakses publik atau user login)
+// Jika ingin diproteksi, tambahkan authenticate
+router.get(
+  '/:id/reviews',
+  catchAsync(getReviewsForCourse)
 );
 
 export default router;
