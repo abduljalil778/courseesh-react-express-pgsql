@@ -1,5 +1,5 @@
 // src/pages/StudentBooking.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCourseById, createBooking } from '../lib/api';
 import Spinner from '../components/Spinner';
@@ -16,7 +16,7 @@ export default function StudentBooking() {
   const [isLoadingCourse, setIsLoadingCourse] = useState(true);
   const [error, setError] = useState(null);
 
-  const ALLOWED_INSTALLMENTS = [2, 3]; // Jumlah cicilan yang diizinkan
+  const ALLOWED_INSTALLMENTS = [2, 3];
 
   const [form, setForm] = useState({
     fullName: '',
@@ -29,8 +29,6 @@ export default function StudentBooking() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
-
   const loadCourseDetails = useCallback(async (id, currentUser) => {
     setIsLoadingCourse(true);
     setError(null);
@@ -40,15 +38,14 @@ export default function StudentBooking() {
       setCourse(courseData);
       setForm(f => ({
         ...f,
-        sessionDates: Array(courseData.numberOfSessions).fill(''),
+        sessionDates: Array(courseData.numberOfSessions || 0).fill(''),
         fullName: f.fullName || currentUser?.name || '',
         email: f.email || currentUser?.email || '',
         phone: f.phone || currentUser?.phone || '',
-        address: f.address || currentUser?.address || '',
+        address: f.address || '',
       }));
     } catch (err) {
-      console.error('Failed to load course:', err);
-      setError(err.response?.data?.message || 'Failed to load course details. Please try again.');
+      setError(err.response?.data?.message || 'Failed to load course details.');
     } finally {
       setIsLoadingCourse(false);
     }
@@ -64,7 +61,11 @@ export default function StudentBooking() {
   }, [courseId, authLoading, loggedInUser, loadCourseDetails]);
 
   const handleChange = e => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
+    if (name === "paymentMethod") {
+      setForm(f => ({ ...f, paymentMethod: value }));
+      return;
+    }
     if (name.startsWith('session-')) {
       const idx = Number(name.split('-')[1]);
       setForm(f => {
@@ -76,35 +77,14 @@ export default function StudentBooking() {
     }
     setForm(f => ({
       ...f,
-      [name]: name === 'installments' && type === 'select-one'
-        ? Number(value)
-        : value,
+      [name]: name === 'installments' && type === 'select-one' ? Number(value) : value,
     }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
+    // Validasi form bisa ditambahkan di sini dengan Zod atau cara lain jika diinginkan
     setIsSubmitting(true);
-    if (!form.fullName.trim() || !form.email.trim() || !form.address.trim()) {
-        Swal.fire('Incomplete Data', 'Full Name, Email, and Address are required.', 'warning');
-        setIsSubmitting(false);
-        return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
-        setIsSubmitting(false);
-        return;
-    }
-    if (form.phone.trim() && !/^\+?[0-9]{10,15}$/.test(form.phone.trim())) {
-        Swal.fire('Invalid Phone', 'Please enter a valid phone number (10-15 digits, e.g., 08xxxxxxxxxx or +62xxxx).', 'warning');
-        setIsSubmitting(false);
-        return;
-    }
-    if (form.sessionDates.some(date => !date)) {
-        Swal.fire('Incomplete Data', 'Please pick all session dates.', 'warning');
-        setIsSubmitting(false);
-        return;
-    }
     try {
       const bookingPayload = {
         courseId,
@@ -114,257 +94,167 @@ export default function StudentBooking() {
         address: form.address,
         sessionDates: form.sessionDates,
         paymentMethod: form.paymentMethod,
-        ...(form.paymentMethod === 'INSTALLMENT'
-          ? { installments: form.installments }
-          : {}),
+        ...(form.paymentMethod === 'INSTALLMENT' ? { installments: form.installments } : {}),
       };
       await createBooking(bookingPayload);
       Swal.fire({
         icon: 'success',
         title: 'Booking Confirmed!',
-        text: 'Your course booking has been successfully submitted. You will be redirected shortly.',
+        text: 'Your course booking has been submitted. Please proceed with the payment.',
         timer: 3000,
         showConfirmButton: false,
         willClose: () => {
-          navigate('/student/');
+          navigate('/student/my-bookings'); // Arahkan ke halaman My Bookings untuk pembayaran
         }
       });
     } catch (err) {
-      console.error('Booking failed:', err);
-      const errMsg = err.response?.data?.message || 'Booking failed. Please check your input and try again.';
       Swal.fire({
         icon: 'error',
         title: 'Booking Failed',
-        text: errMsg,
+        text: err.response?.data?.message || 'Failed to create booking.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (authLoading || (isLoadingCourse && !course)) { // Kondisi loading gabungan
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Spinner size={60} />
-      </div>
-    );
-  }
+  const paymentDetails = useMemo(() => {
+    if (!course) return { total: 0, firstPayment: 0 };
+    const total = course.price;
+    let firstPayment = total;
+    if (form.paymentMethod === 'INSTALLMENT') {
+      firstPayment = total / form.installments;
+    }
+    return {
+      total,
+      firstPayment: Math.round(firstPayment)
+    };
+  }, [course, form.paymentMethod, form.installments]);
 
+  if (authLoading || isLoadingCourse) {
+    return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
+  }
   if (error) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-xl text-red-600 mb-4">{error}</p>
-        <button
-          onClick={() => courseId && !authLoading ? loadCourseDetails(courseId, loggedInUser) : navigate('/student/dashboard')}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
-        >
-          Retry
-        </button>
-        <button
-          onClick={() => navigate('/student/dashboard')}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
+    return <div className="p-6 text-center text-red-500">{error}</div>;
+  }
+  if (!course) {
+    return <div className="p-6 text-center text-gray-500">Course not found.</div>;
   }
 
-  if (!course && !isLoadingCourse && !authLoading) { // Setelah semua loading selesai dan course tetap null
-    return (
-      <div className="p-6 text-center text-xl text-gray-600">
-        Course details could not be loaded or the course does not exist.
-        <button
-          onClick={() => navigate('/student/dashboard')}
-          className="block mx-auto mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  // Jika lolos dari semua kondisi di atas, return utama untuk form akan dieksekusi.
-  // Pastikan `course` tidak null sebelum mengakses propertinya di JSX di bawah ini.
-  // Kondisi `if (!course && !isLoadingCourse && !authLoading)` di atas sudah menangani ini.
   return (
-    <div className="container mx-auto p-4 md:p-6 max-w-2xl">
-      <div className="bg-white shadow-xl rounded-lg p-6 md:p-8">
-        {/* Judul dengan null check untuk course */}
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
-          Book Course: {course ? course.title : 'Loading course title...'}
-        </h1>
-        
-        {/* Informasi Kursus dengan null check */}
-        {course && (
-          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-md space-y-1 text-sm text-indigo-700">
-              <p className="truncate"><strong>Description:</strong> {course.description}</p>
-              <p><strong>Price:</strong> <span className="font-semibold text-lg">{formatCurrencyIDR(course.price)}</span></p>
-              <p><strong>Sessions:</strong> {course.numberOfSessions} | <strong>Class:</strong> {course.classLevel.replace('GRADE_', 'Kelas ')}</p>
-              {course.classLevel !== 'UTBK' && (
-                  <p><strong>Curriculum:</strong> {course.curriculum}</p>
-              )}
-          </div>
-        )}
+    <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-6xl">
+        <button onClick={() => navigate(-1)} className="mb-6 text-sm text-indigo-600 hover:underline">
+          &larr; Back to Course Details
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ... (sisa field form: fullName, email, phone, address, sessionDates, paymentMethod, installments) ... */}
-          {/* Pastikan semua field ini sudah ada di sini seperti pada kode sebelumnya */}
-           <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">Your Details</h2>
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-              placeholder="Enter your full name"
-              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-              placeholder="youremail@example.com"
-              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              required
-              placeholder="Enter your phone number"
-              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Address <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="address"
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              required
-              rows="3"
-              placeholder="Enter your full address for certificate shipping, if any"
-              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
+          {/* Sisi Kiri: Form Isian */}
+          <div className="lg:col-span-2 space-y-8">
+            <h1 className="text-3xl font-bold text-gray-800">Booking Checkout</h1>
+            
+            {/* 1. Contact Information */}
+            <div className="p-6 bg-white rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">1. Contact Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Full Name *</label>
+                  <input type="text" id="fullName" name="fullName" value={form.fullName} onChange={handleChange} required className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number *</label>
+                  <input type="tel" id="phone" name="phone" value={form.phone} onChange={handleChange} required className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email *</label>
+                  <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">Full Address *</label>
+                  <textarea id="address" name="address" value={form.address} onChange={handleChange} required rows="3" className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                </div>
+              </div>
+            </div>
 
-          <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 pt-2">Session & Payment</h2>
-          {course && form.sessionDates && ( // Pastikan course dan sessionDates ada sebelum map
-            <div>
-                <h3 className="text-md font-medium text-gray-700 mb-1">
-                Pick {course.numberOfSessions} Session Date{course.numberOfSessions > 1 && 's'} <span className="text-red-500">*</span>
-                </h3>
-                <div className="space-y-3">
+            {/* 2. Schedule Selection */}
+            <div className="p-6 bg-white rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">2. Schedule Your {course.numberOfSessions} Sessions *</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {form.sessionDates.map((dateValue, i) => (
                     <div key={i}>
-                    <label htmlFor={`session-${i}`} className="block text-xs font-medium text-gray-600 mb-0.5">
-                        Session {i + 1}
-                    </label>
-                    <input
-                        type="date"
-                        id={`session-${i}`}
-                        name={`session-${i}`}
-                        value={dateValue}
-                        onChange={handleChange}
-                        required
-                        min={today}
-                        className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
+                      <label htmlFor={`session-${i}`} className="block text-xs font-medium text-gray-600">Session {i + 1}</label>
+                      <input type="datetime-local" id={`session-${i}`} name={`session-${i}`} value={dateValue} onChange={handleChange} required min={new Date().toISOString().slice(0, 16)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
                     </div>
                 ))}
-                </div>
+              </div>
             </div>
-          )}
 
+            {/* 3. Payment Method */}
+            <div className="p-6 bg-white rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">3. Payment Method</h2>
+              <div className="space-y-4">
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer ${form.paymentMethod === 'FULL' ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-300'}`}>
+                  <input type="radio" name="paymentMethod" value="FULL" checked={form.paymentMethod === 'FULL'} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" />
+                  <span className="ml-3 font-medium text-gray-800">Full Payment</span>
+                </label>
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer ${form.paymentMethod === 'INSTALLMENT' ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-300'}`}>
+                  <input type="radio" name="paymentMethod" value="INSTALLMENT" checked={form.paymentMethod === 'INSTALLMENT'} onChange={handleChange} className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" />
+                  <span className="ml-3 font-medium text-gray-800">Installments</span>
+                </label>
+              </div>
+              {form.paymentMethod === 'INSTALLMENT' && (
+                <div className="mt-4 pl-8">
+                  <label htmlFor="installments" className="block text-sm font-medium text-gray-700">Number of Installments</label>
+                  <select id="installments" name="installments" value={form.installments} onChange={handleChange} required className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white">
+                    {ALLOWED_INSTALLMENTS.map(n => (<option key={n} value={n}>{n} times</option>))}
+                  </select>
+                </div>
+              )}
+            </div>
 
-          <div>
-            <h3 className="text-md font-medium text-gray-700 mb-2">Payment Method <span className="text-red-500">*</span></h3>
-            <div className="space-y-2">
-              <label className="flex items-center p-3 border rounded-md hover:border-indigo-500 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="FULL"
-                  checked={form.paymentMethod === 'FULL'}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 mr-3"
-                />
-                <span className="text-sm font-medium text-gray-700">Full Payment</span>
-              </label>
-              <label className="flex items-center p-3 border rounded-md hover:border-indigo-500 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="INSTALLMENT"
-                  checked={form.paymentMethod === 'INSTALLMENT'}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 mr-3"
-                />
-                <span className="text-sm font-medium text-gray-700">Installments</span>
-              </label>
+          </div>
+
+          {/* Sisi Kanan: Ringkasan Pesanan (Order Summary) */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-4 mb-4">Order Summary</h2>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Course Title:</span>
+                  <span className="font-medium text-right">{course.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-medium">{formatCurrencyIDR(course.price)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment Method:</span>
+                  <span className="font-medium">{form.paymentMethod === 'INSTALLMENT' ? `${form.installments}x Installments` : 'Full Payment'}</span>
+                </div>
+              </div>
+              <div className="border-t mt-4 pt-4 space-y-2">
+                <div className="flex justify-between text-lg font-semibold">
+                  <span className="text-gray-800">
+                    {/* Logika kondisional untuk mengubah teks label */}
+                    {form.paymentMethod === 'FULL' ? 'Total Payment:' : 'First Payment Due:'}
+                  </span>
+                  <span className="text-indigo-600">
+                    {formatCurrencyIDR(paymentDetails.firstPayment)}
+                  </span>
+                </div>
+                {/* Tambahan: Tampilkan detail cicilan jika dipilih */}
+                {form.paymentMethod === 'INSTALLMENT' && (
+                  <p className="text-xs text-gray-500 text-right">
+                    (Total: {formatCurrencyIDR(paymentDetails.total)})
+                  </p>
+                )}
+              </div>
+              <button type="submit" disabled={isSubmitting || isLoadingCourse || authLoading} className="mt-6 w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center">
+                {isSubmitting ? <><Spinner size={20} className="mr-2"/> Processing...</> : 'Confirm Booking'}
+              </button>
             </div>
           </div>
-          
-          {form.paymentMethod === 'INSTALLMENT' && (  
-            <div>
-              <label htmlFor="installments" className="block text-sm font-medium text-gray-700 mb-1">
-                Number of Installments <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="installments"
-                name="installments"
-                value={form.installments}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white sm:text-sm"
-                required
-              >
-                {ALLOWED_INSTALLMENTS.map(n => (
-                  <option key={n} value={n}>{n} installments</option>
-                ))}
-              </select>
-              {/* Mungkin perlu update Zod schema jika ada di frontend untuk validasi awal */}
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={isSubmitting || isLoadingCourse || authLoading || !course} // Tambahkan !course
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center"
-          >
-            {isSubmitting ? (
-              <>
-                <Spinner size={20} className="mr-2"/> Processing...
-              </>
-            ) : (
-              'Confirm & Proceed to Payment'
-            )}
-          </button>
         </form>
       </div>
     </div>

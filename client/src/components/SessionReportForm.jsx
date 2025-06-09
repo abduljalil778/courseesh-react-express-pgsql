@@ -1,45 +1,61 @@
 // src/components/SessionReportForm.jsx
-import React from 'react';
+import React, {useEffect} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import Spinner from './Spinner';
-// Impor enum SessionStatus jika Anda ingin dropdown yang dinamis dari Prisma Client (membutuhkan sedikit trik untuk frontend)
-// atau definisikan secara manual di frontend:
-const SESSION_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED_TEACHER', 'CANCELLED_STUDENT', 'STUDENT_ABSENT'];
+import {sessionReportSchema, SESSION_STATUSES} from '../schemas/sessionReportSchema';
 
-
-// Skema Zod disesuaikan dengan apa yang dikirim
-const sessionReportSchema = z.object({
-  teacherReport: z.string().optional().or(z.literal('')),
-  studentAttendance: z.boolean().optional(),
-  status: z.enum(SESSION_STATUSES).optional(),
-});
 
 export default function SessionReportForm({ session, onSubmit, onCancel, isSubmittingReport }) {
+  let initialAttendanceValue;
+  if (session?.studentAttendance === true) {
+    initialAttendanceValue = true;
+  } else if (session?.studentAttendance === false) {
+    initialAttendanceValue = false;
+  } else {
+    // Default ke 'Present' (true) jika null atau undefined (belum diisi sama sekali)
+    initialAttendanceValue = true; 
+  }
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch, // Untuk melihat nilai field jika perlu
+    watch,
+    reset, // Ambil reset
   } = useForm({
     resolver: zodResolver(sessionReportSchema),
     defaultValues: {
       teacherReport: session?.teacherReport || '',
-      studentAttendance: session?.studentAttendance === null || session?.studentAttendance === undefined ? true : session.studentAttendance, // Default hadir jika belum diisi
+      studentAttendance: initialAttendanceValue,
       status: session?.status || 'SCHEDULED',
     },
   });
+
+  useEffect(() => {
+    let newInitialAttendanceValue;
+    if (session?.studentAttendance === true) {
+        newInitialAttendanceValue = true;
+    } else if (session?.studentAttendance === false) {
+        newInitialAttendanceValue = false;
+    } else {
+        newInitialAttendanceValue = true; // Default jika belum ada
+    }
+    reset({
+        teacherReport: session?.teacherReport || '',
+        studentAttendance: newInitialAttendanceValue,
+        status: session?.status || 'SCHEDULED',
+    });
+  }, [session, reset]);
+
 
   const watchedStatus = watch('status');
 
   const handleFormSubmit = (data) => {
     const payload = { ...data };
-    // Jika status tidak diubah dan defaultnya SCHEDULED, mungkin tidak perlu dikirim jika tidak diubah
-    // atau selalu kirim status saat ini.
-    // Jika studentAttendance tidak disentuh, default boolean mungkin sudah cukup.
     onSubmit(session.id, payload);
   };
+
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -64,7 +80,15 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
           </label>
           <select
             id="studentAttendance"
-            {...register('studentAttendance', { setValueAs: (value) => value === 'true' })}
+            // register studentAttendance dan pastikan setValueAs mengubahnya jadi boolean
+            {...register('studentAttendance', { 
+                setValueAs: (value) => {
+                    if (value === "true") return true;
+                    if (value === "false") return false;
+                    return undefined; // atau null, atau biarkan Zod yang handle
+                }
+            })}
+            // `defaultValue` di sini dikontrol oleh `defaultValues` di `useForm` atau `reset`
             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
           >
             <option value="true">Present</option>

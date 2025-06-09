@@ -138,8 +138,10 @@ export default function CourseDetail() {
           <p><strong>Description:</strong> {course.description || 'No description provided.'}</p>
           <p><strong>Price:</strong> <span className="text-2xl font-semibold text-indigo-600">{formatCurrencyIDR(course.price)}</span></p>
           <p><strong>Total Sessions:</strong> {course.numberOfSessions || 'N/A'}</p>
-          <p><strong>Class Level:</strong> {course.classLevel.replace('GRADE_', 'Kelas ')}</p>
-          {course.classLevel !== 'UTBK' && <p><strong>Curriculum:</strong> {course.curriculum || 'N/A'}</p>}
+          <p><strong>Class Level:</strong> {course.classLevels?.join(', ') || 'N/A'}</p>
+            {!(course.classLevels?.includes('UTBK') && course.classLevels?.length === 1) && course.curriculum && (
+          <p><strong>Curriculum:</strong> {course.curriculum}</p>
+            )}
         </div>
         <div className="text-center mb-10">
           <button

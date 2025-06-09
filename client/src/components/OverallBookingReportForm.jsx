@@ -50,7 +50,7 @@ export default function OverallBookingReportForm({ booking, onSubmit, onCancel, 
 
       <div>
         <label htmlFor="finalGrade" className="block text-sm font-medium text-gray-700 mb-1">
-          Final Grade / Assessment (Optional)
+          Final Grade / Assessment
         </label>
         <input
           type="text"
@@ -61,23 +61,6 @@ export default function OverallBookingReportForm({ booking, onSubmit, onCancel, 
         />
         {errors.finalGrade && <p className="text-red-500 text-xs mt-1">{errors.finalGrade.message}</p>}
       </div>
-
-      {/* Opsional: Membiarkan teacher mengubah status booking akhir */}
-      {/* <div>
-        <label htmlFor="bookingStatus" className="block text-sm font-medium text-gray-700 mb-1">
-            Final Booking Status (Optional)
-        </label>
-        <select
-            id="bookingStatus"
-            {...register('bookingStatus')}
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-        >
-            <option value="">- Select Status -</option>
-            {BOOKING_STATUSES_FOR_COMPLETION.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        {errors.bookingStatus && <p className="text-red-500 text-xs mt-1">{errors.bookingStatus.message}</p>}
-      </div> */}
-
 
       <div className="flex justify-end space-x-3 pt-3">
         <button

@@ -36,7 +36,7 @@ model Course {
   description      String
   price            Float
   numberOfSessions Int            @default(1)
-  classLevel       ClassLevel
+  classLevels      ClassLevel[] // Array untuk mendukung beberapa kelas
   curriculum       Curriculum? // null for UTBK
   teacher          User           @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId        String
@@ -128,7 +128,7 @@ model ApplicationSetting {
 
 model CourseReview {
   id        String   @id @default(cuid())
-  rating    Int 
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -186,19 +186,10 @@ enum PaymentMethod {
 }
 
 enum ClassLevel {
-  GRADE1
-  GRADE2
-  GRADE3
-  GRADE4
-  GRADE5
-  GRADE6
-  GRADE7
-  GRADE8
-  GRADE9
-  GRADE10
-  GRADE11
-  GRADE12
-  UTBK
+  SD //  GRADE1-6
+  SMP //  GRADE7-9
+  SMA //  GRADE10-12
+  UTBK // Untuk UTBK, tidak memiliki kelas
 }
 
 enum Curriculum {

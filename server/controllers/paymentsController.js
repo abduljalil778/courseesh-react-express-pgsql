@@ -122,7 +122,7 @@ export const createPayment = async (req, res, next) => {
  */
 export const updatePayment = async (req, res, next) => {
   const { id: paymentId } = req.params;
-  const { status, amount, dueDate, paidAt } = req.body;
+  const { status, amount, dueDate, } = req.body;
 
   const dataToUpdate = {};
   if (status !== undefined) {
@@ -133,7 +133,7 @@ export const updatePayment = async (req, res, next) => {
   }
   if (amount !== undefined) dataToUpdate.amount = parseFloat(amount);
   if (dueDate !== undefined) dataToUpdate.dueDate = dueDate ? new Date(dueDate) : null;
-  if (paidAt !== undefined) dataToUpdate.paidAt = paidAt ? new Date(paidAt) : null;
+  // if (paidAt !== undefined) dataToUpdate.paidAt = paidAt ? new Date(paidAt) : null;
   // Anda bisa menambahkan field lain yang relevan untuk diupdate di sini
 
   if (Object.keys(dataToUpdate).length === 0) {

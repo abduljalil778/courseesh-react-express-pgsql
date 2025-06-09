@@ -18,30 +18,32 @@ export const getAllBookings = async (req, res, next) => {
 
     const bookings = await prisma.booking.findMany({
       where,
-      include: { // 'include' digunakan untuk relasi
+      include: {
         student: {
-          select: { id: true, name: true, email: true, phone: true, },
+          select: { id: true, name: true, email: true, phone: true },
         },
         course: {
           select: {
             id: true,
             title: true,
             price: true,
+            numberOfSessions: true, // <--- TAMBAHKAN INI
+            teacherId: true, // Anda juga butuh ini untuk `submitOverallBookingReport`
             teacher: {
               select: { id: true, name: true, email: true },
             },
           },
         },
         sessions: {
-          select: { // Field yang ingin diambil dari BookingSession
-            id: true,
-            sessionDate: true,
-            status: true,
-            teacherReport: true,
+          select: { 
+            id: true, 
+            sessionDate: true, 
+            status: true, 
+            teacherReport: true, 
             studentAttendance: true,
+            isUnlocked: true, 
             sessionCompletedAt: true,
-            isUnlocked: true,
-            updatedAt: true,
+            updatedAt: true
           },
           orderBy: { sessionDate: 'asc' },
         },
@@ -49,9 +51,9 @@ export const getAllBookings = async (req, res, next) => {
           select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
           orderBy: { installmentNumber: 'asc' },
         },
+        review: true, 
+        teacherPayout: true 
       },
-      // Field skalar dari Booking (overallTeacherReport, finalGrade, dll.) akan otomatis terambil
-      // karena tidak ada klausa 'select' di level utama query ini.
       orderBy: {
         createdAt: 'desc',
       },
@@ -68,30 +70,63 @@ export const getAllBookings = async (req, res, next) => {
  * PUT /api/bookings/:bookingId/overall-report
  * Teacher submits an overall report for a booking.
  */
-export const submitOverallBookingReport = async (req, res, next) => {
+export const submitOverallBookingReport = async (req, res, next) => { //
   const { id: bookingId } = req.params;
   const { overallTeacherReport, finalGrade } = req.body;
-  const loggedInTeacherId = req.user.id; // Ini adalah teacher yang melakukan aksi
+  const loggedInTeacherId = req.user.id;
 
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { select: { teacherId: true, price: true, } }, // teacherId kursus, bukan teacher yang login
+        course: { select: { teacherId: true, price: true, numberOfSessions: true } }, // Ambil numberOfSessions dari course
         payments: { select: { status: true } },
+        sessions: { // Ambil semua sesi untuk validasi
+          select: { status: true, isUnlocked: true } // Ambil status dan isUnlocked dari setiap sesi
+        }, 
       },
     });
 
-    if (!booking) return next(new AppError('Booking not found', 404));
-    if (booking.course?.teacherId !== loggedInTeacherId) { // Pastikan teacher yang login adalah teacher kursus
+    if (!booking) {
+      return next(new AppError('Booking not found', 404));
+    }
+    if (booking.course?.teacherId !== loggedInTeacherId) {
       return next(new AppError('You are not authorized to submit an overall report for this booking', 403));
     }
+
+    // Cek apakah semua sesi sudah selesai
+    const totalCourseSessions = booking.course.numberOfSessions;
+    const completedSessionsCount = booking.sessions.filter(
+      session => session.status === SessionStatus.COMPLETED && session.isUnlocked 
+    ).length;
+
+
+    if (booking.sessions.length < totalCourseSessions) {
+        return next(new AppError(`Not all ${totalCourseSessions} sessions for this course have been recorded or scheduled yet. Cannot submit overall report.`, 400));
+    }
+
+    const allSessionsHandled = booking.sessions.every(
+        // Definisi "ditangani": bisa COMPLETED, atau status akhir lainnya seperti CANCELLED_STUDENT, STUDENT_ABSENT
+        // Namun, untuk overall report, biasanya kita ingin semua sesi yang seharusnya terjadi sudah COMPLETED oleh guru.
+        session => session.status === SessionStatus.COMPLETED
+    );
+
+    if (!allSessionsHandled) {
+      return next(new AppError('All sessions must be marked as COMPLETED by the teacher before submitting an overall report.', 400));
+    }
+    // --- AKHIR VALIDASI BARU ---
+
 
     const dataForBookingUpdate = {};
     if (overallTeacherReport !== undefined) dataForBookingUpdate.overallTeacherReport = overallTeacherReport;
     if (finalGrade !== undefined) dataForBookingUpdate.finalGrade = finalGrade;
+    
+    // Status booking otomatis menjadi COMPLETED saat overall report disubmit jika semua sesi sudah COMPLETED.
     dataForBookingUpdate.bookingStatus = BookingStatus.COMPLETED;
-    // dataForBookingUpdate.courseCompletionDate = new Date();
+    if(!booking.courseCompletionDate) { // Hanya set jika belum ada
+        dataForBookingUpdate.courseCompletionDate = new Date();
+    }
+
 
     const allPaymentsPaid = booking.payments.every(p => p.status === PrismaPaymentStatusEnum.PAID);
 
@@ -101,16 +136,21 @@ export const submitOverallBookingReport = async (req, res, next) => {
         data: dataForBookingUpdate,
       });
 
-      if (dataForBookingUpdate.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
+      // Logika pembuatan TeacherPayout tetap sama
+      if (updatedBookingResult.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
         const existingPayout = await tx.teacherPayout.findUnique({
           where: { bookingId: booking.id },
         });
 
         if (!existingPayout) {
-          let serviceFeePercentage = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE;
-          // Jika model ApplicationSetting diaktifkan:
+          // ... (logika pembuatan payout seperti sebelumnya) ...
+          let serviceFeePercentageString = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15';
+          let serviceFeePercentage = parseFloat(serviceFeePercentageString);
+          
           const feeSetting = await tx.applicationSetting.findUnique({ where: { key: "DEFAULT_SERVICE_FEE_PERCENTAGE" } });
-          if (feeSetting && !isNaN(parseFloat(feeSetting.value))) serviceFeePercentage = parseFloat(feeSetting.value);
+          if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
+            serviceFeePercentage = parseFloat(feeSetting.value);
+          }
 
           const coursePrice = booking.course.price;
           const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
@@ -119,7 +159,7 @@ export const submitOverallBookingReport = async (req, res, next) => {
           await tx.teacherPayout.create({
             data: {
               bookingId: booking.id,
-              teacherId: booking.course.teacherId, // Gunakan teacherId dari kursus
+              teacherId: booking.course.teacherId,
               coursePriceAtBooking: coursePrice,
               serviceFeePercentage,
               serviceFeeAmount,
@@ -131,64 +171,25 @@ export const submitOverallBookingReport = async (req, res, next) => {
       }
 
       // Ambil kembali booking dengan semua detailnya untuk respons
+      // (Gunakan select eksplisit seperti yang sudah diperbaiki sebelumnya)
       return tx.booking.findUnique({
         where: { id: updatedBookingResult.id },
-        select: { // Gunakan select di level Booking untuk mengambil field address dari Booking
-          id: true,
-          studentId: true,
-          courseId: true,
-          address: true, // Ambil address dari Booking
-          bookingStatus: true,
-          paymentMethod: true,
-          totalInstallments: true,
-          overallTeacherReport: true,
-          finalGrade: true,
-          courseCompletionDate: true,
-          createdAt: true,
-          updatedAt: true,
-          student: { // Pilih field dari student, tanpa address
-            select: { 
-              id: true, 
-              name: true, 
-              email: true, 
-              phone: true 
-            } 
-          },
-          course: { 
-            select: { 
-              id: true, 
-              title: true, 
-              teacher: { 
-                select: { id: true, name: true } 
-              } 
-            } 
-          },
-          sessions: { // Select field yang dibutuhkan dari sessions
-            select: {
-                id: true,
-                sessionDate: true,
-                status: true,
-                teacherReport: true,
-                studentAttendance: true,
-                isUnlocked: true,
-                sessionCompletedAt: true,
-                updatedAt: true
-            },
+        select: { 
+          id: true, studentId: true, courseId: true, address: true, bookingStatus: true,
+          paymentMethod: true, totalInstallments: true, overallTeacherReport: true,
+          finalGrade: true, courseCompletionDate: true, createdAt: true, updatedAt: true,
+          student: { select: { id: true, name: true, email: true, phone: true } },
+          course: { select: { id: true, title: true, teacher: { select: { id: true, name: true } } } },
+          sessions: { 
+            select: { id: true, sessionDate: true, status: true, teacherReport: true, studentAttendance: true, isUnlocked: true, sessionCompletedAt: true, updatedAt: true },
             orderBy: { sessionDate: 'asc' } 
           },
-          payments: { // Select field yang dibutuhkan dari payments
-            select: {
-                id: true,
-                status: true,
-                amount: true,
-                installmentNumber: true,
-                dueDate: true
-            },
+          payments: { 
+            select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
             orderBy: { installmentNumber: 'asc' } 
           },
-          teacherPayout: true, // Bisa juga di-select field spesifik jika perlu
-          // Jika ada relasi Review, tambahkan juga di sini
-          // review: true, 
+          teacherPayout: true,
+          review: true, 
         },
       });
     });
@@ -204,15 +205,16 @@ export const submitOverallBookingReport = async (req, res, next) => {
  * GET /api/bookings/:id
  */
 export const getBookingById = async (req, res, next) => {
-  const { id } = req.params;
+  const { id: bookingId } = req.params;
+
   try {
     const booking = await prisma.booking.findUnique({
-      where: { id },
-      select: { // Gunakan select eksplisit
+      where: { id: bookingId },
+      select: { 
         id: true,
         studentId: true,
         courseId: true,
-        address: true, // Ambil address dari Booking
+        address: true,
         bookingStatus: true,
         paymentMethod: true,
         totalInstallments: true,
@@ -222,65 +224,61 @@ export const getBookingById = async (req, res, next) => {
         createdAt: true,
         updatedAt: true,
         course: { 
-          include: { 
-            teacher: {
-              select: { id: true, name: true, email: true } // Pilih field spesifik dari teacher
-            }
+          select: { 
+            teacherId: true,
+            title: true, 
+            numberOfSessions: true,
+            teacher: { 
+              select: { 
+                name: true,
+                email: true,
+                phone: true,
+              } 
+            } 
           } 
         },
         student: { 
-          select: { // Pilih field dari student, tanpa address
+          select: { 
             id: true, 
             name: true, 
             email: true, 
             phone: true 
           } 
         },
-        payments: { // Pilih field dari payments
-            select: {
-                id: true,
-                status: true,
-                amount: true,
-                installmentNumber: true,
-                dueDate: true,
-                paidAt: true, // Jika ada
-                paymentGatewayRef: true // Jika ada
-            },
-            orderBy: { installmentNumber: 'asc'}
-        },
-        sessions: { // Pilih field dari sessions
+        sessions: {
           select: {
             id: true,
             sessionDate: true,
             status: true,
             teacherReport: true,
             studentAttendance: true,
-            isUnlocked: true, 
-            sessionCompletedAt: true,
-            createdAt: true,
-            updatedAt: true
+            isUnlocked: true,
+            sessionCompletedAt: true
           },
           orderBy: { sessionDate: 'asc' }
         },
-        review: true, // Jika sudah ada relasi review
-        teacherPayout: true, // Jika perlu
+        review: true,
       },
     });
 
     if (!booking) {
-      return next(new AppError(`Booking with ID ${id} not found`, 404));
+      return next(new AppError(`Booking with ID ${bookingId} not found`, 404));
     }
 
-    if (
-      req.user.role === 'ADMIN' ||
-      (req.user.role === 'STUDENT' && booking.studentId === req.user.id) ||
-      (req.user.role === 'TEACHER' && booking.courseId.teacherId === req.user.id)
-    ) {
+    // --- LOGIKA OTORISASI YANG DIPERBAIKI ---
+    const isOwnerStudent = req.user.role === 'STUDENT' && booking.studentId === req.user.id;
+    const isOwnerTeacher = req.user.role === 'TEACHER' && booking.course?.teacherId === req.user.id;
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (isAdmin || isOwnerStudent || isOwnerTeacher) {
       return res.json(booking);
     }
+    
+    // Jika tidak ada kondisi yang terpenuhi, baru lempar error 403
     return next(new AppError('You are not authorized to view this booking', 403));
+
   } catch (err) {
-    console.error(`getBookingById Error (ID: ${id}):`, err);
+    console.error(`getBookingById Error (ID: ${bookingId}):`, err);
     next(new AppError(err.message, 500));
   }
 };
@@ -417,49 +415,70 @@ export const createBooking = async (req, res, next) => {
 /**
  * PUT /api/bookings/:id
  */
-export const updateBooking = async (req, res, next) => {
-  const { id } = req.params; // ID Booking yang akan diupdate
-  const { bookingStatus } = req.body; // Status baru dari request body
+export const updateBooking = async (req, res, next) => { //
+  const { id: bookingId } = req.params;
+  const { bookingStatus: newBookingStatus } = req.body; // Ganti nama variabel agar lebih jelas
 
-  // Validasi input untuk bookingStatus
-  if (!bookingStatus || !Object.values(BookingStatus).includes(bookingStatus)) {
+  if (!newBookingStatus || !Object.values(BookingStatus).includes(newBookingStatus)) {
     return next(new AppError(`Invalid booking status. Valid statuses are: ${Object.values(BookingStatus).join(', ')}`, 400));
   }
 
   try {
-    // 1. Ambil booking beserta informasi kursus (untuk mendapatkan teacherId)
     const booking = await prisma.booking.findUnique({
-      where: { id },
+      where: { id: bookingId },
       include: {
-        course: { // Include course untuk mendapatkan teacherId
-          select: { teacherId: true } // Cukup pilih teacherId jika hanya itu yang dibutuhkan untuk otorisasi
-        }
+        course: { select: { teacherId: true } },
+        payments: { select: { status: true } } // Pastikan payments di-include
       }
     });
 
-    // 2. Jika booking tidak ditemukan
     if (!booking) {
-      return next(new AppError(`Booking with ID ${id} not found`, 404));
+      return next(new AppError(`Booking with ID ${bookingId} not found`, 404));
     }
 
-    // 3. Logika Otorisasi
+    // Mencegah pembatalan jika sudah ada pembayaran PAID
+    if (newBookingStatus === BookingStatus.CANCELLED) {
+      const hasPaidPayment = booking.payments.some(payment => payment.status === PrismaPaymentStatusEnum.PAID);
+      if (hasPaidPayment) {
+        return next(new AppError('Cannot cancel booking because a payment has already been made.', 400));
+      }
+      // Jika student, hanya bisa membatalkan booking yang masih PENDING
+      if (req.user.role === 'STUDENT' && booking.bookingStatus !== BookingStatus.PENDING) {
+         return next(new AppError('Students can only cancel bookings that are still PENDING.', 403));
+      }
+    }
+
     const isAdmin = req.user.role === 'ADMIN';
     const isOwnerStudent = req.user.role === 'STUDENT' && booking.studentId === req.user.id;
     const isOwnerTeacher = req.user.role === 'TEACHER' && booking.course?.teacherId === req.user.id;
 
     if (!(isAdmin || isOwnerStudent || isOwnerTeacher)) {
-      // Jika bukan admin, bukan student pemilik, dan bukan teacher pemilik kursus
       return next(new AppError('You are not authorized to update this booking', 403));
     }
+    
+    // Khusus untuk Teacher, mungkin hanya bisa CONFIRMED atau CANCELLED dari PENDING.
+    // Atau COMPLETED dari CONFIRMED (tapi ini biasanya via overall report).
+    if (req.user.role === 'TEACHER' && booking.bookingStatus === BookingStatus.PENDING && ![BookingStatus.CONFIRMED, BookingStatus.CANCELLED].includes(newBookingStatus)) {
+        return next(new AppError(`Teachers can only confirm or cancel a PENDING booking. Current status: ${booking.bookingStatus}`, 400));
+    }
+    // Teacher tidak boleh mengubah status yang sudah COMPLETED atau CANCELLED olehnya sendiri.
+    if (req.user.role === 'TEACHER' && (booking.bookingStatus === BookingStatus.COMPLETED || booking.bookingStatus === BookingStatus.CANCELLED)) {
+        return next(new AppError(`Cannot change booking status from ${booking.bookingStatus}.`, 400));
+    }
 
-    // 4. Lakukan update jika otorisasi berhasil
+
     const updatedBooking = await prisma.booking.update({
-      where: { id: id }, // Gunakan id dari req.params
-      data: { bookingStatus: bookingStatus }, // Gunakan variabel yang sudah divalidasi
-      include: { // Sertakan data yang relevan untuk respons
+      where: { id: bookingId },
+      data: { bookingStatus: newBookingStatus },
+      include: { 
         student: { select: { id: true, name: true, email: true, phone: true } },
-        course: { select: { id: true, title: true } },
-        payments: true, // Menggunakan 'payments' (plural) sesuai skema
+        course: { select: { id: true, title: true, teacherId: true, teacher: {select: {name: true}} } }, // Sertakan teacherId dan teacher.name
+        payments: { select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true }},
+        sessions: { 
+            select: { id: true, sessionDate: true, status: true, teacherReport: true, studentAttendance: true, isUnlocked: true, sessionCompletedAt: true, updatedAt: true },
+            orderBy: { sessionDate: 'asc' } 
+        },
+        review: true,
       },
     });
 

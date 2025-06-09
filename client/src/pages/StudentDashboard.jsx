@@ -52,7 +52,7 @@ export default function StudentDashboard() {
       if (searchTerm && !(titleMatch || descriptionMatch)) {
         return false;
       }
-      if (filterClass && c.classLevel !== filterClass) {
+      if (filterClass && !c.classLevels.includes(filterClass)) { // Ubah logika ini
         return false;
       }
       if (filterClass && filterClass !== 'UTBK' && filterCurriculum && c.curriculum !== filterCurriculum) {
@@ -120,7 +120,7 @@ export default function StudentDashboard() {
                 onChange={e => setFilterCurriculum(e.target.value)}
                 className="w-full md:w-auto p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
               >
-                <option value="">All Curricula</option>
+                <option value="">All Curriculum</option>
                 {CURRICULA.map(cur => (
                   <option key={cur} value={cur}>
                     {cur === 'MERDEKA' ? 'Kurikulum Merdeka' : 'K13 Revisi'}
@@ -150,7 +150,7 @@ export default function StudentDashboard() {
                 <div className="p-5 flex flex-col flex-grow">
                   <h2 className="text-xl font-semibold text-gray-800 mb-2 leading-tight Htruncate_custom">{course.title}</h2>
                   <p className="text-xs text-gray-500 mb-1">
-                    {course.classLevel.replace('GRADE_', 'Kelas ')}{course.classLevel !== 'UTBK' ? ` - ${course.curriculum}` : ''}
+                    {course.classLevels?.join(', ')}{course.classLevels !== 'UTBK' ? ` - Kurikulum ${course.curriculum}` : ''}
                   </p>
                   <p className="text-sm text-gray-600 mb-3 flex-grow Htruncate_custom_desc">
                     {course.description}

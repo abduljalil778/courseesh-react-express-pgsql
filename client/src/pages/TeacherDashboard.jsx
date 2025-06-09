@@ -193,7 +193,7 @@ export default function TeacherDashboard() {
                 <div className="p-5 flex flex-col flex-grow">
                   <h2 className="text-lg font-semibold text-gray-900 mb-1 leading-tight">{course.title}</h2>
                   <p className="text-xs text-gray-500 mb-2">
-                    {course.classLevel.replace('GRADE_', 'Kelas ')}{course.classLevel !== 'UTBK' ? ` - ${course.curriculum}` : ''} | Sessions: {course.numberOfSessions}
+                    {course.classLevels.join(', ')}{course.classLevels !== 'UTBK' ? ` - ${course.curriculum}` : ''} | Sessions: {course.numberOfSessions}
                   </p>
                   <p className="text-sm text-gray-700 mb-3 flex-grow Htruncate_custom_desc_teacher">
                     {course.description || 'No description available.'}

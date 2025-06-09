@@ -49,6 +49,10 @@ export const getAllBookings = async () => {
   return await api.get('/bookings')
 }
 
+export const getBookingById = async (bookingId) => {
+  return await api.get(`/bookings/${bookingId}`);
+}
+
 export const getAllUsers = async () => {
   return await api.get('/users');
 }
@@ -104,4 +108,8 @@ export const createCourseReview = async (bookingId, reviewData) => {
 
 export const getCourseReviews = async (courseId) => {
   return await api.get(`/courses/${courseId}/reviews`);
+}
+
+export const updateStudentAttendance = async (sessionId) => {
+  return await api.put(`/bookingsessions/${sessionId}/attendance`, {});
 }

@@ -9,15 +9,26 @@ const prisma = new PrismaClient();
 export const getAllCourses = async (req, res) => {
   try {
     const where = {};
-
-    // match with teacher id when return courses
     if (req.user.role === 'TEACHER') {
       where.teacherId = req.user.id;
     }
 
     const courses = await prisma.course.findMany({
       where,
-      include: { teacher: { select: { id: true, name: true, email: true } } }
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        numberOfSessions: true,
+        curriculum: true,
+        classLevels: true,
+        teacher: {
+          select: { id: true, name: true, email: true }
+        },
+        createdAt: true,
+        updatedAt: true
+      }
     });
     return res.json(courses);
   } catch (err) {
@@ -42,7 +53,7 @@ export const getCourseById = async (req, res) => {
       price: true,
       numberOfSessions: true,
       curriculum: true,
-      classLevel: true,
+      classLevels: true,
       teacher: {
         select: { id: true, name: true, email: true }
       }
@@ -64,8 +75,9 @@ export const getCourseById = async (req, res) => {
  * Body: { title, description, price }
  */
 export const createCourse = async (req, res) => {
-  const { title, description, price, classLevel, curriculum, numberOfSessions } = req.body;
-  if (![title, description, price, classLevel, numberOfSessions].every(v => v !== undefined)) {
+  const { title, description, price, classLevels, curriculum, numberOfSessions } = req.body;
+  
+  if (![title, description, price, classLevels, numberOfSessions].every(v => v !== undefined)) {
     return next(new AppError('Missing required fields', 400));
   }
 
@@ -75,10 +87,10 @@ export const createCourse = async (req, res) => {
       title,
       description,
       price,
-      classLevel,
-      curriculum,              // optional
+      classLevels,
+      curriculum,
       numberOfSessions,
-      teacherId: req.user.id,  // assuming you’re auth’ing the teacher
+      teacherId: req.user.id, 
     },
   });
     return res.status(201).json(course);
@@ -93,39 +105,60 @@ export const createCourse = async (req, res) => {
  * Protected: TEACHER or ADMIN (and teacher must own the course if TEACHER)
  * Body: { title?, description?, price? }
  */
-export const updateCourse = async (req, res, next) => {
+export const updateCourse = async (req, res, next) => { //
   const { id } = req.params;
-  const updates = {};
-  ['title', 'description', 'price'].forEach(field => {
-    if (req.body[field] != null) updates[field] = field === 'price'
-      ? parseFloat(req.body[field])
-      : req.body[field];
-  });
+  const { title, description, price, classLevels, curriculum, numberOfSessions } = req.body;
 
-  if (Object.keys(updates).length === 0) {
+  const dataToUpdate = {};
+  if (title !== undefined) dataToUpdate.title = title;
+  if (description !== undefined) dataToUpdate.description = description;
+  if (price !== undefined) dataToUpdate.price = Number(price);
+  if (numberOfSessions !== undefined) dataToUpdate.numberOfSessions = Number(numberOfSessions);
+  
+  if (classLevels !== undefined) { // Jika classLevels diupdate
+    dataToUpdate.classLevels = classLevels;
+    if (classLevels.includes('UTBK')) {
+      dataToUpdate.curriculum = null;
+    } else if (curriculum !== undefined) { 
+      dataToUpdate.curriculum = curriculum;
+    } else if (curriculum === null || curriculum === '') { // Jika curriculum dikosongkan
+        dataToUpdate.curriculum = null;
+    }
+    } else if (curriculum !== undefined) { // Jika hanya curriculum yang diupdate (dan classLevels tidak)
+        // Pastikan classLevels yang ada saat ini bukan UTBK jika ingin set curriculum
+        const existingCourse = await prisma.course.findUnique({where: {id}, select: {classLevels: true}});
+        if (existingCourse && !existingCourse.classLevels.includes('UTBK')) {
+            dataToUpdate.curriculum = curriculum;
+        } else if (existingCourse && existingCourse.classLevels.includes('UTBK')){
+            dataToUpdate.curriculum = null; // Jaga konsistensi
+        }
+  }
+
+
+  if (Object.keys(dataToUpdate).length === 0) {
     return res.status(400).json({ message: 'Nothing to update' });
   }
 
   try {
-    // ensure teacher owns it if role=TEACHER
     const existing = await prisma.course.findUnique({ where: { id } });
     if (!existing) {
-      return res.status(404).json({ message: `Course with id=${id} not found` });
+      return next(new AppError(`Course with id=${id} not found`, 404));
     }
     if (req.user.role === 'TEACHER' && existing.teacherId !== req.user.id) {
-      return res.status(403).json({ message: 'Cannot modify a course you do not own' });
+      return next(new AppError('Cannot modify a course you do not own', 403));
     }
 
     const updated = await prisma.course.update({
       where: { id },
-      data: updates
+      data: dataToUpdate,
     });
     return res.json(updated);
   } catch (err) {
-    console.error('updateCourse:', err);
-    return res.status(500).json({ message: 'Server error updating course' });
+    console.error('updateCourse Error:', err);
+    next(new AppError(err.message || 'Server error updating course', 500));
   }
 };
+
 
 /**
  * DELETE /api/courses/:id

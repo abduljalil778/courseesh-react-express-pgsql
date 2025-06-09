@@ -1,1 +1,119 @@
 @import "tailwindcss";
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.logo {
+    height: 6em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+}
+.logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+    }
+}
+
+.card {
+    padding: 2em;
+}
+
+.read-the-docs {
+    color: #888;
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px; 
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-content-lg {
+    background-color: white; padding: 2rem; border-radius: 0.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); width: 90%;
+    max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative;
+  }
+
+  .modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .modal-close-button:hover {
+    color: #000;
+  }
+
+  .Htruncate_custom {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Jumlah baris yang diinginkan */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4; /* Sesuaikan dengan font Anda */
+  max-height: calc(1.4em * 2); /* line-height * line-clamp */
+}
+.Htruncate_custom_desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Jumlah baris yang diinginkan */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5; /* Sesuaikan dengan font Anda */
+  max-height: calc(1.5em * 3); /* line-height * line-clamp */
+}
+
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c5c5c5;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a5a5a5;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap; word-break: break-word; 
+}
