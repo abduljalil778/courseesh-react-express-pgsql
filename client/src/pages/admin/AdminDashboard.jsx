@@ -3,7 +3,7 @@ import React from 'react';
 
 export default function AdminDashboard() {
   return (
-    <div>
+    <div className='animate-fade-in'>
       <h1 className="text-2xl font-bold text-gray-800">Welcome, Admin!</h1>
       <p className="mt-2 text-gray-600">This is the main dashboard. You can add summary statistics here.</p>
       
