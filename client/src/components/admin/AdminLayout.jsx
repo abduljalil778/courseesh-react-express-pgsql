@@ -6,11 +6,10 @@ import Sidebar from './Sidebar';
 export default function AdminLayout() {
   const location = useLocation();
 
-  // Fungsi untuk mendapatkan judul halaman dari path
   const getPageTitle = (pathname) => {
+    if (pathname === '/admin') return 'Dashboard';
     const parts = pathname.split('/').filter(p => p);
-    if (parts.length === 1) return 'Dashboard';
-    const title = parts[1].replace('-', ' ');
+    const title = (parts[1] || '').replace(/-/g, ' ');
     return title.charAt(0).toUpperCase() + title.slice(1);
   };
   
@@ -20,11 +19,13 @@ export default function AdminLayout() {
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-grow flex flex-col">
-        <header className="bg-white shadow-sm h-16 flex items-center px-6 border-b border-gray-200">
+        <header className="bg-white shadow-sm h-16 flex items-center px-6 border-b border-gray-200 flex-shrink-0">
           <h1 className="text-xl font-semibold text-gray-800">{pageTitle}</h1>
         </header>
         <main className="flex-grow p-6 overflow-y-auto">
-          <Outlet />
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
