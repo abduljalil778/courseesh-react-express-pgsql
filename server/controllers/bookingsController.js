@@ -27,8 +27,8 @@ export const getAllBookings = async (req, res, next) => {
             id: true,
             title: true,
             price: true,
-            numberOfSessions: true, // <--- TAMBAHKAN INI
-            teacherId: true, // Anda juga butuh ini untuk `submitOverallBookingReport`
+            numberOfSessions: true,
+            teacherId: true,
             teacher: {
               select: { id: true, name: true, email: true },
             },
@@ -228,6 +228,7 @@ export const getBookingById = async (req, res, next) => {
             teacherId: true,
             title: true, 
             numberOfSessions: true,
+            price: true,
             teacher: { 
               select: { 
                 name: true,
@@ -245,6 +246,15 @@ export const getBookingById = async (req, res, next) => {
             phone: true 
           } 
         },
+        payments: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            installmentNumber: true,
+            dueDate: true
+          }
+        },
         sessions: {
           select: {
             id: true,
@@ -253,7 +263,8 @@ export const getBookingById = async (req, res, next) => {
             teacherReport: true,
             studentAttendance: true,
             isUnlocked: true,
-            sessionCompletedAt: true
+            sessionCompletedAt: true,
+            teacherUploadedFile: true,
           },
           orderBy: { sessionDate: 'asc' }
         },

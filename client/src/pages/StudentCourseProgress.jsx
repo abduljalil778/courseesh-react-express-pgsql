@@ -31,18 +31,16 @@ export default function StudentCourseProgress() {
   }, [loadBookings]);
 
   const getBookingDisplayStatus = (booking) => {
-    const hasPaidPayment = booking.payments?.some(p => p.status === 'PAID');
-    if (booking.bookingStatus === 'PENDING') {
-      if (!hasPaidPayment || booking.payments?.every(p => p.status === 'PENDING')) {
-        return { text: 'Waiting Teacher Confirmation', colorClass: 'bg-orange-100 text-orange-700' };
-      }
-      return { text: 'PENDING (Payment Processed)', colorClass: 'bg-yellow-100 text-yellow-700' };
+    const hasPaidPayment = booking.payments.some(p => p.status === 'PAID');
+    if (booking.bookingStatus === 'PENDING' && !hasPaidPayment) {
+      return { text: 'Waiting for Payment', colorClass: 'text-yellow-700 bg-yellow-100' };
     }
     switch (booking.bookingStatus) {
-      case 'CONFIRMED': return { text: 'In Progress', colorClass: 'bg-blue-100 text-blue-700' };
-      case 'COMPLETED': return { text: 'COMPLETED', colorClass: 'bg-green-100 text-green-700' };
-      case 'CANCELLED': return { text: 'CANCELLED', colorClass: 'bg-red-100 text-red-700' };
-      default: return { text: booking.bookingStatus, colorClass: 'bg-gray-100 text-gray-700' };
+      case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
+      case 'PENDING': return { text: 'Waiting Teacher Confirmation', colorClass: 'text-yellow-700 bg-yellow-100' };
+      case 'COMPLETED': return { text: 'COMPLETED', colorClass: 'text-blue-700 bg-blue-100' };
+      case 'CANCELLED': return { text: 'CANCELLED', colorClass: 'text-red-700 bg-red-100' };
+      default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
     }
   };
 

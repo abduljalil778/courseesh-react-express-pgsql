@@ -68,17 +68,18 @@ model Booking {
 }
 
 model BookingSession {
-  id                 String         @id @default(ulid())
-  booking            Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId          String
-  sessionDate        DateTime
-  status             SessionStatus? @default(SCHEDULED)
-  isUnlocked         Boolean        @default(false)
-  teacherReport      String?
-  studentAttendance  Boolean?
-  sessionCompletedAt DateTime?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id                  String         @id @default(ulid())
+  booking             Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId           String
+  sessionDate         DateTime
+  status              SessionStatus? @default(SCHEDULED)
+  isUnlocked          Boolean        @default(false)
+  teacherReport       String?
+  teacherUploadedFile String?
+  studentAttendance   Boolean?
+  sessionCompletedAt  DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 }
 
 model Payment {
@@ -90,6 +91,7 @@ model Payment {
   amount            Float
   dueDate           DateTime?
   paymentGatewayRef String?
+  proofOfPaymentUrl String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }
@@ -121,7 +123,7 @@ model ApplicationSetting {
   key         String   @unique
   value       String
   description String?
-  dataType    String   @default("STRING") // contoh: STRING, NUMBER, BOOLEAN
+  dataType    String   @default("STRING")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -144,6 +146,17 @@ model CourseReview {
 
   teacher   User   @relation("TeacherReviews", fields: [teacherId], references: [id])
   teacherId String
+}
+
+model PaymentOption {
+  id            String   @id @default(cuid())
+  bankName      String
+  accountHolder String
+  accountNumber String
+  logoUrl       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum PayoutStatus {

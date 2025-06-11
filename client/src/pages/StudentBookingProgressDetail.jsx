@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getBookingById, api } from '../lib/api';
 import Spinner from '../components/Spinner';
 import Swal from 'sweetalert2';
-import { format, parseISO, isFuture, isPast } from 'date-fns';
+import { format, parseISO, } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';
 import CourseReviewForm from '../components/CourseReviewForm';
 
@@ -23,7 +23,8 @@ export default function StudentBookingProgressDetail() {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    // Hanya tampilkan spinner besar saat load awal
+    if (!booking) setIsLoading(true);
     setError(null);
     try {
       const response = await getBookingById(bookingId);
@@ -33,17 +34,17 @@ export default function StudentBookingProgressDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookingId]);
+  }, [bookingId, booking]);
 
   useEffect(() => {
     fetchBookingDetails();
-  }, [fetchBookingDetails]);
+  }, [bookingId]); // Hanya panggil ulang jika bookingId dari URL berubah
 
   const handleMarkAttendance = async (sessionId, attendedStatus) => {
     setSubmittingAttendanceSessionId(sessionId);
     try {
       await api.put(`/bookingsessions/${sessionId}/student-attendance`, { attended: attendedStatus });
-      Swal.fire('Success', 'Attendance marked!', 'success');
+      await Swal.fire('Success', 'Attendance marked!', 'success');
       fetchBookingDetails();
     } catch (err) {
       Swal.fire('Error', err.response?.data?.message || 'Failed to mark attendance.', 'error');
@@ -56,7 +57,7 @@ export default function StudentBookingProgressDetail() {
      setSubmittingReview(true);
      try {
          await api.post(`/bookings/${currentBookingId}/review`, reviewData);
-         Swal.fire('Review Submitted!', 'Thank you for your feedback.', 'success');
+         await Swal.fire('Review Submitted!', 'Thank you for your feedback.', 'success');
          fetchBookingDetails();
      } catch (err) {
          Swal.fire('Error', err.response?.data?.message || 'Failed to submit review.', 'error');
@@ -69,14 +70,10 @@ export default function StudentBookingProgressDetail() {
      if (!currentBooking) return "";
      const hasPaidPayment = currentBooking.payments?.some(p => p.status === 'PAID');
      if (currentBooking.bookingStatus === 'PENDING') {
-     if (!hasPaidPayment || currentBooking.payments?.every(p => p.status === 'PENDING')) {
-         return 'Waiting Teacher Confirmation';
-     }
-     return 'PENDING (Payment Processed)';
+       return !hasPaidPayment ? 'Waiting Teacher Confirmation' : 'PENDING (Payment Processed)';
      }
      return currentBooking.bookingStatus;
  };
-
 
   if (isLoading) return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
   if (error) return <div className="p-6 text-center text-red-500">{error} <button onClick={fetchBookingDetails} className="text-blue-500 underline ml-2">Retry</button></div>;
@@ -92,15 +89,18 @@ export default function StudentBookingProgressDetail() {
           <h1 className="text-2xl md:text-3xl font-bold text-indigo-700">{booking.course?.title}</h1>
           <div className="mt-2 text-sm text-gray-600 space-y-1">
             <p><strong>Teacher:</strong> {booking.course?.teacher?.name}</p>
-            <p><strong>Phone:</strong> {booking.course?.teacher?.phone || 'Not Available'}</p>
+            <p><strong>Contact Teacher:</strong> {booking.course?.teacher?.phone || 'Not Available'}</p>
           </div>
-          <p className={`text-md font-medium mt-1 ${
-              booking.bookingStatus === 'COMPLETED' ? 'text-green-600' : 
-              booking.bookingStatus === 'CONFIRMED' ? 'text-blue-600' :
-              booking.bookingStatus === 'CANCELLED' ? 'text-red-600' : 
-              'text-orange-600'
-            }`}>
-            Booking Status: {getBookingDisplayStatusText(booking)}
+          <p className={`text-md font-medium mt-2`}>
+            Booking Status: 
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                booking.bookingStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : 
+                booking.bookingStatus === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
+                booking.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-700' : 
+                'bg-orange-100 text-orange-700'
+              }`}>
+              {getBookingDisplayStatusText(booking)}
+            </span>
           </p>
         </div>
 
@@ -129,6 +129,15 @@ export default function StudentBookingProgressDetail() {
                     </div>
                   )}
 
+                  {session.isUnlocked && session.teacherUploadedFile && (
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                          <p className="text-xs font-semibold text-gray-700">Attachment from Teacher:</p>
+                          <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${session.teacherUploadedFile}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1.5 mt-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200">
+                              <i className="fas fa-download mr-2"></i> Download Attachment
+                          </a>
+                      </div>
+                  )}
+
                   {session.isUnlocked && (
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="mt-2 flex items-center justify-end">
@@ -150,8 +159,8 @@ export default function StudentBookingProgressDetail() {
         </div>
         
          {booking.overallTeacherReport && (
-          <div className="mt-6 pt-4 border-t">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Overall Course Report:</h3>
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Overall Course Report</h3>
             <div className="bg-yellow-50 p-4 rounded-md text-gray-700">
                <p className="text-sm whitespace-pre-wrap">{booking.overallTeacherReport}</p>
                {booking.finalGrade && <p className="text-sm mt-2"><strong>Final Grade:</strong> {booking.finalGrade}</p>}
@@ -161,16 +170,14 @@ export default function StudentBookingProgressDetail() {
 
         {booking.bookingStatus === 'COMPLETED' && !booking.review && (
             <CourseReviewForm 
-                bookingId={booking.id} 
-                courseId={booking.courseId}
-                teacherId={booking.course?.teacherId}
+                booking={booking}
                 onSubmitReview={handleSubmitReview}
                 isSubmittingReview={submittingReview}
             />
         )}
         {booking.review && (
-            <div className="mt-6 pt-4 border-t">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Your Review:</h3>
+            <div className="mt-6 pt-6 border-t">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Your Review</h3>
                 <div className="p-4 border rounded-md bg-green-50">
                     <div className="flex items-center mb-1">
                         {[...Array(5)].map((_, i) => (

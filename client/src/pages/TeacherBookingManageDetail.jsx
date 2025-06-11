@@ -34,7 +34,8 @@ export default function TeacherBookingManageDetail() {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    // Set loading true hanya saat fetch awal, bukan saat refresh
+    if (!booking) setIsLoading(true);
     setError(null);
     try {
       const response = await getBookingById(bookingId);
@@ -44,19 +45,15 @@ export default function TeacherBookingManageDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookingId]);
+  }, [bookingId, booking]); // tambahkan booking sebagai dependency
 
   useEffect(() => {
     fetchBookingDetails();
-  }, [fetchBookingDetails]);
+  }, [bookingId]); // Hapus fetchBookingDetails dari dependency array untuk menghindari loop tak terbatas
 
   const areAllSessionsCompleted = (bookingToCheck) => {
-    if (!bookingToCheck || !bookingToCheck.sessions || !bookingToCheck.course?.numberOfSessions) {
-      return false;
-    }
-    if (bookingToCheck.sessions.length < bookingToCheck.course.numberOfSessions) {
-      return false;
-    }
+    if (!bookingToCheck || !bookingToCheck.sessions || !bookingToCheck.course?.numberOfSessions) return false;
+    if (bookingToCheck.sessions.length < bookingToCheck.course.numberOfSessions) return false;
     return bookingToCheck.sessions.every(session => session.status === SESSION_STATUS_COMPLETED);
   };
 
@@ -74,11 +71,13 @@ export default function TeacherBookingManageDetail() {
     setSelectedSession(null);
   };
 
+  // --- HANDLE SUBMIT DIPERBARUI UNTUK FORM DATA ---
   const handleSessionReportSubmit = async (sessionId, data) => {
     setIsSubmittingReport(true);
     try {
-      await submitOrUpdateSessionReport(sessionId, data);
-      Swal.fire('Success', 'Session report saved!', 'success');
+      // API function sekarang bertanggung jawab membuat FormData
+      await submitOrUpdateSessionReport(sessionId, data); 
+      await Swal.fire('Success', 'Session report saved!', 'success');
       closeSessionReportModal();
       fetchBookingDetails(); // Reload data
     } catch (err) {
@@ -104,7 +103,7 @@ export default function TeacherBookingManageDetail() {
     setIsSubmittingReport(true);
     try {
       await submitOverallBookingReport(currentBookingId, data);
-      Swal.fire('Success', 'Overall report saved!', 'success');
+      await Swal.fire('Success', 'Overall report saved!', 'success');
       closeOverallReportModal();
       fetchBookingDetails(); // Reload data
     } catch (err) {
@@ -132,7 +131,7 @@ export default function TeacherBookingManageDetail() {
         <div className="border-b pb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-indigo-700">{booking.course?.title}</h1>
           <div className="mt-2 text-sm text-gray-600 space-y-1">
-            <p><strong>Student:</strong> {booking.student?.name}</p>
+            <p><strong>Student:</strong> {booking.student?.name} ({booking.student?.email})</p>
             <p><strong>Phone:</strong> {booking.student?.phone || 'N/A'}</p>
             <p><strong>Address:</strong> {booking.address || 'N/A'}</p>
           </div>
@@ -162,10 +161,16 @@ export default function TeacherBookingManageDetail() {
                     Status: <span className={`${session.status === 'COMPLETED' ? 'text-green-600' : 'text-gray-500'}`}>{(session.status || 'SCHEDULED').replace(/_/g, ' ')}</span>
                     {!session.isUnlocked && <i className="fas fa-lock text-gray-400 ml-2" title="Locked"></i>}
                   </p>
-                  {session.studentAttendance !== null && <p className="text-xs text-gray-500">Student Attendance: {session.studentAttendance ? 'Present' : 'Absent'}</p>}
-                  {session.teacherReport && <p className="text-xs text-gray-500 mt-1 italic">Report already submitted.</p>}
+                  {session.studentAttendance !== null && <p className="text-xs text-gray-500">Student Attendance: <span className={session.studentAttendance ? 'font-semibold' : 'font-semibold text-red-500'}>{session.studentAttendance ? 'Present' : 'Absent'}</span></p>}
+                  {session.teacherUploadedFile && (
+                    <div className="mt-2">
+                        <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${session.teacherUploadedFile}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200">
+                           <i className="fas fa-paperclip mr-2"></i> View Attachment
+                        </a>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-2 sm:mt-0 flex-shrink-0">
+                <div className="mt-3 sm:mt-0 flex-shrink-0">
                   <button onClick={() => openSessionReportModal(session)} disabled={!session.isUnlocked} className="px-3 py-1.5 text-xs text-white rounded-md bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 disabled:cursor-not-allowed">
                     {session.teacherReport ? 'View/Edit Report' : 'Add Report'}
                   </button>

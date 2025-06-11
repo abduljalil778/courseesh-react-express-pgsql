@@ -15,16 +15,20 @@ import teacherRoutes from './routes/teachers.js';
 import teacherPayoutRoutes from './routes/teacherPayouts.js';
 import reviewRoutes from './routes/reviews.js';
 import errorController from './controllers/errorController.js';
+import paymentOptionsRoutes from './routes/paymentOptions.js';
+import path from 'path';
+import {fileURLToPath} from 'url';
 
 dotenv.config();
 
 const app = express();
 
 // GLOBAL MIDDLEWARE
-app.use(helmet());                              // secure headers
-app.use(cors());// lock down your frontend origin
-app.use(express.json());                        // parse JSON body
-app.use(morgan('tiny'));                        // request logging
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(morgan('tiny'));
+
 
 // simple rate limiter
 const limiter = rateLimit({
@@ -40,6 +44,10 @@ if (process.env.NODE_ENV === 'production') {
   console.log('development mode');
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ROUTES
 app.use('/api/auth',    authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -50,6 +58,7 @@ app.use('/api/bookingsessions', bookingSessionRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api', teacherPayoutRoutes);
 app.use('/api/bookings', reviewRoutes);
+app.use('/api', paymentOptionsRoutes);
 
 // ERROR HANDLER
 // catch unhandled routes

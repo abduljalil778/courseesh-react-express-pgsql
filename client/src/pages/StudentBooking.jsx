@@ -61,7 +61,7 @@ export default function StudentBooking() {
   }, [courseId, authLoading, loggedInUser, loadCourseDetails]);
 
   const handleChange = e => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     if (name === "paymentMethod") {
       setForm(f => ({ ...f, paymentMethod: value }));
       return;
@@ -77,13 +77,18 @@ export default function StudentBooking() {
     }
     setForm(f => ({
       ...f,
-      [name]: name === 'installments' && type === 'select-one' ? Number(value) : value,
+      [name]: name === 'installments' ? Number(value) : value,
     }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    // Validasi form bisa ditambahkan di sini dengan Zod atau cara lain jika diinginkan
+    // Validasi sederhana sebelum submit
+    if (form.sessionDates.some(date => !date)) {
+        Swal.fire('Incomplete Data', 'Please pick all session dates.', 'warning');
+        return;
+    }
+    
     setIsSubmitting(true);
     try {
       const bookingPayload = {
@@ -96,15 +101,20 @@ export default function StudentBooking() {
         paymentMethod: form.paymentMethod,
         ...(form.paymentMethod === 'INSTALLMENT' ? { installments: form.installments } : {}),
       };
-      await createBooking(bookingPayload);
+      
+      // PERBAIKAN: Simpan hasil pemanggilan API ke variabel 'response'
+      const response = await createBooking(bookingPayload);
+      const newBookingId = response.data.id; // Ambil ID dari respons
+
       Swal.fire({
         icon: 'success',
         title: 'Booking Confirmed!',
-        text: 'Your course booking has been submitted. Please proceed with the payment.',
-        timer: 3000,
+        text: 'You will now be redirected to the payment page.',
+        timer: 2500,
         showConfirmButton: false,
         willClose: () => {
-          navigate('/student/my-bookings'); // Arahkan ke halaman My Bookings untuk pembayaran
+          // Arahkan ke halaman instruksi pembayaran yang benar
+          navigate(`/student/bookings/${newBookingId}/pay`); 
         }
       });
     } catch (err) {
@@ -154,7 +164,6 @@ export default function StudentBooking() {
           <div className="lg:col-span-2 space-y-8">
             <h1 className="text-3xl font-bold text-gray-800">Booking Checkout</h1>
             
-            {/* 1. Contact Information */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">1. Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,7 +186,6 @@ export default function StudentBooking() {
               </div>
             </div>
 
-            {/* 2. Schedule Selection */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">2. Schedule Your {course.numberOfSessions} Sessions *</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -190,7 +198,6 @@ export default function StudentBooking() {
               </div>
             </div>
 
-            {/* 3. Payment Method */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">3. Payment Method</h2>
               <div className="space-y-4">
@@ -212,10 +219,9 @@ export default function StudentBooking() {
                 </div>
               )}
             </div>
-
           </div>
 
-          {/* Sisi Kanan: Ringkasan Pesanan (Order Summary) */}
+          {/* Sisi Kanan: Ringkasan Pesanan */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-4 mb-4">Order Summary</h2>
@@ -236,22 +242,20 @@ export default function StudentBooking() {
               <div className="border-t mt-4 pt-4 space-y-2">
                 <div className="flex justify-between text-lg font-semibold">
                   <span className="text-gray-800">
-                    {/* Logika kondisional untuk mengubah teks label */}
                     {form.paymentMethod === 'FULL' ? 'Total Payment:' : 'First Payment Due:'}
                   </span>
                   <span className="text-indigo-600">
                     {formatCurrencyIDR(paymentDetails.firstPayment)}
                   </span>
                 </div>
-                {/* Tambahan: Tampilkan detail cicilan jika dipilih */}
                 {form.paymentMethod === 'INSTALLMENT' && (
                   <p className="text-xs text-gray-500 text-right">
-                    (Total: {formatCurrencyIDR(paymentDetails.total)})
+                    (Total Course Price: {formatCurrencyIDR(paymentDetails.total)})
                   </p>
                 )}
               </div>
               <button type="submit" disabled={isSubmitting || isLoadingCourse || authLoading} className="mt-6 w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center">
-                {isSubmitting ? <><Spinner size={20} className="mr-2"/> Processing...</> : 'Confirm Booking'}
+                {isSubmitting ? <><Spinner size={20} className="mr-2"/> Processing...</> : 'Confirm & Proceed'}
               </button>
             </div>
           </div>

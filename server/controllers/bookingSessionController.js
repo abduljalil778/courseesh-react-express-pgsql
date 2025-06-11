@@ -36,10 +36,11 @@ export const submitOrUpdateSessionReport = async (req, res, next) => {
       return next(new AppError('You are not authorized to submit a report for this session', 403));
     }
 
-    // Data yang akan diupdate
+    const studentAttendanceBool = studentAttendance !== undefined ? (String(studentAttendance).toLowerCase() === 'true') : undefined;
+
     const dataToUpdate = {};
     if (teacherReport !== undefined) dataToUpdate.teacherReport = teacherReport;
-    if (studentAttendance !== undefined) dataToUpdate.studentAttendance = studentAttendance;
+    if (studentAttendanceBool !== undefined) dataToUpdate.studentAttendance = studentAttendanceBool;
     if (status !== undefined) {
         dataToUpdate.status = status;
         if (status === SessionStatus.COMPLETED) { // Jika status diubah jadi COMPLETED
@@ -47,6 +48,11 @@ export const submitOrUpdateSessionReport = async (req, res, next) => {
         }
     }
     
+    if (req.file) {
+      const fileUrl = `/uploads/${req.file.filename}`;
+      dataToUpdate.teacherUploadedFile = fileUrl;
+    }
+
     if (Object.keys(dataToUpdate).length === 0) {
         return next(new AppError("No data provided for update.", 400));
     }

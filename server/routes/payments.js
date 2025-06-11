@@ -1,25 +1,3 @@
-// // server/routes/payments.js
-// import express from 'express';
-// import { authenticate, authorize } from '../middleware/auth.js';
-// import {
-//   getAllPayments,
-//   getPaymentById,
-//   createPayment,
-//   updatePayment,
-//   deletePayment
-// } from '../controllers/paymentsController.js';
-
-// const router = express.Router();
-
-// // Only ADMIN can manage payments
-// router.get('/', authenticate, authorize('ADMIN'), getAllPayments);
-// router.get('/:id', authenticate, authorize('ADMIN'), getPaymentById);
-// router.post('/', authenticate, authorize('ADMIN'), createPayment);
-// router.put('/:id', authenticate, authorize('ADMIN'), updatePayment);
-// router.delete('/:id', authenticate, authorize('ADMIN'), deletePayment);
-
-// export default router;
-
 // src/routes/payments.js
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
@@ -28,7 +6,8 @@ import {
   getPaymentById,
   createPayment,
   updatePayment,
-  deletePayment
+  deletePayment,
+  uploadProofOfPayment,
 } from '../controllers/paymentsController.js';
 import {
   paymentIdValidator,
@@ -37,6 +16,7 @@ import {
 } from '../validators/paymentsValidators.js';
 import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
+import { upload, } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -80,5 +60,15 @@ router.delete(
   runValidation,
   catchAsync(deletePayment)
 );
+
+
+router.post(
+  '/:id/upload-proof',
+  authorize('STUDENT'),
+  paymentIdValidator,
+  runValidation,
+  upload.single('proof'),
+  catchAsync(uploadProofOfPayment)
+)
 
 export default router;

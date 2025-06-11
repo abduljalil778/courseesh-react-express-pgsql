@@ -1,7 +1,7 @@
 // server/controllers/paymentController.js
 import pkg from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
-const { PrismaClient, Prisma, PaymentStatus, BookingStatus, PaymentMethod } = pkg; // Impor PaymentStatus dan Prisma
+const { PrismaClient, Prisma, PaymentStatus, BookingStatus, PaymentMethod } = pkg;
 const prisma = new PrismaClient();
 
 /**
@@ -247,5 +247,46 @@ export const deletePayment = async (req, res, next) => {
       return new AppError({ message: `Payment record with ID ${id} not found` });
     }
     next(new AppError(err.message));
+  }
+};
+
+
+export const uploadProofOfPayment = async (req, res, next) => {
+  const { id } = req.params;
+  const studentId = req.user.id;
+
+  if (!req.file) {
+    return next(new AppError('No file uploaded.', 400));
+  }
+
+  try {
+    const payment = await prisma.payment.findFirst({
+      where: {
+        id: id,
+        booking: {
+          studentId: studentId
+        }
+      }
+    });
+
+    if (!payment) {
+      return next(new AppError('Payment record not found or you are not authorized.', 404));
+    }
+    
+    // Simpan path file yang bisa diakses publik
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id: id },
+      data: {
+        proofOfPaymentUrl: fileUrl,
+      }
+    });
+
+    res.json({ message: 'Proof of payment uploaded successfully.', payment: updatedPayment });
+
+  } catch (err) {
+    console.error(err);
+    next(new AppError('Failed to upload proof of payment.', 500));
   }
 };

@@ -1,10 +1,9 @@
 // server/controllers/usersController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma } = pkg;
-const prisma = new PrismaClient();
+import {PrismaClient, Prisma} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/AppError.mjs';
 import { findAllUsers } from '../libs/usersRepository.js';
+const prisma = new PrismaClient();
 
 // GET /api/users
 export const getAllUsers = async (req, res, next) => {

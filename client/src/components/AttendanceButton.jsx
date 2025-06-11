@@ -1,5 +1,6 @@
 // src/components/AttendanceButton.jsx
 import Spinner from './Spinner';
+import {isToday, parseISO} from 'date-fns';
 
 export default function AttendanceButton({ session, bookingStatus, onMarkAttendance, submittingAttendanceSessionId }) {
   // Kondisi #1: Tampilkan status final jika guru sudah mengisi laporan
@@ -29,7 +30,7 @@ export default function AttendanceButton({ session, bookingStatus, onMarkAttenda
   
   // Kondisi #3: Siswa bisa melakukan presensi
   // Syarat: Sesi unlocked, booking confirmed, dan status sesi masih scheduled
-  const canStudentMark = session.isUnlocked && bookingStatus === 'CONFIRMED';
+  const canStudentMark = session.isUnlocked && bookingStatus === 'CONFIRMED' && session.status === 'SCHEDULED' && isToday(parseISO(session.sessionDate));
   
   if (canStudentMark) {
     return (

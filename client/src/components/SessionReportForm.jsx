@@ -1,5 +1,5 @@
 // src/components/SessionReportForm.jsx
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Spinner from './Spinner';
@@ -7,58 +7,56 @@ import {sessionReportSchema, SESSION_STATUSES} from '../schemas/sessionReportSch
 
 
 export default function SessionReportForm({ session, onSubmit, onCancel, isSubmittingReport }) {
-  let initialAttendanceValue;
-  if (session?.studentAttendance === true) {
-    initialAttendanceValue = true;
-  } else if (session?.studentAttendance === false) {
-    initialAttendanceValue = false;
-  } else {
-    // Default ke 'Present' (true) jika null atau undefined (belum diisi sama sekali)
-    initialAttendanceValue = true; 
-  }
+  // State untuk menangani file upload secara terpisah
+  const [sessionFile, setSessionFile] = useState(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
-    reset, // Ambil reset
+    reset,
   } = useForm({
     resolver: zodResolver(sessionReportSchema),
+    // Logika default value disederhanakan di sini
     defaultValues: {
       teacherReport: session?.teacherReport || '',
-      studentAttendance: initialAttendanceValue,
+      // Jika studentAttendance sudah ada (baik true/false), gunakan itu. Jika belum (null/undefined), default ke true (Present).
+      studentAttendance: session?.studentAttendance ?? true,
       status: session?.status || 'SCHEDULED',
     },
   });
-
+  
+  // useEffect untuk me-reset form jika prop `session` berubah.
+  // Ini penting agar saat modal dibuka untuk sesi yang berbeda, formnya diperbarui.
   useEffect(() => {
-    let newInitialAttendanceValue;
-    if (session?.studentAttendance === true) {
-        newInitialAttendanceValue = true;
-    } else if (session?.studentAttendance === false) {
-        newInitialAttendanceValue = false;
-    } else {
-        newInitialAttendanceValue = true; // Default jika belum ada
-    }
     reset({
-        teacherReport: session?.teacherReport || '',
-        studentAttendance: newInitialAttendanceValue,
-        status: session?.status || 'SCHEDULED',
+      teacherReport: session?.teacherReport || '',
+      studentAttendance: session?.studentAttendance ?? true,
+      status: session?.status || 'SCHEDULED',
     });
   }, [session, reset]);
 
 
-  const watchedStatus = watch('status');
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSessionFile(e.target.files[0]);
+    } else {
+      setSessionFile(null);
+    }
+  };
 
+  // Fungsi submit sekarang akan mengirim FormData
   const handleFormSubmit = (data) => {
-    const payload = { ...data };
+    const payload = {
+      ...data,
+      sessionFile: sessionFile, // Tambahkan file dari state
+    };
     onSubmit(session.id, payload);
   };
 
-
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      {/* Input Teacher Report */}
       <div>
         <label htmlFor="teacherReport" className="block text-sm font-medium text-gray-700 mb-1">
           Session Report / Notes
@@ -72,24 +70,17 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
         />
         {errors.teacherReport && <p className="text-red-500 text-xs mt-1">{errors.teacherReport.message}</p>}
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
+      
+      {/* Input Student Attendance & Session Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="studentAttendance" className="block text-sm font-medium text-gray-700 mb-1">
-            Student Attendance
+            Student Attendance *
           </label>
           <select
             id="studentAttendance"
-            // register studentAttendance dan pastikan setValueAs mengubahnya jadi boolean
-            {...register('studentAttendance', { 
-                setValueAs: (value) => {
-                    if (value === "true") return true;
-                    if (value === "false") return false;
-                    return undefined; // atau null, atau biarkan Zod yang handle
-                }
-            })}
-            // `defaultValue` di sini dikontrol oleh `defaultValues` di `useForm` atau `reset`
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+            {...register('studentAttendance', { setValueAs: (v) => v === 'true' })}
+            className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white"
           >
             <option value="true">Present</option>
             <option value="false">Absent</option>
@@ -98,20 +89,42 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
         </div>
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-            Session Status
+            Session Status *
           </label>
           <select
             id="status"
             {...register('status')}
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+            className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white"
           >
-            {SESSION_STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+            {SESSION_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
           </select>
           {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status.message}</p>}
         </div>
       </div>
+      
+      {/* Input File Upload */}
+      <div>
+        <label htmlFor="sessionFile" className="block text-sm font-medium text-gray-700 mb-1">
+          Upload Document (Optional)
+        </label>
+        <input
+          type="file"
+          id="sessionFile"
+          onChange={handleFileChange}
+          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+        />
+        {session.teacherUploadedFile && (
+            <div className="mt-2 text-xs">
+                <span className="text-gray-600">Current file: </span>
+                <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${session.teacherUploadedFile}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    View Uploaded File
+                </a>
+            </div>
+        )}
+      </div>
 
-      <div className="flex justify-end space-x-3 pt-3">
+      {/* Tombol Aksi */}
+      <div className="flex justify-end space-x-3 pt-4 border-t">
         <button
           type="button"
           onClick={onCancel}
