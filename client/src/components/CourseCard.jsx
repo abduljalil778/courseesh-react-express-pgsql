@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import StarRating from './StarRating';
 
-const placeholderImage = "/placeholder-course.jpg"; // Sediakan gambar placeholder di folder public
+const placeholderImage = "/placeholder-course.jpg";
 
 export default function CourseCard({ course }) {
   const navigate = useNavigate();
@@ -26,12 +26,10 @@ export default function CourseCard({ course }) {
       <div className="relative">
         <img src={imageUrl} alt={course.title} className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" />
         <div className="absolute top-3 right-3 flex items-center space-x-[-12px]">
-          {/* Tampilkan avatar guru (atau siswa yang mengambil, jika ada data itu) */}
           <Avatar className="h-8 w-8 border-2 border-white">
             <AvatarImage src={teacherAvatarUrl} />
             <AvatarFallback>{teacher?.name?.charAt(0) || 'T'}</AvatarFallback>
           </Avatar>
-          {/* Anda bisa menambahkan avatar lain di sini jika ada data */}
         </div>
       </div>
 
@@ -53,8 +51,9 @@ export default function CourseCard({ course }) {
         <p className="text-xl font-bold text-gray-900">
           {formatCurrencyIDR(course.price)}
         </p>
-
-        {/* Tombol akan muncul saat hover (opsional, untuk tampilan lebih bersih) */}
+        <p className="text-xs text-gray-500 mt-1">
+          {course.numberOfSessions} Sessions
+        </p>
         <Button 
           onClick={() => navigate(`/student/courses/${course.id}`)}
           className="w-full mt-4"
