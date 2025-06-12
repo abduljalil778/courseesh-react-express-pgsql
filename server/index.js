@@ -15,7 +15,6 @@ import bookingSessionRoutes from './routes/bookingSessions.js';
 import userRoutes from './routes/users.js';
 import teacherRoutes from './routes/teachers.js';
 import teacherPayoutRoutes from './routes/teacherPayouts.js';
-import reviewRoutes from './routes/reviews.js';
 import paymentOptionsRoutes from './routes/paymentOptions.js';
 import dashboardRoutes from './routes/dashboard.js';
 import errorController from './controllers/errorController.js';
@@ -73,7 +72,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/bookingsessions', bookingSessionRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api', teacherPayoutRoutes); 
-app.use('/api/bookings', reviewRoutes);
 app.use('/api', paymentOptionsRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 

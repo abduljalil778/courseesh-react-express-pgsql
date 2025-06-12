@@ -11,7 +11,6 @@ const prisma = new PrismaClient();
  */
 export const getAllPayments = async (req, res, next) => {
   try {
-    // Contoh: admin bisa filter payments berdasarkan bookingId jika diberikan query param
     const { bookingId: queryBookingId } = req.query;
     const whereClause = {};
     if (queryBookingId) {

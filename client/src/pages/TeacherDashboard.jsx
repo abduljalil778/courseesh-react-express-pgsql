@@ -20,7 +20,6 @@ export default function TeacherDashboard() {
   const [error, setError] = useState(null);
   const [formMode, setFormMode] = useState(null);
 
-  // Fetch all courses
   const loadCourses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -38,7 +37,6 @@ export default function TeacherDashboard() {
     loadCourses();
   }, [loadCourses]);
 
-  // Show add or edit modal
   const handleAddNewCourseClick = () => {
     setEditingCourse(null);
     setFormMode('create');
@@ -49,13 +47,11 @@ export default function TeacherDashboard() {
     setFormMode('edit');
   };
 
-  // Close modal
   const handleCloseForm = () => {
     setFormMode(null);
     setEditingCourse(null);
   };
 
-  // Delete handler
   const handleDelete = async (courseId) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -125,42 +121,17 @@ export default function TeacherDashboard() {
           </div>
         )}
 
-        {/* List Courses */}
+        {/* List Courses (pakai CourseCard) */}
         {courses.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
-              <div
+              <CourseCard
                 key={course.id}
-                className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden flex flex-col hover:shadow-2xl transition-shadow duration-300"
-              >
-                <div className="p-5 flex flex-col flex-grow">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1 leading-tight">{course.title}</h2>
-                  <p className="text-xs text-gray-500 mb-2">
-                    {course.classLevels?.join(', ')}{course.classLevels !== 'UTBK' ? ` - ${course.curriculum}` : ''} | Sessions: {course.numberOfSessions}
-                  </p>
-                  <p className="text-sm text-gray-700 mb-3 flex-grow truncate">{course.description || 'No description available.'}</p>
-                  <p className="text-2xl font-bold text-indigo-600 mb-4">{formatCurrencyIDR(course.price)}</p>
-                  {course.createdAt && (
-                    <p className="text-xs text-gray-400 mb-3">
-                      Created: {format(parseISO(course.createdAt), 'dd MMM yyyy')}
-                    </p>
-                  )}
-                  <div className="mt-auto flex pt-3 space-x-2 border-t border-gray-200">
-                    <button
-                      onClick={() => handleEditCourseClick(course)}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-center text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(course.id)}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-center text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
+                course={course}
+                showActions={true}
+                onEdit={handleEditCourseClick}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

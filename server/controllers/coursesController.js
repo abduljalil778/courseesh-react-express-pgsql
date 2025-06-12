@@ -14,37 +14,53 @@ export const getAllCourses = async (req, res, next) => {
 
     const courses = await prisma.course.findMany({
       where,
-      select: { 
-        id: true, title: true, description: true, price: true,
-        numberOfSessions: true, classLevels: true, curriculum: true, imageUrl: true,
-        teacher: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { reviews: true } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        numberOfSessions: true,
+        classLevels: true,
+        curriculum: true,
+        imageUrl: true,
+        createdAt: true,
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          }
+        },
+        reviews: {
+          select: {
+            rating: true,
+          }
+        }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    const courseIds = courses.map(c => c.id);
-    if (courseIds.length === 0) {
-        return res.json([]);
-    }
+    // Proses data di level aplikasi untuk menghitung rata-rata dan total
+    const coursesWithAggregates = courses.map(course => {
+      const totalReviews = course.reviews.length;
+      const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
+      const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
 
-    const averageRatings = await prisma.courseReview.groupBy({
-      by: ['courseId'],
-      where: { courseId: { in: courseIds } },
-      _avg: { rating: true },
-    });
-    
-    const coursesWithRatings = courses.map(course => {
-      const ratingData = averageRatings.find(r => r.courseId === course.id);
+      delete course.reviews;
+
       return {
         ...course,
-        averageRating: ratingData?._avg.rating || 0,
-        totalReviews: course._count.reviews,
+        totalReviews,
+        averageRating,
       };
     });
 
-    return res.json(coursesWithRatings);
+    return res.json(coursesWithAggregates);
+
   } catch (err) {
+    console.error('getAllCourses Error:', err);
     next(new AppError(err.message, 500));
   }
 };
@@ -57,13 +73,24 @@ export const getCourseById = async (req, res, next) => {
       select: {
         id: true, title: true, description: true, price: true,
         numberOfSessions: true, curriculum: true, classLevels: true, imageUrl: true,
-        teacher: { select: { id: true, name: true, email: true, avatarUrl: true } }
+        teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        reviews: { select: { rating: true } } 
       }
     });
-    if (!course) {
-      return next(new AppError(`Course with id=${id} not found`, 404));
-    }
-    return res.json(course);
+    
+    // Hitung agregat untuk halaman detail
+    const totalReviews = course.reviews.length;
+    const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
+    const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
+    delete course.reviews;
+
+    const courseWithAggregates = {
+        ...course,
+        totalReviews,
+        averageRating
+    };
+
+    return res.json(courseWithAggregates);
   } catch (err) {
     next(new AppError(err.message, 500));
   }

@@ -9,7 +9,7 @@ import AppError from '../utils/AppError.mjs';
  * Siswa membuat review untuk booking yang sudah selesai.
  */
 export const createCourseReview = async (req, res, next) => {
-  const { bookingId } = req.params;
+  const { id: bookingId } = req.params;
   const { rating, comment } = req.body;
   const studentId = req.user.id;
 
@@ -68,13 +68,12 @@ export const createCourseReview = async (req, res, next) => {
  * Siswa mengambil review yang pernah dia submit untuk suatu booking.
  */
 export const getMyReviewForBooking = async (req, res, next) => {
-    const { bookingId } = req.params;
+    const { id: bookingId } = req.params;
     const studentId = req.user.id;
 
     try {
         const review = await prisma.courseReview.findUnique({
-            where: { bookingId }, // Karena bookingId di set @unique di CourseReview
-            // Anda bisa tambahkan include jika perlu detail lain
+            where: { bookingId },
         });
 
         if (!review) {
@@ -98,7 +97,7 @@ export const getMyReviewForBooking = async (req, res, next) => {
  * Mendapatkan semua review untuk sebuah course (bisa untuk publik atau student).
  */
 export const getReviewsForCourse = async (req, res, next) => {
-  const { courseId } = req.params;
+  const { id: courseId } = req.params;
   try {
     const reviews = await prisma.courseReview.findMany({
       where: { courseId },
@@ -118,7 +117,7 @@ export const getReviewsForCourse = async (req, res, next) => {
 };
 
 export const getReviewsByTeacher = async (req, res, next) => {
-  const { teacherId } = req.params;
+  const { id: teacherId } = req.params;
   try {
     const reviews = await prisma.courseReview.findMany({
       where: { teacherId },
@@ -141,7 +140,7 @@ export const getReviewsByTeacher = async (req, res, next) => {
 };
 
 export const updateReview = async (req, res, next) => {
-  const { bookingId } = req.params;
+  const { id: bookingId } = req.params;
   const { rating, comment } = req.body;
   const studentId = req.user.id;
 
@@ -173,7 +172,7 @@ export const updateReview = async (req, res, next) => {
 };
 
 export const deleteReview = async (req, res, next) => {
-  const { bookingId } = req.params;
+  const { id: bookingId } = req.params;
   const studentId = req.user.id;
 
   try {

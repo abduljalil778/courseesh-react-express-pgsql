@@ -10,6 +10,7 @@ import {
 } from '../controllers/coursesController.js';
 import catchAsync from '../utils/catchAsync.js';
 import { upload } from '../middleware/upload.js'; // Impor multer dari middleware
+import { getReviewsForCourse } from '../controllers/reviewsController.js';
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.post(
   catchAsync(createCourse)
 );
 
-router.post(
+router.put(
   '/:id/update',
   authenticate,
   authorize('TEACHER','ADMIN'),
@@ -38,5 +39,10 @@ router.delete(
   authorize('TEACHER','ADMIN'),
   catchAsync(deleteCourse)
 );
+
+router.get(
+  '/:id/reviews',
+  catchAsync(getReviewsForCourse)
+)
 
 export default router;

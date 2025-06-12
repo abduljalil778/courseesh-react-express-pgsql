@@ -8,7 +8,7 @@ import StarRating from './StarRating';
 
 const placeholderImage = "/placeholder-course.jpg";
 
-export default function CourseCard({ course }) {
+export default function CourseCard({ course, onEdit, onDelete, showActions = false }) {
   const navigate = useNavigate();
   if (!course) return null;
 
@@ -19,7 +19,7 @@ export default function CourseCard({ course }) {
   
   const teacherAvatarUrl = teacher?.avatarUrl
     ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${teacher.avatarUrl}`
-    : `https://ui-avatars.com/api/?name=${teacher?.name.replace(/\s/g, '+')}&background=random`;
+    : `https://ui-avatars.com/api/?name=${teacher?.name?.replace(/\s/g, '+')}&background=random`;
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full group">
@@ -43,23 +43,45 @@ export default function CourseCard({ course }) {
         <p className="text-xs text-gray-500 mt-1 mb-2">
           {teacher?.name || 'N/A'}
         </p>
-        
         <div className="my-2">
           <StarRating rating={course.averageRating} totalReviews={course.totalReviews} size={14} />
         </div>
-        
         <p className="text-xl font-bold text-gray-900">
           {formatCurrencyIDR(course.price)}
         </p>
         <p className="text-xs text-gray-500 mt-1">
           {course.numberOfSessions} Sessions
         </p>
-        <Button 
-          onClick={() => navigate(`/student/courses/${course.id}`)}
-          className="w-full mt-4"
-        >
-          View Details
-        </Button>
+
+        {/* Action Buttons */}
+        <div className="w-full mt-4 flex space-x-2">
+          {showActions && (
+            <>
+              <Button
+                className="flex-1 bg-yellow-500 hover:bg-yellow-600"
+                onClick={() => onEdit && onEdit(course)}
+                type="button"
+              >
+                Edit
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={() => onDelete && onDelete(course.id)}
+                type="button"
+              >
+                Delete
+              </Button>
+            </>
+          )}
+          {!showActions && (
+            <Button
+              className="w-full"
+              onClick={() => navigate(`/student/courses/${course.id}`)}
+            >
+              View Details
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -63,11 +63,11 @@ export default function AdminLayout() {
                <DropdownMenuItem asChild>
                  <Link to="/admin/profile" className="flex items-center">
                    <User className="mr-2 h-4 w-4" />
-                   <span>Kelola Profil</span>
+                   <span>Profile</span>
                  </Link>
                </DropdownMenuItem>
                <DropdownMenuItem asChild>
-                 <button onClick={handleLogout} className="flex items-center w-full">
+                 <button onClick={handleLogout} className="flex items-center w-full text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
                    <IconLogout className="mr-2 h-4 w-4" />
                    <span>Logout</span>
                  </button>
