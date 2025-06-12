@@ -2,9 +2,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { getAllUsers, createUser, updateUser, deleteUser } from '../../lib/api';
-import Spinner from '../../components/Spinner';
+import Spinner from '@/components/Spinner';
 import Swal from 'sweetalert2';
 import UserForm from '../../components/UserForm';
+import { Search } from 'lucide-react';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -13,10 +14,13 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const loadUsers = useCallback(async () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const loadUsers = useCallback(async (currentSearchTerm) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await getAllUsers();
+      const response = await getAllUsers(currentSearchTerm);
       setUsers(response.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load users.');
@@ -26,8 +30,13 @@ export default function UserManagementPage() {
   }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    const delayDebounceFn = setTimeout(() => {
+      loadUsers(searchTerm);
+    }, 500); // Tunggu 500ms setelah user berhenti mengetik
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, loadUsers]);
+
 
   const handleOpenCreateForm = () => {
     setEditingUser(null);
@@ -53,7 +62,7 @@ export default function UserManagementPage() {
       await action(isUpdating ? editingUser.id : userData, isUpdating ? userData : undefined);
       Swal.fire('Success!', `User ${isUpdating ? 'updated' : 'created'} successfully.`, 'success');
       handleCloseModal();
-      loadUsers();
+      loadUsers(searchTerm);
     } catch (err) {
       Swal.fire('Error!', err.response?.data?.message || `Could not ${actionText.toLowerCase()} user.`, 'error');
     }
@@ -73,27 +82,37 @@ export default function UserManagementPage() {
       try {
         await deleteUser(userId);
         Swal.fire('Deleted!', `${userName} has been deleted.`, 'success');
-        loadUsers();
+        loadUsers(searchTerm);
       } catch (err) {
         Swal.fire('Error!', err.response?.data?.message || 'Could not delete user.', 'error');
       }
     }
   };
 
-  if (isLoading) return <div className="flex justify-center"><Spinner size={48} /></div>;
-  if (error) return <p className="text-red-500">{error}</p>;
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Users</h1>
-        <button onClick={handleOpenCreateForm} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
-          <i className="fas fa-plus mr-2"></i>Add New User
+        <div className="relative flex-grow max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-400"
+          />
+        </div>
+        <button onClick={handleOpenCreateForm} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 flex-shrink-0">
+          Add New User
         </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        {isLoading ? (
+            <div className="text-center py-10"><Spinner size={32}/></div>
+        ) : users.length > 0 ? (
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
                 <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
@@ -125,6 +144,9 @@ export default function UserManagementPage() {
                 ))}
             </tbody>
         </table>
+        ) : (
+            <p className="text-center py-10 text-gray-500">No users found for "{searchTerm}".</p>
+        )}
       </div>
 
       {isModalOpen && (

@@ -1,3 +1,4 @@
+// server/routes/courses.js (Versi Perbaikan Final)
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import {
@@ -7,47 +8,35 @@ import {
   updateCourse,
   deleteCourse
 } from '../controllers/coursesController.js';
-import {
-  createCourseValidator,
-  updateCourseValidator
-} from '../validators/courseValidators.js';
-import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
-import {getReviewsForCourse} from '../controllers/reviewsController.js';
+import { upload } from '../middleware/upload.js'; // Impor multer dari middleware
 
 const router = express.Router();
-router.use(authenticate)
 
 router.get('/', catchAsync(getAllCourses));
 router.get('/:id', catchAsync(getCourseById));
 
 router.post(
   '/',
+  authenticate,
   authorize('TEACHER','ADMIN'),
-  createCourseValidator,
-  runValidation,
+  upload.single('thumbnailFile'), // Nama field file dari form
   catchAsync(createCourse)
 );
 
-router.put(
-  '/:id',
+router.post(
+  '/:id/update',
+  authenticate,
   authorize('TEACHER','ADMIN'),
-  updateCourseValidator,
-  runValidation,
+  upload.single('thumbnailFile'),
   catchAsync(updateCourse)
 );
 
 router.delete(
   '/:id',
+  authenticate,
   authorize('TEACHER','ADMIN'),
   catchAsync(deleteCourse)
-);
-
-// Mendapatkan semua review untuk sebuah course (bisa diakses publik atau user login)
-// Jika ingin diproteksi, tambahkan authenticate
-router.get(
-  '/:id/reviews',
-  catchAsync(getReviewsForCourse)
 );
 
 export default router;

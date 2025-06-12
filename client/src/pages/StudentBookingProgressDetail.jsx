@@ -23,7 +23,6 @@ export default function StudentBookingProgressDetail() {
       setIsLoading(false);
       return;
     }
-    // Hanya tampilkan spinner besar saat load awal
     if (!booking) setIsLoading(true);
     setError(null);
     try {
@@ -38,7 +37,7 @@ export default function StudentBookingProgressDetail() {
 
   useEffect(() => {
     fetchBookingDetails();
-  }, [bookingId]); // Hanya panggil ulang jika bookingId dari URL berubah
+  }, [bookingId]); 
 
   const handleMarkAttendance = async (sessionId, attendedStatus) => {
     setSubmittingAttendanceSessionId(sessionId);
@@ -171,7 +170,7 @@ export default function StudentBookingProgressDetail() {
         {booking.bookingStatus === 'COMPLETED' && !booking.review && (
             <CourseReviewForm 
                 booking={booking}
-                onSubmitReview={handleSubmitReview}
+                onSubmit={handleSubmitReview}
                 isSubmittingReview={submittingReview}
             />
         )}

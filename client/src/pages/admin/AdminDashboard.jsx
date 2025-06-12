@@ -1,30 +1,139 @@
 // src/pages/admin/AdminDashboard.jsx
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { getAdminDashboardStats } from '../../lib/api';
+import Spinner from '../../components/Spinner';
+import { formatCurrencyIDR } from '../../utils/formatCurrency';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Legend as PieLegend } from 'recharts';
+import { DollarSign, Users, UserCheck, User, BookOpen, CalendarCheck } from 'lucide-react';
+
+
+// Komponen untuk kartu statistik KPI
+const StatCard = ({ title, value, icon: Icon }) => ( 
+  <div className="bg-white p-4 rounded-lg shadow-lg flex items-center">
+    <div className="p-2.5 bg-primary/10 rounded-full">
+      {Icon && <Icon className="h-3 w-3 text-primary" />}
+    </div>
+    <div className="ml-4">
+      <p className="text-xs font-medium text-gray-500 uppercase">{title}</p>
+      <p className="text-sm font-bold text-gray-800">{value}</p>
+    </div>
+  </div>
+);
+
+// Komponen untuk grafik popularitas kursus
+const CoursePopularityChart = ({ data }) => {
+  const COLORS = ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE'];
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey="count"
+          nameKey="name"
+          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip formatter={(value) => `${value} bookings`} />
+        <PieLegend />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+};
+
+const TeacherRevenueRanking = ({ data }) => (
+ <div className="overflow-hidden rounded-md border">
+   <div className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700">
+     Top Teachers by Revenue
+   </div>
+   <ul className="divide-y divide-gray-200">
+     {data.map((teacher, index) => (
+       <li key={teacher.name} className="px-4 py-3 flex items-center justify-between text-sm">
+         <span className="font-medium text-gray-800">{teacher.name}</span>
+         <span className="text-gray-600">{formatCurrencyIDR(teacher.revenue)}</span>
+       </li>
+     ))}
+     {data.length === 0 && <li className="px-4 py-3 text-sm text-gray-500">No data available.</li>}
+   </ul>
+ </div>
+);
+
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadStats = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getAdminDashboardStats();
+      setStats(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load dashboard data.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  if (isLoading) return <div className="flex justify-center p-8"><Spinner size={48} /></div>;
+  if (error) return <p className="text-red-500 p-4">{error}</p>;
+  if (!stats) return <p className="text-gray-500">No statistics to display.</p>;
+  
   return (
-    <div className='animate-fade-in'>
-      <h1 className="text-2xl font-bold text-gray-800">Welcome, Admin!</h1>
-      <p className="mt-2 text-gray-600">This is the main dashboard. You can add summary statistics here.</p>
-      
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Contoh Kartu Statistik */}
+    <div className="space-y-8 animate-fade-in">
+      {/* Kartu KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <StatCard title="Total Revenue" value={formatCurrencyIDR(stats.kpi.totalRevenue)} icon={DollarSign} />
+        <StatCard title="Total Users" value={stats.kpi.totalUsers} icon={Users} />
+        <StatCard title="Total Teachers" value={stats.kpi.totalTeachers} icon={UserCheck} />
+        <StatCard title="Total Students" value={stats.kpi.totalStudents} icon={User} />
+        <StatCard title="Total Courses" value={stats.kpi.totalCourses} icon={BookOpen} />
+        <StatCard title="Active Bookings" value={stats.kpi.activeBookings} icon={CalendarCheck} />
+      </div>
+
+      {/* Grafik Utama */}
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Bookings in Last 30 Days</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={stats.bookingStats}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="Bookings" fill="#4F46E5" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Grafik Sekunder */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-700">Total Users</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">150</p>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Top 5 Popular Courses</h3>
+          <CoursePopularityChart data={stats.coursePopularityStats} />
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-700">Total Courses</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">42</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-700">Active Bookings</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">78</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-700">Pending Payouts</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">12</p>
-        </div>
+        {stats.teacherRevenueRanking && (
+          <TeacherRevenueRanking data={stats.teacherRevenueRanking} />
+        )}
+        {!stats.teacherRevenueRanking && (
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-700">Top Teachers by Revenue</h3>
+            <p className="text-gray-500 mt-2">Loading data...</p>
+          </div>
+        )}
       </div>
     </div>
   );

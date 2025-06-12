@@ -1,176 +1,194 @@
 // src/components/CourseForm.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CLASS_LEVELS, CURRICULA } from '../config';
-import {courseSchema, defaultValuesForCreate, ALLOWED_SESSIONS} from '../schemas/courseSchema';
 import Spinner from './Spinner';
+import Swal from 'sweetalert2';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
+const courseSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  price: z.preprocess((val) => Number(val), z.number().min(0, 'Price must be non-negative')),
+  numberOfSessions: z.preprocess((val) => Number(val), z.number().int().min(1, 'At least 1 session required')),
+  classLevels: z.array(z.string()).min(1, { message: 'At least one class level is required.' }),
+  curriculum: z.string().optional().default(''),
+});
 
 export default function CourseForm({
   initialData = null,
-  onSubmit,
+  onSuccess,
   onCancel,
-  submitLabel = 'Submit',
+  onSubmit,
+  submitLabel = 'Save',
 }) {
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(initialData?.imageUrl || null);
+  const isEditMode = !!initialData;
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
-    control, // Ambil control dari useForm
     setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(courseSchema),
-    defaultValues: initialData ? {
-        ...initialData,
-        numberOfSessions: initialData.numberOfSessions && ALLOWED_SESSIONS.includes(initialData.numberOfSessions) 
-                          ? initialData.numberOfSessions 
-                          : ALLOWED_SESSIONS[0],
-        price: initialData.price !== undefined ? Number(initialData.price) : undefined,
-        classLevels: Array.isArray(initialData.classLevels) ? initialData.classLevels : [], // Pastikan array
-        curriculum: initialData.curriculum || '',
-    } : defaultValuesForCreate,
+    defaultValues: initialData || {
+      title: '', description: '', price: 0,
+      numberOfSessions: 6, classLevels: [], curriculum: ''
+    },
   });
 
-  const watchedClassLevels = watch('classLevels', []); // Awasi classLevels, default ke array kosong
-
   useEffect(() => {
-    const defaultVals = initialData ? {
-        ...initialData,
-        price: initialData.price !== undefined ? Number(initialData.price) : undefined,
-        classLevels: Array.isArray(initialData.classLevels) ? initialData.classLevels : [],
-        curriculum: initialData.curriculum || '',
-        numberOfSessions: initialData.numberOfSessions && ALLOWED_SESSIONS.includes(initialData.numberOfSessions) 
-                          ? initialData.numberOfSessions 
-                          : ALLOWED_SESSIONS[0],
-    } : defaultValuesForCreate;
-    reset(defaultVals);
+    if (initialData) {
+      reset(initialData);
+      setPreviewUrl(initialData.imageUrl || null);
+      setThumbnailFile(null);
+    }
   }, [initialData, reset]);
 
-  // Menyesuaikan curriculum jika UTBK dipilih/dihilangkan
+  const watchedClassLevels = watch('classLevels', []);
   useEffect(() => {
-    const isUtbkSelected = watchedClassLevels.includes('UTBK');
-    const hasOtherLevels = watchedClassLevels.some(level => level !== 'UTBK');
-
-    if (isUtbkSelected && !hasOtherLevels) { // Jika HANYA UTBK yang dipilih
-      setValue('curriculum', ''); // Kosongkan curriculum
+    if (watchedClassLevels.includes('UTBK') && watchedClassLevels.length === 1) {
+      setValue('curriculum', '');
     }
-    // Jika UTBK dihilangkan dan hanya ada level lain, user bisa pilih curriculum
-    // Jika semua classLevels dihilangkan, curriculum juga bisa dikosongkan
   }, [watchedClassLevels, setValue]);
 
-
-  const handleFormSubmit = async (data) => {
-    const dataToSubmit = {
-        ...data,
-        price: Number(data.price),
-        numberOfSessions: Number(data.numberOfSessions),
-        // Jika hanya UTBK yang dipilih, atau tidak ada SD/SMP/SMA, curriculum bisa null/kosong
-        curriculum: data.classLevels.includes('UTBK') && !data.classLevels.some(l => ['SD','SMP','SMA'].includes(l)) 
-                    ? null 
-                    : data.curriculum || null,
-    };
-    await onSubmit(dataToSubmit);
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
-  const getInputClassName = (fieldName, isCheckbox = false) =>
-    isCheckbox 
-    ? `h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 ${errors[fieldName] ? 'border-red-500' : ''}`
-    : `w-full p-2 border rounded ${
-        errors[fieldName] ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
-      } shadow-sm sm:text-sm bg-white`;
+  const handleFormSubmit = async (data) => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        formData.append(key, value.join(','));
+      } else {
+        formData.append(key, value ?? '');
+      }
+    });
+    if (thumbnailFile) {
+      formData.append('thumbnailFile', thumbnailFile);
+    }
+
+    Swal.fire({ title: isEditMode ? 'Updating Course...' : 'Creating Course...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+      if (onSubmit) {
+        await onSubmit(formData, isEditMode, initialData?.id);
+      }
+      await Swal.fire('Success!', `Course ${isEditMode ? 'updated' : 'created'} successfully.`, 'success');
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      Swal.fire('Error!', err.response?.data?.message || 'Operation failed.', 'error');
+    }
+  };
+
+  const handleCancel = () => {
+    reset(initialData || {
+      title: '', description: '', price: 0,
+      numberOfSessions: 6, classLevels: [], curriculum: ''
+    });
+    setThumbnailFile(null);
+    setPreviewUrl(initialData?.imageUrl || null);
+    if (onCancel) onCancel();
+  };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="p-4 mb-6 space-y-6 bg-white border rounded-lg shadow-md">
-      {/* Title, Description, Price, numberOfSessions tetap sama (dengan select untuk numberOfSessions) */}
-      {/* ... (field title, description, price, numberOfSessions seperti sebelumnya) ... */}
-       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
-        <input type="text" id="title" {...register('title')} className={getInputClassName('title').replace('bg-white', '')} />
-        {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>}
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Course Title *</Label>
+        <Input id="title" {...register('title')} />
+        {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>}
       </div>
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea id="description" rows="3" {...register('description')} className={getInputClassName('description').replace('bg-white', '')} />
-        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
+        <Label htmlFor="description">Description *</Label>
+        <Textarea id="description" {...register('description')} />
+        {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>}
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-          <input type="number" id="price" step="any" {...register('price', { valueAsNumber: true })} className={getInputClassName('price').replace('bg-white', '')} />
-          {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
+          <Label htmlFor="price">Price *</Label>
+          <Input id="price" type="number" step="any" {...register('price')} />
+          {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
         </div>
         <div>
-          <label htmlFor="numberOfSessions" className="block text-sm font-medium text-gray-700 mb-1">Number of Sessions</label>
-          <select id="numberOfSessions" {...register('numberOfSessions')} className={getInputClassName('numberOfSessions')}>
-            {ALLOWED_SESSIONS.map(sessionCount => (<option key={sessionCount} value={sessionCount}>{sessionCount} sessions</option>))}
+          <Label htmlFor="numberOfSessions">Sessions *</Label>
+          <select id="numberOfSessions" {...register('numberOfSessions')} className="w-full h-10 border border-input bg-background px-3 py-2 text-sm rounded-md">
+            {[6, 12, 24].map(val => <option key={val} value={val}>{val} sessions</option>)}
           </select>
-          {errors.numberOfSessions && <p className="mt-1 text-sm text-red-600">{errors.numberOfSessions.message}</p>}
+          {errors.numberOfSessions && <p className="text-sm text-red-500 mt-1">{errors.numberOfSessions.message}</p>}
         </div>
       </div>
-
-      {/* Class Levels - Diubah menjadi Checkbox Group */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Class Levels <span className="text-red-500">*</span> (Select one or more)
-        </label>
-        <div className="space-y-2">
+        <Label className="mb-2 block">Class Levels *</Label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {CLASS_LEVELS.map((level) => (
-            <label key={level} htmlFor={`classLevels-${level}`} className="flex items-center">
+            <div key={level} className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id={`classLevels-${level}`}
                 value={level}
-                {...register('classLevels')} // react-hook-form akan menangani array value
-                className={getInputClassName('classLevels', true) + " mr-2"}
+                {...register('classLevels')}
+                className="h-4 w-4"
               />
-              <span className="text-sm text-gray-700">{level}</span>
-            </label>
+              <Label htmlFor={`classLevels-${level}`} className="font-normal">{level}</Label>
+            </div>
           ))}
         </div>
-        {errors.classLevels && (
-          <p className="mt-1 text-sm text-red-600">{errors.classLevels.message}</p>
+        {errors.classLevels && <p className="text-sm text-red-500 mt-1">{errors.classLevels.message}</p>}
+      </div>
+      <div>
+        <Label htmlFor="curriculum">Curriculum</Label>
+        <select
+          id="curriculum"
+          {...register('curriculum')}
+          disabled={watchedClassLevels.includes('UTBK') && watchedClassLevels.length === 1}
+          className="w-full h-10 border border-input bg-background px-3 py-2 text-sm rounded-md"
+        >
+          <option value="">Select Curriculum (Optional)</option>
+          {CURRICULA.map(curr => (<option key={curr} value={curr}>{curr}</option>))}
+        </select>
+        {errors.curriculum && <p className="text-sm text-red-500 mt-1">{errors.curriculum.message}</p>}
+      </div>
+      <div>
+        <Label htmlFor="thumbnailFile">Course Thumbnail</Label>
+        <Input
+          id="thumbnailFile"
+          name="thumbnailFile"
+          type="file"
+          onChange={handleFileChange}
+          accept="image/*"
+          className="mt-1"
+        />
+        {previewUrl && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500">Image Preview:</p>
+            <img
+              src={previewUrl.startsWith('blob:') ? previewUrl : `${import.meta.env.VITE_API_URL.replace('/api', '')}${previewUrl}`}
+              alt="Thumbnail preview"
+              className="h-24 w-auto rounded-md mt-1 border p-1"
+            />
+          </div>
         )}
       </div>
-
-      {/* Curriculum (conditional, hanya tampil jika bukan HANYA UTBK yang dipilih) */}
-      {watchedClassLevels && !watchedClassLevels.includes('UTBK') || watchedClassLevels.some(l => l !== 'UTBK') && watchedClassLevels.length > 1 ? (
-         // Tampilkan jika (tidak ada UTBK) ATAU (ada UTBK TAPI ada level lain juga)
-        <div>
-          <label htmlFor="curriculum" className="block text-sm font-medium text-gray-700 mb-1">
-            Curriculum (for SD/SMP/SMA)
-          </label>
-          <select
-            id="curriculum"
-            {...register('curriculum')}
-            className={getInputClassName('curriculum')}
-            disabled={watchedClassLevels.includes('UTBK') && watchedClassLevels.length === 1} // Disable jika HANYA UTBK dipilih
-          >
-            <option value="">Select Curriculum (Optional for SD/SMP/SMA)</option>
-            {CURRICULA.map(curriculum => (
-              <option key={curriculum} value={curriculum}>{curriculum === 'MERDEKA' ? 'Kurikulum Merdeka' : 'K13 Revisi'}</option>
-            ))}
-          </select>
-          {errors.curriculum && (
-            <p className="mt-1 text-sm text-red-600">{errors.curriculum.message}</p>
-          )}
-        </div>
-      ) : null}
-
-      {/* Tombol Submit dan Cancel */}
-      <div className="flex items-center pt-4 mt-4 border-t border-gray-200 justify-end space-x-3">
-        {onCancel && (
-          <button type="button" onClick={onCancel} disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Cancel
-          </button>
-        )}
-        <button type="submit" disabled={isSubmitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60">
-          {isSubmitting ? 'Saving...' : submitLabel}
-        </button>
+      <div className="flex items-center justify-end space-x-2 pt-4 border-t">
+        <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Spinner size={20} className="mr-2" />}
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

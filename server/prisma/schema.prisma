@@ -21,13 +21,14 @@ model User {
   password         String
   role             Role
   status           Status          @default(ACTIVE)
+  avatarUrl        String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   courses          Course[]        @relation("TeacherCourses")
   bookings         Booking[]       @relation("StudentBookings")
   payoutsAsTeacher TeacherPayout[] @relation("TeacherPayouts")
   studentReviews   CourseReview[]  @relation("StudentReviews")
-  teacherFeedback  CourseReview[]  @relation("TeacherReviews") // Feedback yang diterima guru
+  teacherFeedback  CourseReview[]  @relation("TeacherReviews")
 }
 
 model Course {
@@ -35,6 +36,7 @@ model Course {
   title            String
   description      String
   price            Float
+  imageUrl         String?
   numberOfSessions Int            @default(1)
   classLevels      ClassLevel[] // Array untuk mendukung beberapa kelas
   curriculum       Curriculum? // null for UTBK

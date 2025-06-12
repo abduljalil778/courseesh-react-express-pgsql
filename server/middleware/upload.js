@@ -1,4 +1,4 @@
-// server/middleware/upload.js (File Baru)
+// server/middleware/upload.js
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,13 +6,11 @@ import fs from 'fs';
 import AppError from '../utils/AppError.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
-// Kita perlu naik dua level direktori dari middleware ke root server
-const __dirname = path.dirname(path.dirname(__filename)); 
+const __dirname = path.dirname(__filename);
 
-// Tentukan direktori upload di dalam folder public
-const uploadDir = path.join(__dirname, 'public/uploads'); 
+// Tentukan direktori upload di dalam folder public di root server
+const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
 
-// Buat direktori jika belum ada
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -28,14 +26,14 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|doc|docx|pdf/;
+  const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     return cb(null, true);
   }
-  cb(new AppError('Error: File type not allowed. Only images and document are permitted.', 400));
+  cb(new AppError('File type not allowed. Only images and documents are permitted.', 400));
 };
 
 export const upload = multer({ 

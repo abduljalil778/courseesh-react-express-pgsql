@@ -8,7 +8,32 @@ const prisma = new PrismaClient();
 // GET /api/users
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await findAllUsers()
+    const { search } = req.query;
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const users = await prisma.user.findMany({
+        where,
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            status: true,
+            createdAt: true,
+        },
+        orderBy: {
+            name: "asc",
+        }
+    });
+
     res.json(users);
   } catch (err) {
     next(new AppError(err.message))
@@ -136,3 +161,24 @@ export const deleteUser = async (req, res, next) => {
     next(err);
   }
 };
+
+export const uploadAvatar = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+  if (!req.file) {
+    return next(new AppError('No avatar file uploaded.', 400));
+  }
+
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl: avatarUrl },
+    select: { id: true, name: true, email: true, avatarUrl: true }
+  });
+
+  res.json(updatedUser);
+  } catch (err) {
+    next(new AppError(err.message));
+  }
+}

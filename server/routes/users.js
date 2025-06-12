@@ -2,9 +2,10 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import catchAsync from '../utils/catchAsync.js';
-import { getAllUsers, createUser, getUserById, updateUser, deleteUser } from '../controllers/usersController.js';
+import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar } from '../controllers/usersController.js';
 import { createUserValidator, updateUserValidator, userIdValidator } from '../validators/usersValidator.js';
 import { runValidation } from '../middleware/validate.js';
+import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -47,5 +48,12 @@ router.put('/:id',
   runValidation,
   catchAsync(updateUser)
 )
+
+router.post(
+  '/me/upload-avatar',
+  authenticate,
+  upload.single('avatar'),
+  catchAsync(uploadAvatar)
+);
 
 export default router;

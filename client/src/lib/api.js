@@ -28,14 +28,23 @@ export const deleteCourse = async (id) => {
   return await api.delete(`/courses/${id}`);
 }
 
-// handle create course
-export const createCourse = async (data) => {
-  return await api.post(`/courses/`, data);
+export const createCourse = async (formData) => { // Menerima FormData
+  return await api.post('/courses', formData, {
+    // headers: {
+    //   'Content-Type': 'multipart/form-data',
+    // },
+  });
 }
 
-// handle update course
-export const updateCourse = async (courseId, courseData) => {
-  return await api.put(`/courses/${courseId}`, courseData);
+export const updateCourse = async (courseId, formData) => {
+  if (!(formData instanceof FormData)) {
+    console.error('[ERROR] updateCourse: Payload BUKAN FormData!', formData);
+  }
+  return await api.post(`/courses/${courseId}/update`, formData, {
+    // headers: {
+    //   'Content-Type': 'multipart/form-data',
+    // },
+  });
 }
 
 // handle create booking
@@ -64,8 +73,12 @@ export const getBookingById = async (bookingId) => {
 }
 
 // handle get all users
-export const getAllUsers = async () => {
-  return await api.get('/users');
+export const getAllUsers = async (searchTerm = '') => {
+  return await api.get('/users', {
+    params: {
+      search: searchTerm,
+    },
+  });
 }
 
 // handle create user
@@ -196,4 +209,27 @@ export const uploadProofOfPayment = async (paymentId, file) => {
 // handle get all payment proofs
 export const getPaymentProofs = async (paymentId) => {
   return await api.get(`/payments/${paymentId}/proofs`);
+};
+
+// handle get admin dashboard stats
+export const getAdminDashboardStats = async () => {
+  return await api.get('/admin/dashboard/stats');
+};
+
+// handle upload course image
+export const uploadCourseImage = (courseId, file) => {
+  const formData = new FormData();
+  formData.append('courseImage', file);
+  return api.post(`/courses/${courseId}/upload-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+// handle upload user avatar
+export const uploadUserAvatar = (file) => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return api.post('/users/me/upload-avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
