@@ -49,3 +49,8 @@ export const updateUserValidator = [
     .withMessage('Status must be ACTIVE or INACTIVE if provided'),
 ];
 
+export const updatePayoutInfoValidator = [
+  body('bankName').trim().notEmpty().withMessage('Bank name is required.'),
+  body('bankAccountHolder').trim().notEmpty().withMessage('Account holder name is required.'),
+  body('bankAccountNumber').trim().notEmpty().withMessage('Account number is required.'),
+];

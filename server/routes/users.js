@@ -2,8 +2,8 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import catchAsync from '../utils/catchAsync.js';
-import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar } from '../controllers/usersController.js';
-import { createUserValidator, updateUserValidator, userIdValidator } from '../validators/usersValidator.js';
+import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar, updateMyPayoutInfo } from '../controllers/usersController.js';
+import { createUserValidator, updateUserValidator, userIdValidator, updatePayoutInfoValidator } from '../validators/usersValidator.js';
 import { runValidation } from '../middleware/validate.js';
 import { upload } from '../middleware/upload.js';
 
@@ -55,5 +55,14 @@ router.post(
   upload.single('avatar'),
   catchAsync(uploadAvatar)
 );
+
+router.put(
+    '/me/payout-info',
+    authenticate,
+    authorize('TEACHER'),
+    updatePayoutInfoValidator,
+    runValidation,
+    catchAsync(updateMyPayoutInfo)
+)
 
 export default router;

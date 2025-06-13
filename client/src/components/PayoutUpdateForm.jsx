@@ -1,5 +1,5 @@
 // src/components/PayoutUpdateForm.jsx
-import React from 'react';
+import React, {useState} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,7 +7,7 @@ import Spinner from './Spinner';
 import { format, parseISO } from 'date-fns';
 
 // Definisikan enum PayoutStatus di frontend agar konsisten atau impor jika memungkinkan (biasanya tidak dari backend langsung)
-const PAYOUT_STATUSES = ['PENDING_PAYMENT', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED']; // Tambahkan PENDING_CALCULATION jika admin bisa set itu
+const PAYOUT_STATUSES = ['PENDING_PAYMENT', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED']; 
 
 const payoutUpdateSchema = z.object({
   status: z.enum(PAYOUT_STATUSES, { required_error: "Status is required" }),
@@ -21,6 +21,7 @@ const payoutUpdateSchema = z.object({
 });
 
 export default function PayoutUpdateForm({ payout, onSubmit, onCancel, isSubmitting }) {
+  const [proofFile, setProofFile] = useState(null);
   const {
     register,
     handleSubmit,
@@ -38,11 +39,20 @@ export default function PayoutUpdateForm({ payout, onSubmit, onCancel, isSubmitt
 
   const watchedStatus = watch("status");
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProofFile(file);
+    }
+  };
+
   const handleFormSubmit = (data) => {
     const payload = { ...data };
-    // Hanya kirim payoutDate jika statusnya PAID dan tanggal diisi
     if (payload.status !== 'PAID' || !payload.payoutDate) {
       payload.payoutDate = null;
+    }
+    if (proofFile) {
+      payload.adminProof = proofFile;
     }
     onSubmit(payout.id, payload);
   };
@@ -98,6 +108,26 @@ export default function PayoutUpdateForm({ payout, onSubmit, onCancel, isSubmitt
           className={`w-full p-2.5 border rounded-md ${errors.adminNotes ? 'border-red-500' : 'border-gray-300'} shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500`}
         />
         {errors.adminNotes && <p className="text-red-600 text-xs mt-1">{errors.adminNotes.message}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="adminProof" className="block text-sm font-medium text-gray-700 mb-1">
+          Upload Proof of Transfer (Optional)
+        </label>
+        <input
+          type="file"
+          id="adminProof"
+          onChange={handleFileChange}
+          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+        />
+        {payout.adminProofOfPaymentUrl && (
+          <div className="mt-2 text-xs">
+            <span className="text-gray-600">Current file: </span>
+            <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${payout.adminProofOfPaymentUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+              View Uploaded Proof
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end space-x-3 pt-4 border-t mt-6">

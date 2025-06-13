@@ -18,6 +18,7 @@ import teacherPayoutRoutes from './routes/teacherPayouts.js';
 import paymentOptionsRoutes from './routes/paymentOptions.js';
 import dashboardRoutes from './routes/dashboard.js';
 import errorController from './controllers/errorController.js';
+import appSettingRoutes from './routes/appSettings.js';
 
 dotenv.config();
 
@@ -74,6 +75,7 @@ app.use('/api/teachers', teacherRoutes);
 app.use('/api', teacherPayoutRoutes); 
 app.use('/api', paymentOptionsRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/admin/settings', appSettingRoutes);
 
 // === ERROR HANDLER ===
 app.use((req, res, next) => {

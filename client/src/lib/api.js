@@ -28,11 +28,9 @@ export const deleteCourse = async (id) => {
   return await api.delete(`/courses/${id}`);
 }
 
-export const createCourse = async (formData) => { // Menerima FormData
+// handle create course
+export const createCourse = async (formData) => {
   return await api.post('/courses', formData, {
-    // headers: {
-    //   'Content-Type': 'multipart/form-data',
-    // },
   });
 }
 
@@ -41,9 +39,6 @@ export const updateCourse = async (courseId, formData) => {
     console.error('[ERROR] updateCourse: Payload BUKAN FormData!', formData);
   }
   return await api.put(`/courses/${courseId}/update`, formData, {
-    // headers: {
-    //   'Content-Type': 'multipart/form-data',
-    // },
   });
 }
 
@@ -138,7 +133,22 @@ export const getAllTeacherPayoutsAdmin = async (filters = {}) => {
 
 // handle update teacher payout by admin
 export const updateTeacherPayoutAdmin = async (payoutId, payoutData) => {
-  return await api.put(`/teacher-payouts/${payoutId}`, payoutData); 
+  const formData = new FormData();
+
+  Object.keys(payoutData).forEach(key => {
+    const value = payoutData[key];
+    if (value instanceof File) {
+      formData.append(key, value);
+    } else if (value !== null && value !== undefined) {
+      formData.append(key, value);
+    }
+  });
+  
+  return await api.put(`/teacher-payouts/${payoutId}`, formData, {
+    headers: {
+      // 'Content-Type': 'multipart/form-data',
+    },
+  }); 
 };
 
 // handle get payout by ID by admin
@@ -232,4 +242,18 @@ export const uploadUserAvatar = (file) => {
   return api.post('/users/me/upload-avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+};
+
+// handle update teacher payout info
+export const updateMyPayoutInfo = async (payoutData) => {
+  return await api.put('/users/me/payout-info', payoutData);
+};
+
+// --- Application Settings ---
+export const getAppSettings = async () => {
+  return await api.get('/admin/settings');
+};
+
+export const updateAppSettings = async (settingsData) => {
+  return await api.put('/admin/settings', settingsData);
 };

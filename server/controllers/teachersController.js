@@ -27,3 +27,4 @@ export const getMyPayouts = async (req, res, next) => {
     next(new AppError(err.message || 'Failed to fetch payouts', 500));
   }
 };
+

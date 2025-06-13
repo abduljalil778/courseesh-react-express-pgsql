@@ -1,0 +1,65 @@
+// client/src/components/PayoutDetailModal.jsx
+
+import React from 'react';
+import { format, parseISO } from 'date-fns';
+import { formatCurrencyIDR } from '../utils/formatCurrency';
+
+export default function PayoutDetailModal({ payout, onClose }) {
+  if (!payout) return null;
+
+  // Hitung persentase untuk ditampilkan
+  const feePercentage = (payout.serviceFeePercentage * 100).toFixed(0);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content-lg" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="modal-close-button" aria-label="Close modal">&times;</button>
+        
+        <div className="p-4 sm:p-6">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">Payout Details</h2>
+          <p className="text-center text-sm text-gray-500 font-mono mb-6">ID: {payout.id}</p>
+
+          <div className="grid grid-cols-2 gap-4 text-sm mb-8">
+            <div>
+              <p className="text-gray-500">Payout Date</p>
+              <p className="font-semibold text-gray-800">
+                {payout.payoutDate ? format(parseISO(payout.payoutDate), 'dd MMMM yyyy') : 'Pending'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-gray-500">Status</p>
+              <p className="font-semibold text-indigo-600">{payout.status.replace(/_/g, ' ')}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Billed to</p>
+              <p className="font-semibold text-gray-800">{payout.teacher?.name}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-gray-500">Reference</p>
+              <p className="font-semibold text-gray-800">{payout.payoutTransactionRef || '-'}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-b py-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Course Revenue (Gross)</span>
+                <span className="font-medium text-gray-800">{formatCurrencyIDR(payout.coursePriceAtBooking)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Platform Service Fee ({feePercentage}%)</span>
+                <span className="font-medium text-red-600">-{formatCurrencyIDR(payout.serviceFeeAmount)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center mt-4">
+            <span className="text-base font-semibold text-gray-800">Net Payout (Honorarium)</span>
+            <span className="text-xl font-bold text-green-600">{formatCurrencyIDR(payout.honorariumAmount)}</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

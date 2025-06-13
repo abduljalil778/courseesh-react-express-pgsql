@@ -13,6 +13,7 @@ import {
     listPayoutsQueryValidator,
 } from '../validators/teacherPayoutValidators.js';
 import {runValidation} from '../middleware/validate.js';
+import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -40,6 +41,7 @@ router.get(
 router.put(
     '/teacher-payouts/:payoutId',
     authorize('ADMIN'),
+    upload.single('adminProof'),
     payoutIdParamValidator,
     updatePayoutStatusValidator,
     runValidation,

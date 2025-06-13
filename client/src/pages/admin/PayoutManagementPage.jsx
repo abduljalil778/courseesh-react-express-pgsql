@@ -1,4 +1,4 @@
-// src/pages/admin/PayoutManagementPage.jsx
+// client/src/pages/admin/PayoutManagementPage.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { getAllTeacherPayoutsAdmin, updateTeacherPayoutAdmin } from '../../lib/api';
@@ -78,10 +78,10 @@ export default function PayoutManagementPage() {
             <thead className="bg-gray-50">
                 <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course (Booking)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payout Info</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payout Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking Info</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
@@ -92,10 +92,19 @@ export default function PayoutManagementPage() {
                             <div className="text-sm font-medium text-gray-900">{payout.teacher?.name}</div>
                             <div className="text-sm text-gray-500">{payout.teacher?.email}</div>
                         </td>
+                        {/* --- KOLOM BARU UNTUK INFO PAYOUT --- */}
                         <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-800">{payout.booking?.course?.title}</div>
-                            <div className="text-xs text-gray-500 font-mono">Booking: {payout.bookingId.substring(0,8)}...</div>
+                          {payout.teacher?.bankAccountHolder ? (
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{payout.teacher.bankName}</div>
+                              <div className="text-xs text-gray-500">{payout.teacher.bankAccountNumber}</div>
+                              <div className="text-xs text-gray-500">a/n {payout.teacher.bankAccountHolder}</div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Not Set</span>
+                          )}
                         </td>
+                        {/* ------------------------------------ */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
                             {formatCurrencyIDR(payout.honorariumAmount)}
                         </td>
@@ -104,8 +113,9 @@ export default function PayoutManagementPage() {
                                 {payout.status.replace(/_/g, ' ')}
                             </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {payout.payoutDate ? format(parseISO(payout.payoutDate), 'dd MMM, yyyy') : '-'}
+                         <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-800">{payout.booking?.course?.title}</div>
+                            <div className="text-xs text-gray-500 font-mono">Booking: {payout.bookingId.substring(0,8)}...</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button onClick={() => handleOpenModal(payout)} className="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400" disabled={payout.status === 'PAID' || payout.status === 'CANCELLED'}>
@@ -115,7 +125,7 @@ export default function PayoutManagementPage() {
                     </tr>
                 )) : (
                     <tr>
-                        <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No payouts to manage.</td>
+                        <td colSpan="7" className="px-6 py-4 text-center text-gray-500">No payouts to manage.</td>
                     </tr>
                 )}
             </tbody>

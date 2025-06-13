@@ -147,6 +147,7 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
+// DELETE /api/users/:id
 export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -162,6 +163,7 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
+// upload avatar
 export const uploadAvatar = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -182,3 +184,35 @@ export const uploadAvatar = async (req, res, next) => {
     next(new AppError(err.message));
   }
 }
+
+/**
+ * PUT /api/teachers/me/payout-info
+ * Teacher mengupdate informasi bank mereka sendiri.
+ */
+  export const updateMyPayoutInfo = async (req, res, next) => {
+  const { id: userId } = req.user;
+  const { bankName, bankAccountHolder, bankAccountNumber } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        bankName,
+        bankAccountHolder,
+        bankAccountNumber,
+      },
+    });
+    res.json({
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatarUrl: updatedUser.avatarUrl,
+        bankName: updatedUser.bankName,
+        bankAccountHolder: updatedUser.bankAccountHolder,
+        bankAccountNumber: updatedUser.bankAccountNumber,
+    });
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+  }

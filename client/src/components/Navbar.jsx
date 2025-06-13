@@ -26,13 +26,17 @@ export default function Navbar() {
 
   if (loading || !user || user.role === 'ADMIN') return null;
 
+  const avatarSrc = user.avatarUrl
+    ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${user.avatarUrl}`
+    : `https://ui-avatars.com/api/?name=${user.name.replace(/\s/g, '+')}&background=random`;
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
   
   const activeLinkStyle = {
-    color: '#4f46e5', // Warna indigo-600
+    color: '#4f46e5',
     fontWeight: '600',
     borderColor: '#4f46e5',
   };
@@ -103,14 +107,17 @@ export default function Navbar() {
               </div>
             )}
             
-            {/* --- PERBAIKAN: Menambahkan kembali ikon-ikon aksi --- */}
             <div className="hidden sm:flex items-center space-x-1">
-              <Button variant="ghost" size="icon" title="Analytics">
-                <ShoppingCart className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-              </Button>
-              <Button variant="ghost" size="icon" title="Favorites">
-                <Heart className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-              </Button>
+              {user.role === 'STUDENT' && (
+                <>
+                  <Button variant="ghost" size="icon" title="Analytics">
+                    <ShoppingCart className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                  </Button>
+                  <Button variant="ghost" size="icon" title="Favorites">
+                    <Heart className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                  </Button>
+                </>
+              )}
               <Button variant="ghost" size="icon" className="relative" title="Notifications">
                 <Bell className="h-5 w-5 text-gray-500 hover:text-gray-900" />
                 <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
@@ -124,7 +131,7 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={`https://ui-avatars.com/api/?name=${user.name.replace(/\s/g, '+')}&background=random`} />
+                    <AvatarImage src={avatarSrc} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -137,7 +144,7 @@ export default function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link to="#" className="cursor-pointer"><UserCircle className="mr-2 h-4 w-4" /><span>Profile</span></Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to={`/${user.role.toLowerCase()}/profile`} className="cursor-pointer"><UserCircle className="mr-2 h-4 w-4" /><span>Profile</span></Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" /><span>Logout</span>

@@ -12,6 +12,7 @@ import MainLayout from './components/MainLayout';
 // Halaman Publik
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 // Halaman Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -21,6 +22,7 @@ import BookingManagementPage from './pages/admin/BookingManagementPage';
 import PaymentManagementPage from './pages/admin/PaymentManagementPage';
 import PayoutManagementPage from './pages/admin/PayoutManagementPage';
 import PaymentOptionsPage from './pages/admin/PaymentOptionsPage';
+import SettingsPage from './pages/SettingsPage';
 
 // Halaman Teacher
 import TeacherDashboard from './pages/TeacherDashboard';
@@ -39,7 +41,7 @@ import CourseDetail from './pages/CourseDetail';
 import PaymentPage from './pages/PaymentPage';
 
 
-// Komponen ini HANYA untuk proteksi, bukan untuk UI layout
+
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
 
@@ -56,11 +58,10 @@ function ProtectedRoute({ children, roles }) {
   }
 
   if (roles && !roles.includes(user.role)) {
-    // Arahkan ke dashboard default mereka jika mencoba akses yang salah
     return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
   }
 
-  return children; // Merender layout yang sesuai (AdminLayout atau MainLayout)
+  return children;
 }
 
 
@@ -74,6 +75,7 @@ export default function App() {
             <Route element={<PublicLayout />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              
             </Route>
 
             {/* --- Rute Admin --- */}
@@ -92,6 +94,8 @@ export default function App() {
               <Route path="payments" element={<PaymentManagementPage />} />
               <Route path="payouts" element={<PayoutManagementPage />} />
               <Route path="payment-options" element={<PaymentOptionsPage />} />
+              <Route path='settings' element={<SettingsPage />} />
+              <Route path="profile" element={<UserProfilePage />} />
             </Route>
 
             {/* --- Rute Teacher --- */}
@@ -108,6 +112,7 @@ export default function App() {
               <Route path="schedules" element={<TeacherScheduleAndReports />} />
               <Route path="schedules/:bookingId" element={<TeacherBookingManageDetail />} />
               <Route path="my-payouts" element={<MyPayouts />} />
+              <Route path="profile" element={<UserProfilePage />} />
             </Route>
             
             {/* --- Rute Student --- */}
@@ -126,6 +131,7 @@ export default function App() {
               <Route path="book/:courseId" element={<StudentBooking />} />
               <Route path="courses/:courseId" element={<CourseDetail />} />
               <Route path="bookings/:bookingId/pay" element={<PaymentPage />} />
+              <Route path="profile" element={<UserProfilePage />} />
             </Route>
 
             {/* --- Fallback dan Redirect --- */}

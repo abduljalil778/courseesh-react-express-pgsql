@@ -38,7 +38,13 @@ export const register = async (req, res) => {
     });
 
     res.status(201).json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatarUrl
+      },
       token
     });
   } catch (err) {
@@ -73,7 +79,13 @@ export const login = async (req, res) => {
     });
 
     res.json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        avatarUrl: user.avatarUrl,
+      },
       token
     });
   } catch (err) {

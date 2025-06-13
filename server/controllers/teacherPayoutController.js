@@ -15,7 +15,16 @@ export const getAllTeacherPayouts = async (req, res, next) => {
     const payouts = await prisma.teacherPayout.findMany({
       where,
       include: {
-        teacher: { select: { id: true, name: true, email: true } },
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            bankName: true,
+            bankAccountHolder: true,
+            bankAccountNumber: true,
+          },
+        },
         booking: {
           select: {
             id: true,
@@ -39,15 +48,24 @@ export const getTeacherPayoutById = async (req, res, next) => {
         const payout = await prisma.teacherPayout.findUnique({
             where: {id: payoutId},
             include: {
-                teacher: { select: { id: true, name: true, email: true } },
-                booking: {
+              teacher: {
                 select: {
-                    id: true,
-                    course: { select: { title: true } },
-                    student: { select: { name: true } },
+                  id: true,
+                  name: true,
+                  email: true,
+                  bankName: true,
+                  bankAccountHolder: true,
+                  bankAccountNumber: true,
                 },
+              },
+              booking: {
+                select: {
+                  id: true,
+                  course: { select: { title: true } },
+                  student: { select: { name: true } },
                 },
-            }
+              },
+            },
         });
         if (!payout) { // Pengecekan setelah query
             return next(new AppError(`Payout with ID ${payoutId} not found`, 404));
@@ -60,11 +78,10 @@ res.json(payout);
 
 // PUT /api/payouts/:payoutId
 export const updateTeacherPayout = async (req, res, next) => {
-  const { payoutId } = req.params; // Sesuaikan dengan nama parameter di route
+  const { payoutId } = req.params;
   const { status, payoutTransactionRef, payoutDate, adminNotes } = req.body;
 
   try {
-    // Validasi status di sini bisa sebagai tambahan, tapi utamakan di express-validator
     if (status && !Object.values(PayoutStatus).includes(status)) {
       return next(new AppError(`Invalid payout status: ${status}`, 400));
     }
@@ -74,6 +91,9 @@ export const updateTeacherPayout = async (req, res, next) => {
     if (payoutTransactionRef !== undefined) dataToUpdate.payoutTransactionRef = payoutTransactionRef;
     if (payoutDate !== undefined) dataToUpdate.payoutDate = payoutDate ? new Date(payoutDate) : null;
     if (adminNotes !== undefined) dataToUpdate.adminNotes = adminNotes;
+    if (req.file) {
+      dataToUpdate.adminProofOfPaymentUrl = `/uploads/${req.file.filename}`;
+    }
 
     if (Object.keys(dataToUpdate).length === 0) {
         return next(new AppError('No data provided for payout update.', 400));

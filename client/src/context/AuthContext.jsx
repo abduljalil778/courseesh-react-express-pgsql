@@ -28,8 +28,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUserContext = (newUserData) => {
+    // Gabungkan data lama dengan data baru untuk jaga-jaga jika data baru tidak lengkap
+    const updatedUser = { ...user, ...newUserData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUserContext }}>
       {children}
     </AuthContext.Provider>
   );
