@@ -38,6 +38,6 @@ export const updatePaymentValidator = [
     .withMessage('paymentDate must be a valid ISO8601 date string'),
   body('paymentStatus')
     .optional()
-    .isIn(['PAID', 'FAILED', 'REFUNDED'])
-    .withMessage('paymentStatus must be one of PAID, FAILED, REFUNDED')
+    .isIn(['PAID', 'FAILED',])
+    .withMessage('paymentStatus must be one of PAID, FAILED')
 ];

@@ -1,4 +1,4 @@
-// src/pages/StudentBookingProgressDetail.jsx
+// src/pages/MyCourseProgress.jsx
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBookingById, api } from '../lib/api';
@@ -8,7 +8,7 @@ import { format, parseISO, } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';
 import CourseReviewForm from '../components/CourseReviewForm';
 
-export default function StudentBookingProgressDetail() {
+export default function MyCourseProgress() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);

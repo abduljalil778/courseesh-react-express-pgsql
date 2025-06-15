@@ -27,18 +27,19 @@ import SettingsPage from './pages/SettingsPage';
 // Halaman Teacher
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherBookingRequests from './pages/TeacherBookingRequests';
-import TeacherScheduleAndReports from './pages/TeacherScheduleAndReport';
-import TeacherBookingManageDetail from './pages/TeacherBookingManageDetail';
+import TeacherScheduleDetails from './pages/TeacherScheduleDetails';
 import MyPayouts from './pages/MyPayouts';
+import TeacherSchedules from './pages/TeacherSchedules';
 
 // Halaman Student
 import StudentDashboard from './pages/StudentDashboard';
-import StudentCourseProgress from './pages/StudentCourseProgress';
-import StudentBookingProgressDetail from './pages/StudentBookingProgressDetail';
+import MyCoursesList from './pages/MyCoursesList';
+import MyCourseProgress from './pages/MyCourseProgress';
 import MyBookings from './pages/MyBookings';
-import StudentBooking from './pages/StudentBooking';
 import CourseDetail from './pages/CourseDetail';
 import PaymentPage from './pages/PaymentPage';
+import Checkout from './pages/Checkout';
+
 
 
 
@@ -109,8 +110,8 @@ export default function App() {
             >
               <Route index element={<TeacherDashboard />} />
               <Route path="bookings" element={<TeacherBookingRequests />} />
-              <Route path="schedules" element={<TeacherScheduleAndReports />} />
-              <Route path="schedules/:bookingId" element={<TeacherBookingManageDetail />} />
+              <Route path="schedules" element={<TeacherSchedules />} />
+              <Route path="schedules/:bookingId" element={<TeacherScheduleDetails />} />
               <Route path="my-payouts" element={<MyPayouts />} />
               <Route path="profile" element={<UserProfilePage />} />
             </Route>
@@ -125,11 +126,11 @@ export default function App() {
               }
             >
               <Route index element={<StudentDashboard />} />
-              <Route path="my-courses" element={<StudentCourseProgress />} />
-              <Route path="my-courses/:bookingId" element={<StudentBookingProgressDetail />} />
+              <Route path="my-courses" element={<MyCoursesList />} />
+              <Route path="my-courses/:bookingId" element={<MyCourseProgress />} />
               <Route path="my-bookings" element={<MyBookings />} />
-              <Route path="book/:courseId" element={<StudentBooking />} />
               <Route path="courses/:courseId" element={<CourseDetail />} />
+              <Route path="cart/checkout/:courseId" element={<Checkout />} />
               <Route path="bookings/:bookingId/pay" element={<PaymentPage />} />
               <Route path="profile" element={<UserProfilePage />} />
             </Route>

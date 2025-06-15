@@ -159,17 +159,14 @@ model PaymentOption {
 
 enum PayoutStatus {
   PENDING_PAYMENT
-  PROCESSING
   PAID
   FAILED
-  CANCELLED
 }
 
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
-  REFUNDED
 }
 
 enum Role {
@@ -210,7 +207,4 @@ enum Curriculum {
 enum SessionStatus {
   SCHEDULED
   COMPLETED
-  CANCELLED_TEACHER
-  CANCELLED_STUDENT
-  STUDENT_ABSENT
 }

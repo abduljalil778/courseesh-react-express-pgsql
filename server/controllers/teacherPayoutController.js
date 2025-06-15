@@ -9,7 +9,7 @@ export const getAllTeacherPayouts = async (req, res, next) => {
   try {
     const { status, teacherId } = req.query;
     const where = {};
-    if (status) where.status = status; // Perlu validasi enum status
+    if (status) where.status = status;
     if (teacherId) where.teacherId = teacherId;
 
     const payouts = await prisma.teacherPayout.findMany({
@@ -28,7 +28,7 @@ export const getAllTeacherPayouts = async (req, res, next) => {
         booking: {
           select: {
             id: true,
-            course: { select: { title: true } },
+            course: { select: { title: true, imageUrl: true, numberOfSessions: true } },
             student: { select: { name: true } },
           },
         },
@@ -56,6 +56,7 @@ export const getTeacherPayoutById = async (req, res, next) => {
                   bankName: true,
                   bankAccountHolder: true,
                   bankAccountNumber: true,
+                  avatarUrl: true,
                 },
               },
               booking: {

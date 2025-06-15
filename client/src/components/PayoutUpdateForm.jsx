@@ -7,7 +7,7 @@ import Spinner from './Spinner';
 import { format, parseISO } from 'date-fns';
 
 // Definisikan enum PayoutStatus di frontend agar konsisten atau impor jika memungkinkan (biasanya tidak dari backend langsung)
-const PAYOUT_STATUSES = ['PENDING_PAYMENT', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED']; 
+const PAYOUT_STATUSES = ['PENDING_PAYMENT', 'PAID', 'FAILED']; 
 
 const payoutUpdateSchema = z.object({
   status: z.enum(PAYOUT_STATUSES, { required_error: "Status is required" }),

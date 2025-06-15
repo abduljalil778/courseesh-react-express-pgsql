@@ -1,12 +1,11 @@
-// src/pages/StudentCourseProgress.jsx
-// NAMA FILE SEMENTARA TETAP, TAPI FUNGSINYA MENJADI "MY COURSES LIST"
+// src/pages/MyCourseList.jsx
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
 import Spinner from '../components/Spinner';
 
-export default function StudentCourseProgress() {
+export default function MyCoursesList() {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,7 +70,7 @@ export default function StudentCourseProgress() {
         </svg>
         <h3 className="mt-2 text-lg font-medium text-gray-900">You haven't enrolled in any courses yet.</h3>
         <button 
-            onClick={() => navigate('/student/dashboard')}
+            onClick={() => navigate('/student')}
             className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
         >
             Browse Courses

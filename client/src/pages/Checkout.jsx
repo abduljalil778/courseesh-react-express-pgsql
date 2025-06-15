@@ -1,4 +1,4 @@
-// src/pages/StudentBooking.jsx
+// src/pages/Checkout.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCourseById, createBooking } from '../lib/api';
@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 
-export default function StudentBooking() {
+export default function Checkout() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user: loggedInUser, loading: authLoading } = useAuth();
@@ -102,9 +102,9 @@ export default function StudentBooking() {
         ...(form.paymentMethod === 'INSTALLMENT' ? { installments: form.installments } : {}),
       };
       
-      // PERBAIKAN: Simpan hasil pemanggilan API ke variabel 'response'
+
       const response = await createBooking(bookingPayload);
-      const newBookingId = response.data.id; // Ambil ID dari respons
+      const newBookingId = response.data.id;
 
       Swal.fire({
         icon: 'success',
@@ -113,7 +113,6 @@ export default function StudentBooking() {
         timer: 2500,
         showConfirmButton: false,
         willClose: () => {
-          // Arahkan ke halaman instruksi pembayaran yang benar
           navigate(`/student/bookings/${newBookingId}/pay`); 
         }
       });

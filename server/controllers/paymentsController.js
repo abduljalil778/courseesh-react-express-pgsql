@@ -132,8 +132,6 @@ export const updatePayment = async (req, res, next) => {
   }
   if (amount !== undefined) dataToUpdate.amount = parseFloat(amount);
   if (dueDate !== undefined) dataToUpdate.dueDate = dueDate ? new Date(dueDate) : null;
-  // if (paidAt !== undefined) dataToUpdate.paidAt = paidAt ? new Date(paidAt) : null;
-  // Anda bisa menambahkan field lain yang relevan untuk diupdate di sini
 
   if (Object.keys(dataToUpdate).length === 0) {
     return next(new AppError('No fields provided for update', 400));

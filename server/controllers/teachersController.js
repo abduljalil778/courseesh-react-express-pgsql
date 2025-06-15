@@ -14,9 +14,18 @@ export const getMyPayouts = async (req, res, next) => {
         booking: {
           select: {
             id: true,
-            course: { select: { title: true } },
+            course: { select: { title: true, imageUrl: true, numberOfSessions: true } },
             student: { select: { name: true } },
             courseCompletionDate: true,
+            createdAt: true,
+            sessions: {
+              select: {
+                id: true,
+                sessionDate: true,
+                status: true,
+              },
+              orderBy: { sessionDate: 'asc' },
+            }
           },
         },
       },

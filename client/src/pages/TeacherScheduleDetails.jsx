@@ -14,7 +14,7 @@ import OverallBookingReportForm from '../components/OverallBookingReportForm';
 
 const SESSION_STATUS_COMPLETED = 'COMPLETED';
 
-export default function TeacherBookingManageDetail() {
+export default function TeacherScheduleDetails() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
 

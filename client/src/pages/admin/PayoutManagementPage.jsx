@@ -60,8 +60,7 @@ export default function PayoutManagementPage() {
     switch (status) {
       case 'PAID': return 'bg-green-100 text-green-800';
       case 'PENDING_PAYMENT': return 'bg-yellow-100 text-yellow-800';
-      case 'PROCESSING': return 'bg-blue-100 text-blue-800';
-      case 'FAILED': case 'CANCELLED': return 'bg-red-100 text-red-800';
+      case 'FAILED': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -118,7 +117,7 @@ export default function PayoutManagementPage() {
                             <div className="text-xs text-gray-500 font-mono">Booking: {payout.bookingId.substring(0,8)}...</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onClick={() => handleOpenModal(payout)} className="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400" disabled={payout.status === 'PAID' || payout.status === 'CANCELLED'}>
+                            <button onClick={() => handleOpenModal(payout)} className="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400" disabled={payout.status === 'PAID'}>
                                 Manage
                             </button>
                         </td>

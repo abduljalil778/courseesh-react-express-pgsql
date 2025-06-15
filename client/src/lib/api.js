@@ -58,8 +58,10 @@ export const updateBooking = async (bookingId, bookingData) => {
 }
 
 // handle get all bookings
-export const getAllBookings = async () => {
-  return await api.get('/bookings')
+export const getAllBookings = async (searchTerm = '') => {
+  return await api.get('/bookings', {
+    params: { search: searchTerm }
+  });
 }
 
 // handle get booking by ID

@@ -54,7 +54,7 @@ export default function CourseManagementPage() {
   if (error) return <p className="text-red-500 p-4">{error}</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold text-gray-800">Course Management</h1>
       
       <div className="bg-white rounded-lg shadow-lg overflow-x-auto">

@@ -27,7 +27,6 @@ export default function PaymentStatusForm({ paymentId, currentStatus, onSubmit }
         <option value="PENDING">PENDING</option>
         <option value="PAID">PAID</option>
         <option value="FAILED">FAILED</option>
-        <option value="REFUNDED">REFUNDED</option>
       </select>
       {errors.paymentStatus && (
         <p className="text-red-600 text-sm mt-1">

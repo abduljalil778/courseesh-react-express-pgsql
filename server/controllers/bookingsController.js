@@ -1,6 +1,5 @@
 // server/controllers/bookingsController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus: PrismaPaymentStatusEnum } = pkg;
+import { PrismaClient, Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus } from '@prisma/client'
 const prisma = new PrismaClient();
 import AppError from '../utils/AppError.mjs'; 
 
@@ -9,6 +8,7 @@ import AppError from '../utils/AppError.mjs';
  */
 export const getAllBookings = async (req, res, next) => {
   try {
+    const {search} = req.query;
     let where = {};
     if (req.user.role === 'TEACHER') {
       where = { course: { teacherId: req.user.id } };
@@ -16,11 +16,19 @@ export const getAllBookings = async (req, res, next) => {
       where = { studentId: req.user.id };
     }
 
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: 'insensitive' } },
+        { student: { name: { contains: search, mode: 'insensitive' } } },
+        { course: { title: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
     const bookings = await prisma.booking.findMany({
       where,
       include: {
         student: {
-          select: { id: true, name: true, email: true, phone: true },
+          select: { id: true, name: true, email: true, phone: true, avatarUrl: true },
         },
         course: {
           select: {
@@ -30,7 +38,7 @@ export const getAllBookings = async (req, res, next) => {
             numberOfSessions: true,
             teacherId: true,
             teacher: {
-              select: { id: true, name: true, email: true },
+              select: { id: true, name: true, email: true, avatarUrl: true },
             },
           },
         },
@@ -48,7 +56,7 @@ export const getAllBookings = async (req, res, next) => {
           orderBy: { sessionDate: 'asc' },
         },
         payments: {
-          select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
+          select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true, proofOfPaymentUrl: true },
           orderBy: { installmentNumber: 'asc' },
         },
         review: true, 
@@ -79,10 +87,10 @@ export const submitOverallBookingReport = async (req, res, next) => { //
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { select: { teacherId: true, price: true, numberOfSessions: true } }, // Ambil numberOfSessions dari course
+        course: { select: { teacherId: true, price: true, numberOfSessions: true } }, 
         payments: { select: { status: true } },
-        sessions: { // Ambil semua sesi untuk validasi
-          select: { status: true, isUnlocked: true } // Ambil status dan isUnlocked dari setiap sesi
+        sessions: {
+          select: { status: true, isUnlocked: true }
         }, 
       },
     });
@@ -94,7 +102,6 @@ export const submitOverallBookingReport = async (req, res, next) => { //
       return next(new AppError('You are not authorized to submit an overall report for this booking', 403));
     }
 
-    // Cek apakah semua sesi sudah selesai
     const totalCourseSessions = booking.course.numberOfSessions;
     const completedSessionsCount = booking.sessions.filter(
       session => session.status === SessionStatus.COMPLETED && session.isUnlocked 
@@ -106,29 +113,24 @@ export const submitOverallBookingReport = async (req, res, next) => { //
     }
 
     const allSessionsHandled = booking.sessions.every(
-        // Definisi "ditangani": bisa COMPLETED, atau status akhir lainnya seperti CANCELLED_STUDENT, STUDENT_ABSENT
-        // Namun, untuk overall report, biasanya kita ingin semua sesi yang seharusnya terjadi sudah COMPLETED oleh guru.
         session => session.status === SessionStatus.COMPLETED
     );
 
     if (!allSessionsHandled) {
       return next(new AppError('All sessions must be marked as COMPLETED by the teacher before submitting an overall report.', 400));
     }
-    // --- AKHIR VALIDASI BARU ---
-
 
     const dataForBookingUpdate = {};
     if (overallTeacherReport !== undefined) dataForBookingUpdate.overallTeacherReport = overallTeacherReport;
     if (finalGrade !== undefined) dataForBookingUpdate.finalGrade = finalGrade;
     
-    // Status booking otomatis menjadi COMPLETED saat overall report disubmit jika semua sesi sudah COMPLETED.
     dataForBookingUpdate.bookingStatus = BookingStatus.COMPLETED;
-    if(!booking.courseCompletionDate) { // Hanya set jika belum ada
+    if(!booking.courseCompletionDate) {
         dataForBookingUpdate.courseCompletionDate = new Date();
     }
 
 
-    const allPaymentsPaid = booking.payments.every(p => p.status === PrismaPaymentStatusEnum.PAID);
+    const allPaymentsPaid = booking.payments.every(p => p.status === PayoutStatus.PAID);
 
     const result = await prisma.$transaction(async (tx) => {
       const updatedBookingResult = await tx.booking.update({
@@ -136,14 +138,12 @@ export const submitOverallBookingReport = async (req, res, next) => { //
         data: dataForBookingUpdate,
       });
 
-      // Logika pembuatan TeacherPayout tetap sama
       if (updatedBookingResult.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
         const existingPayout = await tx.teacherPayout.findUnique({
           where: { bookingId: booking.id },
         });
 
         if (!existingPayout) {
-          // ... (logika pembuatan payout seperti sebelumnya) ...
           let serviceFeePercentageString = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15';
           let serviceFeePercentage = parseFloat(serviceFeePercentageString);
           
@@ -170,8 +170,6 @@ export const submitOverallBookingReport = async (req, res, next) => { //
         }
       }
 
-      // Ambil kembali booking dengan semua detailnya untuk respons
-      // (Gunakan select eksplisit seperti yang sudah diperbaiki sebelumnya)
       return tx.booking.findUnique({
         where: { id: updatedBookingResult.id },
         select: { 
@@ -276,7 +274,6 @@ export const getBookingById = async (req, res, next) => {
       return next(new AppError(`Booking with ID ${bookingId} not found`, 404));
     }
 
-    // --- LOGIKA OTORISASI YANG DIPERBAIKI ---
     const isOwnerStudent = req.user.role === 'STUDENT' && booking.studentId === req.user.id;
     const isOwnerTeacher = req.user.role === 'TEACHER' && booking.course?.teacherId === req.user.id;
     const isAdmin = req.user.role === 'ADMIN';
@@ -285,7 +282,6 @@ export const getBookingById = async (req, res, next) => {
       return res.json(booking);
     }
     
-    // Jika tidak ada kondisi yang terpenuhi, baru lempar error 403
     return next(new AppError('You are not authorized to view this booking', 403));
 
   } catch (err) {
@@ -305,8 +301,8 @@ export const createBooking = async (req, res, next) => {
     studentPhone,
     address,
     sessionDates,
-    paymentMethod, // Ini adalah enum PaymentMethod
-    installments,  // Ini adalah jumlah cicilan (angka)
+    paymentMethod,
+    installments,
   } = req.body;
 
   const loggedInUserId = req.user.id;
@@ -329,21 +325,19 @@ export const createBooking = async (req, res, next) => {
     }
 
     const userDataToUpdate = {};
-    // Asumsi req.user sudah ada dan terisi dari middleware auth
     if (req.user) {
         if (studentFullName && studentFullName !== req.user.name) userDataToUpdate.name = studentFullName;
-        if (studentEmail && studentEmail !== req.user.email) userDataToUpdate.email = studentEmail; // Perlu penanganan khusus jika email ini sudah terdaftar
+        if (studentEmail && studentEmail !== req.user.email) userDataToUpdate.email = studentEmail;
         if (studentPhone !== undefined) userDataToUpdate.phone = studentPhone === '' ? null : studentPhone;
     }
 
 
     const newBookingWithDetails = await prisma.$transaction(async (tx) => {
-      if (Object.keys(userDataToUpdate).length > 0 && req.user) { // Cek juga req.user
+      if (Object.keys(userDataToUpdate).length > 0 && req.user) {
         try {
           await tx.user.update({ where: { id: loggedInUserId }, data: userDataToUpdate });
         } catch (userUpdateError) {
           if (userUpdateError instanceof Prisma.PrismaClientKnownRequestError && userUpdateError.code === 'P2002') {
-            // Menggunakan AppError untuk dilempar, bukan objek biasa
             throw new AppError('The provided email for student update is already in use.', 409);
           }
           throw userUpdateError;
@@ -370,7 +364,7 @@ export const createBooking = async (req, res, next) => {
           bookingId: newBooking.id,
           installmentNumber: 1,
           amount: course.price,
-          status: PrismaPaymentStatusEnum.PENDING, // Gunakan enum dari Prisma
+          status: PayoutStatus.PENDING,
         });
       } else if (paymentMethod === PaymentMethod.INSTALLMENT) {
         const numInstallments = Number(installments);
@@ -386,7 +380,7 @@ export const createBooking = async (req, res, next) => {
             bookingId: newBooking.id,
             installmentNumber: i,
             amount: currentInstallmentAmount,
-            status: PrismaPaymentStatusEnum.PENDING, // Gunakan enum dari Prisma
+            status: PaymentStatus.PENDING,
           });
           totalCalculated += installmentAmount;
         }
@@ -410,9 +404,8 @@ export const createBooking = async (req, res, next) => {
     res.status(201).json(newBookingWithDetails);
 
   } catch (err) {
-    // Cek apakah error adalah instance dari AppError
     if (err instanceof AppError) {
-        return next(err); // Teruskan AppError ke global error handler
+        return next(err);
     }
     // Untuk error yang dilempar sebagai objek dari transaksi
     if (err.statusCode && err.message && !(err instanceof AppError)) {
@@ -428,7 +421,7 @@ export const createBooking = async (req, res, next) => {
  */
 export const updateBooking = async (req, res, next) => { //
   const { id: bookingId } = req.params;
-  const { bookingStatus: newBookingStatus } = req.body; // Ganti nama variabel agar lebih jelas
+  const { bookingStatus: newBookingStatus } = req.body;
 
   if (!newBookingStatus || !Object.values(BookingStatus).includes(newBookingStatus)) {
     return next(new AppError(`Invalid booking status. Valid statuses are: ${Object.values(BookingStatus).join(', ')}`, 400));
@@ -439,7 +432,7 @@ export const updateBooking = async (req, res, next) => { //
       where: { id: bookingId },
       include: {
         course: { select: { teacherId: true } },
-        payments: { select: { status: true } } // Pastikan payments di-include
+        payments: { select: { status: true } }
       }
     });
 
@@ -449,7 +442,7 @@ export const updateBooking = async (req, res, next) => { //
 
     // Mencegah pembatalan jika sudah ada pembayaran PAID
     if (newBookingStatus === BookingStatus.CANCELLED) {
-      const hasPaidPayment = booking.payments.some(payment => payment.status === PrismaPaymentStatusEnum.PAID);
+      const hasPaidPayment = booking.payments.some(payment => payment.status === PaymentStatus.PAID);
       if (hasPaidPayment) {
         return next(new AppError('Cannot cancel booking because a payment has already been made.', 400));
       }
@@ -467,12 +460,10 @@ export const updateBooking = async (req, res, next) => { //
       return next(new AppError('You are not authorized to update this booking', 403));
     }
     
-    // Khusus untuk Teacher, mungkin hanya bisa CONFIRMED atau CANCELLED dari PENDING.
-    // Atau COMPLETED dari CONFIRMED (tapi ini biasanya via overall report).
     if (req.user.role === 'TEACHER' && booking.bookingStatus === BookingStatus.PENDING && ![BookingStatus.CONFIRMED, BookingStatus.CANCELLED].includes(newBookingStatus)) {
         return next(new AppError(`Teachers can only confirm or cancel a PENDING booking. Current status: ${booking.bookingStatus}`, 400));
     }
-    // Teacher tidak boleh mengubah status yang sudah COMPLETED atau CANCELLED olehnya sendiri.
+
     if (req.user.role === 'TEACHER' && (booking.bookingStatus === BookingStatus.COMPLETED || booking.bookingStatus === BookingStatus.CANCELLED)) {
         return next(new AppError(`Cannot change booking status from ${booking.bookingStatus}.`, 400));
     }
@@ -483,7 +474,7 @@ export const updateBooking = async (req, res, next) => { //
       data: { bookingStatus: newBookingStatus },
       include: { 
         student: { select: { id: true, name: true, email: true, phone: true } },
-        course: { select: { id: true, title: true, teacherId: true, teacher: {select: {name: true}} } }, // Sertakan teacherId dan teacher.name
+        course: { select: { id: true, title: true, teacherId: true, teacher: {select: {name: true}} } }, 
         payments: { select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true }},
         sessions: { 
             select: { id: true, sessionDate: true, status: true, teacherReport: true, studentAttendance: true, isUnlocked: true, sessionCompletedAt: true, updatedAt: true },
@@ -498,10 +489,8 @@ export const updateBooking = async (req, res, next) => { //
   } catch (err) {
     console.error(`updateBooking Error (ID: ${id}):`, err);
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      // Error "Record to update not found" dari Prisma
       return next(new AppError(`Booking with ID ${id} not found for update`, 404));
     }
-    // Untuk error lainnya
     next(new AppError(err.message || 'Could not update booking status', 500));
   }
 };
@@ -531,9 +520,6 @@ export const deleteBooking = async (req, res, next) => {
       return next(new AppError('Only PENDING bookings can be deleted by students', 403));
     }
 
-    // Prisma akan menghapus BookingSession dan Payment yang berelasi jika onDelete: Cascade diset di skema.
-    // Jika tidak, Anda perlu menghapusnya secara manual dalam transaksi.
-    // Asumsi onDelete: Cascade ada atau Anda akan menanganinya.
     await prisma.booking.delete({ where: { id } });
 
     return res.status(204).send();

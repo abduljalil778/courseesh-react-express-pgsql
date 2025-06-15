@@ -27,6 +27,7 @@ export const getAllUsers = async (req, res, next) => {
             phone: true,
             role: true,
             status: true,
+            avatarUrl: true,
             createdAt: true,
         },
         orderBy: {
@@ -54,6 +55,7 @@ export const getUserById = async (req, res, next) => {
         phone: true,
         role: true,
         status: true,
+        avatarUrl: true,
         createdAt: true
       }
     });
@@ -111,7 +113,7 @@ export const updateUser = async (req, res, next) => {
     if (email  != undefined) data.email  = email;
     if (role   != undefined) data.role   = role;
     if (status != undefined) data.status = status;
-    if (phone  != undefined) data.phone  = phone === '' ? null : phone; // simpan null jika tidak diisi
+    if (phone  != undefined) data.phone  = phone === '' ? null : phone;
 
     
     if (Object.keys(data).length === 0) {
@@ -135,11 +137,11 @@ export const updateUser = async (req, res, next) => {
     return res.json(updatedUser);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      if (err.code === 'P2002') { // Unique constraint (misal email)
+      if (err.code === 'P2002') {
         const field = err.meta?.target?.join(', ');
         return new AppError({ message: `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.` });
       }
-      if (err.code === 'P2025') { // Record to update not found
+      if (err.code === 'P2025') {
         return new AppError({ message: 'User not found' });
       }
     }

@@ -1,16 +1,18 @@
-// src/pages/MyPayouts.jsx
+// client/src/pages/MyPayouts.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { getMyPayoutsTeacher } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
-import PayoutDetailModal from '../components/PayoutDetailModal'; 
+import PayoutDetailModal from '../components/PayoutDetailModal';
+import { BanknotesIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
 
 export default function MyPayouts() {
   const [payouts, setPayouts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPayout, setSelectedPayout] = useState(null); 
+  const [selectedPayout, setSelectedPayout] = useState(null);
 
   const loadMyPayouts = useCallback(async () => {
     setIsLoading(true);
@@ -19,8 +21,7 @@ export default function MyPayouts() {
       const response = await getMyPayoutsTeacher();
       setPayouts(response.data || []);
     } catch (err) {
-      console.error('Failed to load my payouts:', err);
-      setError(err.response?.data?.message || 'Could not load your payouts. Please try again.');
+      setError(err.response?.data?.message || 'Could not load your payouts.');
     } finally {
       setIsLoading(false);
     }
@@ -34,29 +35,16 @@ export default function MyPayouts() {
     switch (status) {
       case 'PAID': return 'bg-green-100 text-green-800';
       case 'PENDING_PAYMENT': return 'bg-yellow-100 text-yellow-800';
-      case 'PROCESSING': return 'bg-blue-100 text-blue-800';
-      case 'FAILED':
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
+      case 'FAILED': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
-  if (error) return <div className="p-6 text-center text-red-500">{error} <button onClick={loadMyPayouts} className="text-blue-500 underline ml-2">Retry</button></div>;
-  if (payouts.length === 0) {
-    return (
-      <div className="container mx-auto p-4 md:p-6 lg:p-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">My Payouts</h1>
-        <div className="text-center py-10 bg-white shadow-md rounded-lg">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No Payouts Yet</h3>
-            <p className="mt-1 text-sm text-gray-500">You currently do not have any payout records.</p>
-        </div>
-      </div>
-    );
-  }
+  const placeholderImage = "/placeholder-course.jpg";
+
+  if (isLoading) return <div className="flex justify-center items-center h-screen"><Spinner size={60} /></div>;
+  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
+  if (payouts.length === 0) return <div className="p-6 text-center text-gray-500">You have no payouts yet.</div>;
 
   return (
     <>
@@ -64,58 +52,61 @@ export default function MyPayouts() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
           My Payouts
         </h1>
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Payout</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proof</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {payouts.map((payout) => (
-                <tr key={payout.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(parseISO(payout.createdAt), 'dd MMM yyyy')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{payout.booking?.course?.title || 'N/A'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                    {formatCurrencyIDR(payout.honorariumAmount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getPayoutStatusColor(payout.status)}`}>
-                      {payout.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {payout.adminProofOfPaymentUrl ? (
-                      <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${payout.adminProofOfPaymentUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+        
+        <div className="space-y-4">
+          {payouts.map((payout) => {
+            const courseImageUrl = payout.booking?.course?.imageUrl
+              ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${payout.booking.course.imageUrl}`
+              : placeholderImage;
+            
+            return (
+              <div key={payout.id} className="bg-white shadow-lg rounded-xl overflow-hidden">
+                <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <BanknotesIcon className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium text-gray-600">Payout</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-gray-500">{format(parseISO(payout.createdAt), 'dd MMM yyyy')}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 font-semibold rounded-full ${getPayoutStatusColor(payout.status)}`}>
+                    {payout.status.replace(/_/g, ' ')}
+                  </span>
+                </div>
+
+                <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                  <div className="md:col-span-2 flex items-center gap-4">
+                    <div className="w-20 h-20 bg-gray-200 rounded-md flex-shrink-0">
+                      <img src={courseImageUrl} alt={payout.booking?.course?.title} className="w-full h-full object-cover rounded-md" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-800">{payout.booking?.course?.title || 'N/A'}</h3>
+                      <p className="text-sm text-gray-500">{payout.booking?.course?.numberOfSessions || 0} Sessions</p>
+                    </div>
+                  </div>
+                  <div className="text-left md:text-right">
+                    <p className="text-sm text-gray-500">Total Payout</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrencyIDR(payout.honorariumAmount)}</p>
+                  </div>
+                </div>
+
+                <div className="px-5 py-3 bg-gray-50 flex items-center justify-end gap-3">
+                  <Button variant="outline" size="sm" onClick={() => setSelectedPayout(payout)}>
+                    View Payout Details
+                  </Button>
+                  {payout.adminProofOfPaymentUrl && (
+                    <Button asChild size="sm">
+                      <a href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${payout.adminProofOfPaymentUrl}`} target="_blank" rel="noopener noreferrer">
                         View Proof
                       </a>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={() => setSelectedPayout(payout)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+
       {selectedPayout && (
         <PayoutDetailModal
           payout={selectedPayout}

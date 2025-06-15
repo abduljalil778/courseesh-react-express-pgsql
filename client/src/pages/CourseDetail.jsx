@@ -106,7 +106,7 @@ export default function CourseDetail() {
         </div>
 
         <div className="text-center mb-10">
-          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg" onClick={() => navigate(`/student/book/${courseId}`)}>
+          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg" onClick={() => navigate(`/student/cart/checkout/${courseId}`)}>
             Book This Course Now
           </Button>
         </div>

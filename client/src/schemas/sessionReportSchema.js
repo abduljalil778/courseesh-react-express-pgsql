@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SESSION_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED_TEACHER', 'CANCELLED_STUDENT', 'STUDENT_ABSENT'];
+export const SESSION_STATUSES = ['SCHEDULED', 'COMPLETED',];
 
 export const sessionReportSchema = z.object({
   teacherReport: z.string().optional().or(z.literal('')),

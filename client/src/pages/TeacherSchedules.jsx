@@ -1,11 +1,11 @@
-// client/src/pages/TeacherScheduleAndReport.jsx
+// client/src/pages/TeacherSchedules.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { format, parseISO } from 'date-fns';
 
-export default function TeacherScheduleAndReport() {
+export default function TeacherSchedules() {
   const [activeBookings, setActiveBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);

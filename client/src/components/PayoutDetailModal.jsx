@@ -7,7 +7,6 @@ import { formatCurrencyIDR } from '../utils/formatCurrency';
 export default function PayoutDetailModal({ payout, onClose }) {
   if (!payout) return null;
 
-  // Hitung persentase untuk ditampilkan
   const feePercentage = (payout.serviceFeePercentage * 100).toFixed(0);
 
   return (
@@ -31,12 +30,32 @@ export default function PayoutDetailModal({ payout, onClose }) {
               <p className="font-semibold text-indigo-600">{payout.status.replace(/_/g, ' ')}</p>
             </div>
             <div>
-              <p className="text-gray-500">Billed to</p>
-              <p className="font-semibold text-gray-800">{payout.teacher?.name}</p>
+              <p className="text-gray-500">For Course</p>
+              <p className="font-semibold text-gray-800">{payout.booking?.course?.title}</p>
             </div>
             <div className="text-right">
-              <p className="text-gray-500">Reference</p>
-              <p className="font-semibold text-gray-800">{payout.payoutTransactionRef || '-'}</p>
+              <p className="text-gray-500">Student</p>
+              <p className="font-semibold text-gray-800">{payout.booking?.student?.name}</p>
+            </div>
+          </div>
+          
+          <div className="mt-8">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">Session Details</h3>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+              {payout.booking?.sessions?.length > 0 ? (
+                payout.booking.sessions.map((session, index) => (
+                  <div key={session.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded-md">
+                    <span className="text-gray-600">
+                      Session {index + 1}: {format(parseISO(session.sessionDate), 'EEEE, dd MMM yyyy')}
+                    </span>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${session.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
+                      {session.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No session details available.</p>
+              )}
             </div>
           </div>
 
@@ -57,7 +76,8 @@ export default function PayoutDetailModal({ payout, onClose }) {
             <span className="text-base font-semibold text-gray-800">Net Payout (Honorarium)</span>
             <span className="text-xl font-bold text-green-600">{formatCurrencyIDR(payout.honorariumAmount)}</span>
           </div>
-
+          
+          
         </div>
       </div>
     </div>
