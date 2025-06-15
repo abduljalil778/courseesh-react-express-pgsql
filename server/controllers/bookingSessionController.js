@@ -1,6 +1,5 @@
 // server/controllers/bookingSessionController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma, SessionStatus } = pkg; // Impor SessionStatus
+import { PrismaClient, Prisma, SessionStatus, PayoutStatus } from '@prisma/client';
 const prisma = new PrismaClient();
 import AppError from '../utils/AppError.mjs';
 
@@ -20,7 +19,7 @@ export const submitOrUpdateSessionReport = async (req, res, next) => {
         booking: {
           include: {
             course: {
-              select: { teacherId: true },
+              select: { teacherId: true , price: true,},
             },
           },
         },
@@ -57,12 +56,40 @@ export const submitOrUpdateSessionReport = async (req, res, next) => {
         return next(new AppError("No data provided for update.", 400));
     }
 
-    // dataToUpdate.updatedAt = new Date(); // Selalu update updatedAt
-
     const updatedBookingSession = await prisma.bookingSession.update({
       where: { id: sessionId },
       data: dataToUpdate,
     });
+
+    if (status === SessionStatus.COMPLETED) {
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.teacherPayout.findFirst({ where: { bookingSessionId: sessionId } });
+        if (!existing) {
+          let serviceFeePercentage = parseFloat(process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15');
+          const feeSetting = await tx.applicationSetting.findUnique({ where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' } });
+          if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
+            serviceFeePercentage = parseFloat(feeSetting.value);
+          }
+          const pricePerSession = bookingSession.booking.course.price;
+          const serviceFeeAmount = parseFloat((pricePerSession * serviceFeePercentage).toFixed(2));
+          const honorariumAmount = parseFloat((pricePerSession - serviceFeeAmount).toFixed(2));
+
+          await tx.teacherPayout.create({
+            data: {
+              bookingId: bookingSession.bookingId,
+              bookingSessionId: sessionId,
+              teacherId: bookingSession.booking.course.teacherId,
+              coursePriceAtBooking: pricePerSession,
+              serviceFeePercentage,
+              serviceFeeAmount,
+              honorariumAmount,
+              status: PayoutStatus.PENDING_PAYMENT,
+              
+            },
+          });
+        }
+      });
+    }
 
     res.json(updatedBookingSession);
   } catch (err) {
@@ -105,24 +132,14 @@ export const markStudentAttendance = async (req, res, next) => {
     }
 
     // Verifikasi apakah status sesi masih 'SCHEDULED'
-    // Anda mungkin ingin lebih fleksibel, misalnya jika guru belum input, siswa masih bisa input
     if (bookingSession.status !== SessionStatus.SCHEDULED) {
       return next(new AppError(`Attendance can only be marked for scheduled sessions. Current status: ${bookingSession.status}`, 400));
     }
-    
-    // Jika guru sudah pernah mengisi laporan (yang mungkin termasuk studentAttendance),
-    // Anda mungkin tidak ingin siswa mengubahnya lagi, atau Anda bisa punya logika lain.
-    // Untuk saat ini, kita biarkan siswa bisa update jika status masih SCHEDULED.
-    // if (bookingSession.teacherReport !== null) {
-    //   return next(new AppError('Attendance cannot be changed after teacher has submitted a report for this session.', 403));
-    // }
-
 
     const updatedBookingSession = await prisma.bookingSession.update({
       where: { id: sessionId },
       data: {
         studentAttendance: attended,
-        // Anda bisa menambahkan field lain seperti studentAttendanceMarkedAt: new Date() jika perlu
       },
     });
 

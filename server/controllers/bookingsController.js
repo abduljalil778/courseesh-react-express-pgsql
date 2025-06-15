@@ -59,7 +59,7 @@ export const getAllBookings = async (req, res, next) => {
           orderBy: { installmentNumber: 'asc' },
         },
         review: true, 
-        teacherPayout: true 
+        teacherPayouts: true 
       },
       orderBy: {
         createdAt: 'desc',
@@ -137,37 +137,37 @@ export const submitOverallBookingReport = async (req, res, next) => { //
         data: dataForBookingUpdate,
       });
 
-      if (updatedBookingResult.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
-        const existingPayout = await tx.teacherPayout.findUnique({
-          where: { bookingId: booking.id },
-        });
+      // if (updatedBookingResult.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
+      //   const existingPayout = await tx.teacherPayout.findUnique({
+      //     where: { bookingId: booking.id },
+      //   });
 
-        if (!existingPayout) {
-          let serviceFeePercentageString = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15';
-          let serviceFeePercentage = parseFloat(serviceFeePercentageString);
+      //   if (!existingPayout) {
+      //     let serviceFeePercentageString = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15';
+      //     let serviceFeePercentage = parseFloat(serviceFeePercentageString);
           
-          const feeSetting = await tx.applicationSetting.findUnique({ where: { key: "DEFAULT_SERVICE_FEE_PERCENTAGE" } });
-          if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
-            serviceFeePercentage = parseFloat(feeSetting.value);
-          }
+      //     const feeSetting = await tx.applicationSetting.findUnique({ where: { key: "DEFAULT_SERVICE_FEE_PERCENTAGE" } });
+      //     if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
+      //       serviceFeePercentage = parseFloat(feeSetting.value);
+      //     }
 
-          const coursePrice = booking.course.price * booking.sessions.length;
-          const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
-          const honorariumAmount = parseFloat((coursePrice - serviceFeeAmount).toFixed(2));
+      //     const coursePrice = booking.course.price * booking.sessions.length;
+      //     const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
+      //     const honorariumAmount = parseFloat((coursePrice - serviceFeeAmount).toFixed(2));
 
-          await tx.teacherPayout.create({
-            data: {
-              bookingId: booking.id,
-              teacherId: booking.course.teacherId,
-              coursePriceAtBooking: coursePrice,
-              serviceFeePercentage,
-              serviceFeeAmount,
-              honorariumAmount,
-              status: PayoutStatus.PENDING_PAYMENT,
-            },
-          });
-        }
-      }
+      //     await tx.teacherPayout.create({
+      //       data: {
+      //         bookingId: booking.id,
+      //         teacherId: booking.course.teacherId,
+      //         coursePriceAtBooking: coursePrice,
+      //         serviceFeePercentage,
+      //         serviceFeeAmount,
+      //         honorariumAmount,
+      //         status: PayoutStatus.PENDING_PAYMENT,
+      //       },
+      //     });
+      //   }
+      // }
 
       return tx.booking.findUnique({
         where: { id: updatedBookingResult.id },
@@ -185,7 +185,7 @@ export const submitOverallBookingReport = async (req, res, next) => { //
             select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true },
             orderBy: { installmentNumber: 'asc' } 
           },
-          teacherPayout: true,
+          teacherPayouts: true,
           review: true, 
         },
       });

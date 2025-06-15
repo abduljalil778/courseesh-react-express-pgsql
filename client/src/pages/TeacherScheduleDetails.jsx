@@ -75,7 +75,6 @@ export default function TeacherScheduleDetails() {
   const handleSessionReportSubmit = async (sessionId, data) => {
     setIsSubmittingReport(true);
     try {
-      // API function sekarang bertanggung jawab membuat FormData
       await submitOrUpdateSessionReport(sessionId, data); 
       await Swal.fire('Success', 'Session report saved!', 'success');
       closeSessionReportModal();

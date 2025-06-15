@@ -2,7 +2,6 @@
 import { body, param } from 'express-validator';
 
 const ALLOWED_CLASS_LEVELS = ['SD', 'SMP', 'SMA', 'UTBK'];
-const ALLOWED_SESSIONS_VALUES = [6, 12, 24];
 
 export const createCourseValidator = [
   body('title').trim().notEmpty().withMessage('title is required'),

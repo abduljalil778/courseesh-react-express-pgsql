@@ -91,7 +91,6 @@ export default function PayoutManagementPage() {
                             <div className="text-sm font-medium text-gray-900">{payout.teacher?.name}</div>
                             <div className="text-sm text-gray-500">{payout.teacher?.email}</div>
                         </td>
-                        {/* --- KOLOM BARU UNTUK INFO PAYOUT --- */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           {payout.teacher?.bankAccountHolder ? (
                             <div>
@@ -103,7 +102,6 @@ export default function PayoutManagementPage() {
                             <span className="text-xs text-gray-400 italic">Not Set</span>
                           )}
                         </td>
-                        {/* ------------------------------------ */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
                             {formatCurrencyIDR(payout.honorariumAmount)}
                         </td>
@@ -114,6 +112,9 @@ export default function PayoutManagementPage() {
                         </td>
                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-800">{payout.booking?.course?.title}</div>
+                            {payout.bookingSession && (
+                              <div className="text-xs text-gray-500">Session: {format(parseISO(payout.bookingSession.sessionDate), 'dd MMM yyyy')}</div>
+                            )}
                             <div className="text-xs text-gray-500 font-mono">Booking: {payout.bookingId.substring(0,8)}...</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

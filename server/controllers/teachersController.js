@@ -1,6 +1,5 @@
 // server/controllers/teachersController.js
-import pkg from '@prisma/client';
-const {Prisma, PrismaClient, PayoutStatus} = pkg
+import {Prisma, PrismaClient, PayoutStatus} from '@prisma/client'
 const prisma = new PrismaClient()
 import AppError from '../utils/AppError.mjs';
 
@@ -28,6 +27,12 @@ export const getMyPayouts = async (req, res, next) => {
             }
           },
         },
+        bookingSession: {
+          select: {
+            id: true,
+            sessionDate: true,
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });

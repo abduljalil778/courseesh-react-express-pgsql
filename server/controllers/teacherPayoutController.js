@@ -1,6 +1,5 @@
 // server/controllers/teacherPayoutController.js
-import pkg from '@prisma/client';
-const {PrismaClient, Prisma, PayoutStatus } =pkg
+import {PrismaClient, Prisma, PayoutStatus } from '@prisma/client'
 import AppError from '../utils/AppError.mjs';
 const prisma = new PrismaClient()
 
@@ -32,6 +31,12 @@ export const getAllTeacherPayouts = async (req, res, next) => {
             student: { select: { name: true } },
           },
         },
+        bookingSession: {
+          select: {
+            id: true,
+            sessionDate: true,
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -66,6 +71,12 @@ export const getTeacherPayoutById = async (req, res, next) => {
                   student: { select: { name: true } },
                 },
               },
+              bookingSession: {
+                select: {
+                  id: true,
+                  sessionDate: true,
+                }
+              }
             },
         });
         if (!payout) { // Pengecekan setelah query
@@ -112,6 +123,12 @@ export const updateTeacherPayout = async (req, res, next) => {
                 student: { select: { name: true } }
             } 
         },
+        bookingSession: {
+          select: {
+            id: true,
+            sessionDate: true,
+          }
+        }
       }
     });
     res.json(updatedPayout);

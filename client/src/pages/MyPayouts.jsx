@@ -80,7 +80,9 @@ export default function MyPayouts() {
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-gray-800">{payout.booking?.course?.title || 'N/A'}</h3>
-                      <p className="text-sm text-gray-500">{payout.booking?.sessions?.length || 0} Sessions</p>
+                      {payout.bookingSession && (
+                        <p className="text-sm text-gray-500">Session on {format(parseISO(payout.bookingSession.sessionDate), 'dd MMM yyyy')}</p>
+                      )}
                     </div>
                   </div>
                   <div className="text-left md:text-right">

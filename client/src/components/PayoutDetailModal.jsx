@@ -41,18 +41,16 @@ export default function PayoutDetailModal({ payout, onClose }) {
           
           <div className="mt-8">
             <h3 className="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">Session Details</h3>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-              {payout.booking?.sessions?.length > 0 ? (
-                payout.booking.sessions.map((session, index) => (
-                  <div key={session.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded-md">
-                    <span className="text-gray-600">
-                      Session {index + 1}: {format(parseISO(session.sessionDate), 'EEEE, dd MMM yyyy')}
-                    </span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${session.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
-                      {session.status}
-                    </span>
-                  </div>
-                ))
+            <div className="space-y-2">
+              {payout.bookingSession ? (
+                <div className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded-md">
+                  <span className="text-gray-600">
+                    {format(parseISO(payout.bookingSession.sessionDate), 'EEEE, dd MMM yyyy')}
+                  </span>
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    COMPLETED
+                  </span>
+                </div>
               ) : (
                 <p className="text-sm text-gray-500">No session details available.</p>
               )}
