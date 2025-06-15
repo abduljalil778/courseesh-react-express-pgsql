@@ -35,19 +35,20 @@ model User {
 }
 
 model Course {
-  id               String         @id @default(uuid())
+  id               String          @id @default(uuid())
   title            String
   description      String
   price            Float
   imageUrl         String?
   numberOfSessions Int?
+  category         SubjectCategory @default(UMUM)
   classLevels      ClassLevel[] // Array untuk mendukung beberapa kelas
   curriculum       Curriculum? // null for UTBK
-  teacher          User           @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacher          User            @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId        String
-  bookings         Booking[]      @relation("CourseBookings")
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  bookings         Booking[]       @relation("CourseBookings")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   reviews          CourseReview[]
 }
 
@@ -210,4 +211,20 @@ enum Curriculum {
 enum SessionStatus {
   SCHEDULED
   COMPLETED
+}
+
+enum SubjectCategory {
+  MTK
+  BAHASA_INGGRIS
+  BAHASA_INDONESIA
+  FISIKA
+  KIMIA
+  BIOLOGI
+  SOSIOLOGI
+  EKONOMI
+  GEOGRAFI
+  IPAS
+  IPA
+  IPS
+  UMUM
 }

@@ -3,7 +3,7 @@ import React, { useEffect, useState, } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CLASS_LEVELS, CURRICULA } from '../config';
+import { CLASS_LEVELS, CURRICULA, SUBJECT_CATEGORIES } from '../config';
 import Spinner from './Spinner';
 import Swal from 'sweetalert2';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ const courseSchema = z.object({
   price: z.preprocess((val) => Number(val), z.number().min(0, 'Price must be non-negative')),
   classLevels: z.array(z.string()).min(1, { message: 'At least one class level is required.' }),
   curriculum: z.string().optional().default(''),
+  category: z.string().min(1, 'Category is required'),
 });
 
 export default function CourseForm({
@@ -41,13 +42,13 @@ export default function CourseForm({
     resolver: zodResolver(courseSchema),
     defaultValues: initialData || {
       title: '', description: '', price: 0,
-      classLevels: [], curriculum: ''
+      classLevels: [], curriculum: '', category: 'UMUM'
     },
   });
 
   useEffect(() => {
     if (initialData) {
-      reset(initialData);
+      reset({ category: 'UMUM', ...initialData });
       setPreviewUrl(initialData.imageUrl || null);
       setThumbnailFile(null);
     }
@@ -97,7 +98,7 @@ export default function CourseForm({
   const handleCancel = () => {
     reset(initialData || {
       title: '', description: '', price: 0,
-      classLevels: [], curriculum: ''
+      classLevels: [], curriculum: '', category: 'UMUM'
     });
     setThumbnailFile(null);
     setPreviewUrl(initialData?.imageUrl || null);
@@ -154,6 +155,19 @@ export default function CourseForm({
           {CURRICULA.map(curr => (<option key={curr} value={curr}>{curr}</option>))}
         </select>
         {errors.curriculum && <p className="text-sm text-red-500 mt-1">{errors.curriculum.message}</p>}
+      </div>
+      <div>
+        <Label htmlFor="category">Category *</Label>
+        <select
+          id="category"
+          {...register('category')}
+          className="w-full h-10 border border-input bg-background px-3 py-2 text-sm rounded-md"
+        >
+          {SUBJECT_CATEGORIES.map(cat => (
+            <option key={cat.value} value={cat.value}>{cat.label}</option>
+          ))}
+        </select>
+        {errors.category && <p className="text-sm text-red-500 mt-1">{errors.category.message}</p>}
       </div>
       <div>
         <Label htmlFor="thumbnailFile">Course Thumbnail</Label>

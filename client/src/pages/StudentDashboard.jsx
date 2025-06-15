@@ -4,11 +4,13 @@ import { getAllCourses } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import CourseCard from '../components/CourseCard'; 
+import { SUBJECT_CATEGORIES } from '@/config';
 
 export default function StudentDashboard() {
   const [allCourses, setAllCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const { searchTerm, filterClass, clearFilters } = useCourseFilterStore();
 
@@ -40,10 +42,11 @@ export default function StudentDashboard() {
       const titleMatch = c.title.toLowerCase().includes(searchTermLower);
       const descriptionMatch = c.description.toLowerCase().includes(searchTermLower);
       const classLevelMatch = filterClass ? c.classLevels.includes(filterClass) : true;
+      const categoryMatch = selectedCategory ? c.category === selectedCategory : true;
 
-      return (searchTerm ? titleMatch || descriptionMatch : true) && classLevelMatch;
+      return (searchTerm ? titleMatch || descriptionMatch : true) && classLevelMatch && categoryMatch;
     });
-  }, [allCourses, searchTerm, filterClass]);
+  }, [allCourses, searchTerm, filterClass, selectedCategory]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
@@ -51,6 +54,18 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="flex overflow-x-auto space-x-4 pb-2">
+        {SUBJECT_CATEGORIES.map(cat => (
+          <button
+            key={cat.value}
+            onClick={() => setSelectedCategory(cat.value === selectedCategory ? '' : cat.value)}
+            className={`flex flex-col items-center px-3 py-2 rounded-md border ${selectedCategory === cat.value ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}
+          >
+            <span className="text-2xl">{cat.icon}</span>
+            <span className="text-xs mt-1 whitespace-nowrap">{cat.label}</span>
+          </button>
+        ))}
+      </div>
       {error && <div className="p-4 text-center text-red-700 bg-red-100 rounded-md"><p>{error}</p></div>}
       
       {!isLoading && filteredCourses.length === 0 ? (

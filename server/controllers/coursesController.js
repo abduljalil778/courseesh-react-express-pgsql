@@ -8,8 +8,13 @@ const prisma = new PrismaClient();
 export const getAllCourses = async (req, res, next) => {
   try {
     const where = {};
+    const { category } = req.query;
     if (req.user?.role === 'TEACHER') {
       where.teacherId = req.user.id;
+    }
+
+    if (category) {
+      where.category = category;
     }
 
     const courses = await prisma.course.findMany({
@@ -22,6 +27,7 @@ export const getAllCourses = async (req, res, next) => {
         // numberOfSessions: true,
         classLevels: true,
         curriculum: true,
+        category: true,
         imageUrl: true,
         createdAt: true,
         teacher: {
@@ -74,7 +80,8 @@ export const getCourseById = async (req, res, next) => {
         id: true, title: true, description: true, price: true,
         curriculum: true, classLevels: true, imageUrl: true,
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
-        reviews: { select: { rating: true } } 
+        reviews: { select: { rating: true } },
+        category: true,
       }
     });
     
@@ -101,7 +108,7 @@ export const getCourseById = async (req, res, next) => {
 export const createCourse = async (req, res, next) => {
 
   try {
-    const { title, description, price, classLevels, curriculum } = req.body;
+    const { title, description, price, classLevels, curriculum, category } = req.body;
 
     if (!title || !price || !classLevels) {
       return next(new AppError('Title, price, and class levels are required.', 400));
@@ -116,6 +123,7 @@ export const createCourse = async (req, res, next) => {
       // numberOfSessions: parseInt(numberOfSessions, 10),
       classLevels: parsedClassLevels,
       curriculum: curriculum || null,
+      category: category || 'UMUM',
       teacherId: req.user.id,
     };
     
@@ -141,7 +149,7 @@ export const updateCourse = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const { title, description, price, classLevels, curriculum } = req.body;
+    const { title, description, price, classLevels, curriculum, category } = req.body;
 
     const existing = await prisma.course.findUnique({ where: { id } });
     if (!existing) return next(new AppError('Course not found', 404));
@@ -156,6 +164,7 @@ export const updateCourse = async (req, res, next) => {
     // if (numberOfSessions) dataToUpdate.numberOfSessions = parseInt(numberOfSessions, 10);
     if (classLevels) dataToUpdate.classLevels = typeof classLevels === 'string' ? classLevels.split(',') : classLevels;
     if (curriculum !== undefined) dataToUpdate.curriculum = curriculum || null;
+    if (category !== undefined) dataToUpdate.category = category;
 
     if (req.file) {
       dataToUpdate.imageUrl = `/uploads/${req.file.filename}`;
