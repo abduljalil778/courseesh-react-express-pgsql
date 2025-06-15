@@ -89,11 +89,7 @@ export default function CourseDetail() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-8 p-4 bg-gray-50 rounded-lg">
             <div>
                 <p className="text-xs text-gray-500 uppercase">Price</p>
-                <p className="font-bold text-lg text-indigo-600">{formatCurrencyIDR(course.price)}</p>
-            </div>
-            <div>
-                <p className="text-xs text-gray-500 uppercase">Sessions</p>
-                <p className="font-bold text-lg">{course.numberOfSessions}</p>
+                <p className="font-bold text-lg text-indigo-600">{formatCurrencyIDR(course.price)}<span className="text-sm font-normal">/ session</span></p>
             </div>
             <div>
                 <p className="text-xs text-gray-500 uppercase">Class Level</p>

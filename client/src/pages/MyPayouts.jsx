@@ -80,7 +80,7 @@ export default function MyPayouts() {
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-gray-800">{payout.booking?.course?.title || 'N/A'}</h3>
-                      <p className="text-sm text-gray-500">{payout.booking?.course?.numberOfSessions || 0} Sessions</p>
+                      <p className="text-sm text-gray-500">{payout.booking?.sessions?.length || 0} Sessions</p>
                     </div>
                   </div>
                   <div className="text-left md:text-right">

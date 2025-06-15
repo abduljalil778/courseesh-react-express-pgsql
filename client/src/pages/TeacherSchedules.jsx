@@ -54,7 +54,7 @@ export default function TeacherSchedules() {
           <tbody className="bg-white divide-y divide-gray-200">
             {activeBookings.map(booking => {
               const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
-              const totalSessions = booking.course?.numberOfSessions || 0;
+              const totalSessions = booking.sessions?.length || 0;
 
               return (
                 <tr key={booking.id} className="hover:bg-gray-50">

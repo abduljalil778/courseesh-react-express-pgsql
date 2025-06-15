@@ -47,7 +47,7 @@ export default function PaymentPage() {
       return firstInstallment?.amount || 0;
     }
     // Jika pembayaran penuh, ambil harga total kursus
-    return booking.course?.price || 0;
+    return (booking.course?.price || 0) * (booking.sessions?.length || 0);
   }, [booking]);
 //   console.log('Booking data received on Payment Page:', JSON.stringify(booking, null, 2));
   if (isLoading) {

@@ -35,7 +35,6 @@ export const getAllBookings = async (req, res, next) => {
             id: true,
             title: true,
             price: true,
-            numberOfSessions: true,
             teacherId: true,
             teacher: {
               select: { id: true, name: true, email: true, avatarUrl: true },
@@ -87,7 +86,7 @@ export const submitOverallBookingReport = async (req, res, next) => { //
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { select: { teacherId: true, price: true, numberOfSessions: true } }, 
+        course: { select: { teacherId: true, price: true } }, 
         payments: { select: { status: true } },
         sessions: {
           select: { status: true, isUnlocked: true }
@@ -102,7 +101,7 @@ export const submitOverallBookingReport = async (req, res, next) => { //
       return next(new AppError('You are not authorized to submit an overall report for this booking', 403));
     }
 
-    const totalCourseSessions = booking.course.numberOfSessions;
+    const totalCourseSessions = booking.sessions.length;
     const completedSessionsCount = booking.sessions.filter(
       session => session.status === SessionStatus.COMPLETED && session.isUnlocked 
     ).length;
@@ -152,7 +151,7 @@ export const submitOverallBookingReport = async (req, res, next) => { //
             serviceFeePercentage = parseFloat(feeSetting.value);
           }
 
-          const coursePrice = booking.course.price;
+          const coursePrice = booking.course.price * booking.sessions.length;
           const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
           const honorariumAmount = parseFloat((coursePrice - serviceFeeAmount).toFixed(2));
 
@@ -225,7 +224,6 @@ export const getBookingById = async (req, res, next) => {
           select: { 
             teacherId: true,
             title: true, 
-            numberOfSessions: true,
             price: true,
             teacher: { 
               select: { 
@@ -309,14 +307,15 @@ export const createBooking = async (req, res, next) => {
   try {
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      select: { price: true, numberOfSessions: true, title: true },
+      select: { price: true, title: true },
     });
     if (!course) {
       return next(new AppError(`Course with ID ${courseId} not found`, 404));
     }
 
-    if (!Array.isArray(sessionDates) || sessionDates.length !== course.numberOfSessions) {
-      return next(new AppError(`You must pick exactly ${course.numberOfSessions} session date(s). Received ${sessionDates?.length || 0}.`, 400));
+    const allowedSessions = [6, 12, 24];
+    if (!Array.isArray(sessionDates) || !allowedSessions.includes(sessionDates.length)) {
+      return next(new AppError(`Number of sessions must be one of: ${allowedSessions.join(', ')}`, 400));
     }
     for (const dateStr of sessionDates) {
         if (isNaN(new Date(dateStr).getTime())) {
@@ -358,23 +357,24 @@ export const createBooking = async (req, res, next) => {
         },
       });
 
+      const totalPrice = course.price * sessionDates.length;
       const paymentRecordsToCreate = [];
       if (paymentMethod === PaymentMethod.FULL) {
         paymentRecordsToCreate.push({
           bookingId: newBooking.id,
           installmentNumber: 1,
-          amount: course.price,
+          amount: totalPrice,
           status: PayoutStatus.PENDING,
         });
       } else if (paymentMethod === PaymentMethod.INSTALLMENT) {
         const numInstallments = Number(installments);
-        const installmentAmount = parseFloat((course.price / numInstallments).toFixed(2));
+        const installmentAmount = parseFloat((totalPrice / numInstallments).toFixed(2));
         let totalCalculated = 0;
 
         for (let i = 1; i <= numInstallments; i++) {
           let currentInstallmentAmount = installmentAmount;
           if (i === numInstallments) {
-            currentInstallmentAmount = parseFloat((course.price - totalCalculated).toFixed(2));
+            currentInstallmentAmount = parseFloat((totalPrice - totalCalculated).toFixed(2));
           }
           paymentRecordsToCreate.push({
             bookingId: newBooking.id,

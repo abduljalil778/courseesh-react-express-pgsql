@@ -19,7 +19,7 @@ export const getAllCourses = async (req, res, next) => {
         title: true,
         description: true,
         price: true,
-        numberOfSessions: true,
+        // numberOfSessions: true,
         classLevels: true,
         curriculum: true,
         imageUrl: true,
@@ -72,7 +72,7 @@ export const getCourseById = async (req, res, next) => {
       where: { id },
       select: {
         id: true, title: true, description: true, price: true,
-        numberOfSessions: true, curriculum: true, classLevels: true, imageUrl: true,
+        curriculum: true, classLevels: true, imageUrl: true,
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
         reviews: { select: { rating: true } } 
       }
@@ -101,10 +101,10 @@ export const getCourseById = async (req, res, next) => {
 export const createCourse = async (req, res, next) => {
 
   try {
-    const { title, description, price, numberOfSessions, classLevels, curriculum } = req.body;
+    const { title, description, price, classLevels, curriculum } = req.body;
 
-    if (!title || !price || !numberOfSessions || !classLevels) {
-      return next(new AppError('Title, price, sessions, and class levels are required.', 400));
+    if (!title || !price || !classLevels) {
+      return next(new AppError('Title, price, and class levels are required.', 400));
     }
     
     const parsedClassLevels = typeof classLevels === 'string' ? classLevels.split(',') : [];
@@ -113,7 +113,7 @@ export const createCourse = async (req, res, next) => {
       title,
       description: description || '',
       price: parseFloat(price),
-      numberOfSessions: parseInt(numberOfSessions, 10),
+      // numberOfSessions: parseInt(numberOfSessions, 10),
       classLevels: parsedClassLevels,
       curriculum: curriculum || null,
       teacherId: req.user.id,
@@ -141,7 +141,7 @@ export const updateCourse = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const { title, description, price, numberOfSessions, classLevels, curriculum } = req.body;
+    const { title, description, price, classLevels, curriculum } = req.body;
 
     const existing = await prisma.course.findUnique({ where: { id } });
     if (!existing) return next(new AppError('Course not found', 404));
@@ -153,7 +153,7 @@ export const updateCourse = async (req, res, next) => {
     if (title) dataToUpdate.title = title;
     if (description !== undefined) dataToUpdate.description = description;
     if (price) dataToUpdate.price = parseFloat(price);
-    if (numberOfSessions) dataToUpdate.numberOfSessions = parseInt(numberOfSessions, 10);
+    // if (numberOfSessions) dataToUpdate.numberOfSessions = parseInt(numberOfSessions, 10);
     if (classLevels) dataToUpdate.classLevels = typeof classLevels === 'string' ? classLevels.split(',') : classLevels;
     if (curriculum !== undefined) dataToUpdate.curriculum = curriculum || null;
 

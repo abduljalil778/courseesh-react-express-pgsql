@@ -15,7 +15,6 @@ const courseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   price: z.preprocess((val) => Number(val), z.number().min(0, 'Price must be non-negative')),
-  numberOfSessions: z.preprocess((val) => Number(val), z.number().int().min(1, 'At least 1 session required')),
   classLevels: z.array(z.string()).min(1, { message: 'At least one class level is required.' }),
   curriculum: z.string().optional().default(''),
 });
@@ -42,7 +41,7 @@ export default function CourseForm({
     resolver: zodResolver(courseSchema),
     defaultValues: initialData || {
       title: '', description: '', price: 0,
-      numberOfSessions: 6, classLevels: [], curriculum: ''
+      classLevels: [], curriculum: ''
     },
   });
 
@@ -98,7 +97,7 @@ export default function CourseForm({
   const handleCancel = () => {
     reset(initialData || {
       title: '', description: '', price: 0,
-      numberOfSessions: 6, classLevels: [], curriculum: ''
+      classLevels: [], curriculum: ''
     });
     setThumbnailFile(null);
     setPreviewUrl(initialData?.imageUrl || null);
@@ -119,17 +118,11 @@ export default function CourseForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="price">Price *</Label>
+          <Label htmlFor="price">Price/Session *</Label>
           <Input id="price" type="number" step="any" {...register('price')} />
           {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
         </div>
-        <div>
-          <Label htmlFor="numberOfSessions">Sessions *</Label>
-          <select id="numberOfSessions" {...register('numberOfSessions')} className="w-full h-10 border border-input bg-background px-3 py-2 text-sm rounded-md">
-            {[6, 12, 24].map(val => <option key={val} value={val}>{val} sessions</option>)}
-          </select>
-          {errors.numberOfSessions && <p className="text-sm text-red-500 mt-1">{errors.numberOfSessions.message}</p>}
-        </div>
+        
       </div>
       <div>
         <Label className="mb-2 block">Class Levels *</Label>

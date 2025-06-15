@@ -28,7 +28,7 @@ export const getAllTeacherPayouts = async (req, res, next) => {
         booking: {
           select: {
             id: true,
-            course: { select: { title: true, imageUrl: true, numberOfSessions: true } },
+            course: { select: { title: true, imageUrl: true,} },
             student: { select: { name: true } },
           },
         },

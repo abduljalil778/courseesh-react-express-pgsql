@@ -52,8 +52,8 @@ export default function TeacherScheduleDetails() {
   }, [bookingId]); // Hapus fetchBookingDetails dari dependency array untuk menghindari loop tak terbatas
 
   const areAllSessionsCompleted = (bookingToCheck) => {
-    if (!bookingToCheck || !bookingToCheck.sessions || !bookingToCheck.course?.numberOfSessions) return false;
-    if (bookingToCheck.sessions.length < bookingToCheck.course.numberOfSessions) return false;
+    if (!bookingToCheck || !bookingToCheck.sessions) return false;
+    if (bookingToCheck.sessions.length === 0) return false;
     return bookingToCheck.sessions.every(session => session.status === SESSION_STATUS_COMPLETED);
   };
 
@@ -150,7 +150,7 @@ export default function TeacherScheduleDetails() {
         {/* Session List */}
         <div>
           <h2 className="text-xl font-semibold text-gray-800 mb-3">
-            Session Details & Reports: ({booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0} / {booking.course?.numberOfSessions || 0} sessions completed)
+            Session Details & Reports: ({booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0} / {booking.sessions.length} sessions completed)
           </h2>
           <ul className="space-y-4">
             {booking.sessions.map((session, index) => (

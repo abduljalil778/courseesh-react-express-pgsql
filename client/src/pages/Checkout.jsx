@@ -27,6 +27,9 @@ export default function Checkout() {
     paymentMethod: 'FULL',
     installments: 2,
   });
+
+  const SESSION_OPTIONS = [6, 12, 24];
+  const [sessionCount, setSessionCount] = useState(SESSION_OPTIONS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadCourseDetails = useCallback(async (id, currentUser) => {
@@ -38,7 +41,7 @@ export default function Checkout() {
       setCourse(courseData);
       setForm(f => ({
         ...f,
-        sessionDates: Array(courseData.numberOfSessions || 0).fill(''),
+        sessionDates: Array(sessionCount).fill(''),
         fullName: f.fullName || currentUser?.name || '',
         email: f.email || currentUser?.email || '',
         phone: f.phone || currentUser?.phone || '',
@@ -52,6 +55,10 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
+    setForm(f => ({ ...f, sessionDates: Array(sessionCount).fill('') }));
+  }, [sessionCount]);
+
+  useEffect(() => {
     if (courseId && !authLoading) {
       loadCourseDetails(courseId, loggedInUser);
     } else if (!courseId) {
@@ -62,6 +69,10 @@ export default function Checkout() {
 
   const handleChange = e => {
     const { name, value } = e.target;
+    if (name === 'sessionCount') {
+      setSessionCount(Number(value));
+      return;
+    }
     if (name === "paymentMethod") {
       setForm(f => ({ ...f, paymentMethod: value }));
       return;
@@ -129,7 +140,7 @@ export default function Checkout() {
 
   const paymentDetails = useMemo(() => {
     if (!course) return { total: 0, firstPayment: 0 };
-    const total = course.price;
+    const total = course.price * sessionCount;
     let firstPayment = total;
     if (form.paymentMethod === 'INSTALLMENT') {
       firstPayment = total / form.installments;
@@ -138,7 +149,7 @@ export default function Checkout() {
       total,
       firstPayment: Math.round(firstPayment)
     };
-  }, [course, form.paymentMethod, form.installments]);
+  }, [course, sessionCount, form.paymentMethod, form.installments]);
 
   if (authLoading || isLoadingCourse) {
     return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
@@ -186,7 +197,13 @@ export default function Checkout() {
             </div>
 
             <div className="p-6 bg-white rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">2. Schedule Your {course.numberOfSessions} Sessions *</h2>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">2. Schedule Your {sessionCount} Sessions *</h2>
+              <div className="mb-4">
+                <label htmlFor="sessionCount" className="block text-sm font-medium text-gray-700 mb-1">Number of Sessions</label>
+                <select id="sessionCount" name="sessionCount" value={sessionCount} onChange={handleChange} className="w-full border rounded-md p-2">
+                  {SESSION_OPTIONS.map(n => (<option key={n} value={n}>{n} sessions</option>))}
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {form.sessionDates.map((dateValue, i) => (
                     <div key={i}>
@@ -231,7 +248,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">{formatCurrencyIDR(course.price)}</span>
+                  <span className="font-medium">{formatCurrencyIDR(course.price)} x {sessionCount}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Payment Method:</span>

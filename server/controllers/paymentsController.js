@@ -1,4 +1,4 @@
-// server/controllers/paymentController.js
+// server/controllers/paymentsController.js
 import pkg from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
 const { PrismaClient, Prisma, PaymentStatus, BookingStatus, PaymentMethod } = pkg;
@@ -145,7 +145,6 @@ export const updatePayment = async (req, res, next) => {
         include: { // Include booking untuk mendapatkan detail kursus dan pembayaran lain
           booking: {
             include: {
-              course: { select: { numberOfSessions: true } },
               payments: { select: { status: true } },
               sessions: { select: { id: true, sessionDate: true }, orderBy: { sessionDate: 'asc' } }
             }
@@ -156,7 +155,7 @@ export const updatePayment = async (req, res, next) => {
       // Logika untuk membuka sesi jika pembayaran LUNAS dan metode adalah CICILAN
       if (payment.status === PaymentStatus.PAID && payment.booking.paymentMethod === PaymentMethod.INSTALLMENT) {
         const bookingDetails = payment.booking;
-        const totalCourseSessions = bookingDetails.course.numberOfSessions;
+        const totalCourseSessions = bookingDetails.sessions.length;
         const totalInstallmentsInBooking = bookingDetails.totalInstallments;
 
         if (totalCourseSessions > 0 && totalInstallmentsInBooking > 0) {

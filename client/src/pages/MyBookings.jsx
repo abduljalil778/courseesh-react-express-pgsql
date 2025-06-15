@@ -267,7 +267,7 @@ export default function MyBookings() {
                 <div className="mb-3">
                   <h4 className="text-sm font-semibold text-gray-700 mb-1.5">Payment Details:</h4>
                   <div className="text-sm text-gray-600">
-                    <p>Total: <span className="font-bold">{formatCurrencyIDR(booking.course?.price || 0)}</span></p>
+                    <p>Total: <span className="font-bold">{formatCurrencyIDR((booking.course?.price || 0) * (booking.sessions?.length || 0))}</span></p>
                     <p>Method: {booking.paymentMethod}</p>
                     {booking.paymentMethod === 'INSTALLMENT' && (
                       <p className="text-xs">

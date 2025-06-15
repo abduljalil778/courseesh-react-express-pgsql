@@ -86,7 +86,7 @@ export default function MyCoursesList() {
         {bookings.map(booking => {
           const displayStatus = getBookingDisplayStatus(booking);
           const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
-          const totalSessions = booking.course?.numberOfSessions || 0;
+          const totalSessions = booking.sessions?.length || 0;
 
           return (
             <div 

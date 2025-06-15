@@ -7,11 +7,6 @@ export const courseSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.number({ invalid_type_error: 'Price must be a number' })
     .min(0, 'Price must be a non-negative number'), // Izinkan harga 0
-  numberOfSessions: z.coerce
-    .number()
-    .refine(val => ALLOWED_SESSIONS.includes(val), {
-      message: `Number of sessions must be one of: ${ALLOWED_SESSIONS.join(', ')}`,
-    }),
   classLevels: z.array(z.enum(CLASS_LEVELS)) // Validasi sebagai array enum
     .min(1, 'At least one class level must be selected'),
   curriculum: z.enum(CURRICULA).optional().or(z.literal('')),
@@ -34,7 +29,6 @@ export const defaultValuesForCreate = {
   title: '',
   description: '',
   price: undefined,
-  numberOfSessions: ALLOWED_SESSIONS[0],
   classLevels: [], // Default ke array kosong
   curriculum: '',
 };

@@ -155,7 +155,7 @@ export default function PaymentManagementPage() {
                         {paymentStatus.text}
                       </span>
                       <span className="text-lg font-bold text-gray-700 w-32 text-right">
-                        {formatCurrencyIDR(booking.course?.price || 0)}
+                        {formatCurrencyIDR((booking.course?.price || 0) * (booking.sessions?.length || 0))}
                       </span>
                       <button className="p-1 rounded-full hover:bg-gray-200">
                         {isExpanded ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}

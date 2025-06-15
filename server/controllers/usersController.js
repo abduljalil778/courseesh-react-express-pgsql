@@ -44,25 +44,24 @@ export const getAllUsers = async (req, res, next) => {
 // GET /api/users/:id
 export const getUserById = async (req, res, next) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
     const user = await prisma.user.findUnique({
-      where: {
-        id: {id}
-      }, select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        status: true,
-        avatarUrl: true,
-        createdAt: true
-      }
+      where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          status: true,
+          avatarUrl: true,
+          createdAt: true
+        }
     });
     if (!user) {
-      return new AppError(({message: 'User not found'}))
+      return next(new AppError('User not found', 404));
     }
-    res.json(user)
+    res.json(user);
   } catch (err) {
     next(new AppError(err.message))
   }

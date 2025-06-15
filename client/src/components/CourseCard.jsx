@@ -47,10 +47,7 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
           <StarRating rating={course.averageRating} totalReviews={course.totalReviews} size={14} />
         </div>
         <p className="text-xl font-bold text-gray-900">
-          {formatCurrencyIDR(course.price)}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          {course.numberOfSessions} Sessions
+          {formatCurrencyIDR(course.price)} <span className="text-sm font-normal">/ session</span>
         </p>
 
         {/* Action Buttons */}
