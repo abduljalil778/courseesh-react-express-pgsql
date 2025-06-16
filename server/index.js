@@ -19,6 +19,7 @@ import paymentOptionsRoutes from './routes/paymentOptions.js';
 import dashboardRoutes from './routes/dashboard.js';
 import errorController from './controllers/errorController.js';
 import appSettingRoutes from './routes/appSettings.js';
+import availabilityRoutes from './routes/availability.js';
 
 dotenv.config();
 
@@ -76,6 +77,7 @@ app.use('/api', payoutRoutes);
 app.use('/api', paymentOptionsRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/settings', appSettingRoutes);
+app.use('/api/availability', availabilityRoutes);
 
 // === ERROR HANDLER ===
 app.use((req, res, next) => {

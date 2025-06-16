@@ -30,6 +30,7 @@ import TeacherBookingRequests from './pages/TeacherBookingRequests';
 import TeacherScheduleDetails from './pages/TeacherScheduleDetails';
 import MyPayouts from './pages/MyPayouts';
 import TeacherSchedules from './pages/TeacherSchedules';
+import TeacherAvailability from './pages/TeacherAvailability';
 
 // Halaman Student
 import StudentDashboard from './pages/StudentDashboard';
@@ -112,6 +113,7 @@ export default function App() {
               <Route path="bookings" element={<TeacherBookingRequests />} />
               <Route path="schedules" element={<TeacherSchedules />} />
               <Route path="schedules/:bookingId" element={<TeacherScheduleDetails />} />
+              <Route path="availability" element={<TeacherAvailability />} />
               <Route path="my-payouts" element={<MyPayouts />} />
               <Route path="profile" element={<UserProfilePage />} />
             </Route>

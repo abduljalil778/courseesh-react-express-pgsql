@@ -253,3 +253,16 @@ export const getAppSettings = async () => {
 export const updateAppSettings = async (settingsData) => {
   return await api.put('/admin/settings', settingsData);
 };
+
+// --- Teacher Availability ---
+export const getMyUnavailableDates = async () => {
+  return await api.get('/availability');
+};
+
+export const addUnavailableDate = async (date) => {
+  return await api.post('/availability', { date });
+};
+
+export const deleteUnavailableDate = async (id) => {
+  return await api.delete(`/availability/${id}`);
+};

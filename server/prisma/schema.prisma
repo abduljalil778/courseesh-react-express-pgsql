@@ -14,24 +14,25 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(uuid())
+  id                String                   @id @default(uuid())
   name              String
-  email             String          @unique
+  email             String                   @unique
   phone             String?
   password          String
   role              Role
-  status            Status          @default(ACTIVE)
+  status            Status                   @default(ACTIVE)
   avatarUrl         String?
   bankName          String?
   bankAccountHolder String?
   bankAccountNumber String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  courses           Course[]        @relation("TeacherCourses")
-  bookings          Booking[]       @relation("StudentBookings")
-  payoutsAsTeacher  TeacherPayout[] @relation("TeacherPayouts")
-  studentReviews    CourseReview[]  @relation("StudentReviews")
-  teacherFeedback   CourseReview[]  @relation("TeacherReviews")
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  courses           Course[]                 @relation("TeacherCourses")
+  bookings          Booking[]                @relation("StudentBookings")
+  payoutsAsTeacher  TeacherPayout[]          @relation("TeacherPayouts")
+  studentReviews    CourseReview[]           @relation("StudentReviews")
+  teacherFeedback   CourseReview[]           @relation("TeacherReviews")
+  unavailableDates  TeacherUnavailableDate[]
 }
 
 model Course {
@@ -122,6 +123,17 @@ model TeacherPayout {
   adminNotes             String?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
+}
+
+model TeacherUnavailableDate {
+  id        String   @id @default(uuid())
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teacherId, date])
 }
 
 model ApplicationSetting {

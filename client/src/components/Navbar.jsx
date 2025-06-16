@@ -59,6 +59,7 @@ export default function Navbar() {
         <>
           <NavLink to="/teacher/bookings" className={({ isActive }) => `${isActive ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-gray-900'} block md:inline-block px-3 py-2 rounded-md text-base font-medium md:text-sm`} onClick={() => setIsMobileMenuOpen(false)}>Booking Requests</NavLink>
           <NavLink to="/teacher/schedules" className={({ isActive }) => `${isActive ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-gray-900'} block md:inline-block px-3 py-2 rounded-md text-base font-medium md:text-sm`} onClick={() => setIsMobileMenuOpen(false)}>Schedules</NavLink>
+          <NavLink to="/teacher/availability" className={({ isActive }) => `${isActive ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-gray-900'} block md:inline-block px-3 py-2 rounded-md text-base font-medium md:text-sm`} onClick={() => setIsMobileMenuOpen(false)}>Availability</NavLink>
           <NavLink to="/teacher/my-payouts" className={({ isActive }) => `${isActive ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-gray-900'} block md:inline-block px-3 py-2 rounded-md text-base font-medium md:text-sm`} onClick={() => setIsMobileMenuOpen(false)}>My Payouts</NavLink>
         </>
       )}

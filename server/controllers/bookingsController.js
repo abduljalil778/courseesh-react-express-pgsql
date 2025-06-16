@@ -1,6 +1,7 @@
 // server/controllers/bookingsController.js
 import { PrismaClient, Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus } from '@prisma/client'
 const prisma = new PrismaClient();
+import { startOfDay, endOfDay } from 'date-fns'
 import AppError from '../utils/AppError.mjs'; 
 
 /**
@@ -343,7 +344,7 @@ export const createBooking = async (req, res, next) => {
   try {
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      select: { price: true, title: true },
+      select: { price: true, title: true , teacherId: true },
     });
     if (!course) {
       return next(new AppError(`Course with ID ${courseId} not found`, 404));
@@ -358,6 +359,30 @@ export const createBooking = async (req, res, next) => {
             return next(new AppError(`Invalid date format in sessionDates: ${dateStr}`, 400));
         }
     }
+
+    // Check teacher availability for each session date
+    for (const dateStr of sessionDates) {
+        const d = new Date(dateStr);
+        const conflictSession = await prisma.bookingSession.findFirst({
+            where: {
+                sessionDate: { gte: startOfDay(d), lt: endOfDay(d) },
+                booking: {
+                    course: { teacherId: course.teacherId },
+                    bookingStatus: { not: BookingStatus.CANCELLED },
+                },
+            },
+        });
+        if (conflictSession) {
+            return next(new AppError(`Teacher is already booked on ${dateStr}`, 400));
+        }
+        const conflictUnavailable = await prisma.teacherUnavailableDate.findFirst({
+            where: { teacherId: course.teacherId, date: { gte: startOfDay(d), lt: endOfDay(d) } },
+        });
+        if (conflictUnavailable) {
+            return next(new AppError(`Teacher is unavailable on ${dateStr}`, 400));
+        }
+    }
+
 
     const userDataToUpdate = {};
     if (req.user) {
