@@ -1,7 +1,5 @@
-// server/controllers/dashboardController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma, Role, BookingStatus } = pkg;
-const prisma = new PrismaClient();
+import { Prisma, Role, BookingStatus } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 import { subDays } from 'date-fns';
 

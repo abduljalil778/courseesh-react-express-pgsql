@@ -1,7 +1,6 @@
 // server/controllers/reviewsController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma, BookingStatus } = pkg;
-const prisma = new PrismaClient();
+import { Prisma, BookingStatus } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 
 /**

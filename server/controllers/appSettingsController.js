@@ -1,8 +1,5 @@
-// server/controllers/appSettingsController.js
-import { PrismaClient } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
-
-const prisma = new PrismaClient();
 
 // GET /api/admin/settings
 export const getAllSettings = async (req, res, next) => {

@@ -1,7 +1,6 @@
 // server/controllers/paymentOptionsController.js
-import pkg from '@prisma/client';
-const { PrismaClient, Prisma } = pkg;
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 
 // --- Untuk Publik (Siswa di Halaman Pembayaran) ---

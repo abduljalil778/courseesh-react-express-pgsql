@@ -1,8 +1,8 @@
 // server/controllers/usersController.js
-import {PrismaClient, Prisma} from '@prisma/client';
+import {Prisma} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/AppError.mjs';
-const prisma = new PrismaClient();
+import prisma from '../libs/prisma.js';
 
 // GET /api/users
 export const getAllUsers = async (req, res, next) => {
@@ -117,7 +117,12 @@ export const createUser = async (req, res, next) => {
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       const field = err.meta?.target?.join(', ');
-      return new AppError({ message: `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.` });
+      return next(
+        new AppError(
+          `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`,
+          400
+        )
+      );
     }
     next(new AppError(err.message));
   }
@@ -126,7 +131,7 @@ export const createUser = async (req, res, next) => {
 // PUT /api/users/:id
 export const updateUser = async (req, res, next) => {
   try {
-    const id = req.params;
+    const { id } = req.params;
     const { name, email, phone, password, role, status } = req.body;
     const data = {};
     if (name   != undefined) data.name   = name;
@@ -137,11 +142,11 @@ export const updateUser = async (req, res, next) => {
 
     
     if (Object.keys(data).length === 0) {
-      return new AppError({ message: 'No fields provided to update' })
+      return next(new AppError('No fields provided to update', 400));
     }
 
     const updatedUser = await prisma.user.update({
-      where: id,
+      where: { id },
       data: data,
       select: {
         id: true,
@@ -159,10 +164,15 @@ export const updateUser = async (req, res, next) => {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === 'P2002') {
         const field = err.meta?.target?.join(', ');
-        return new AppError({ message: `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.` });
+        return next(
+          new AppError(
+            `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`,
+            400
+          )
+        );
       }
       if (err.code === 'P2025') {
-        return new AppError({ message: 'User not found' });
+        return next(new AppError('User not found', 404));
       }
     }
     next(new AppError(err.message));
@@ -179,7 +189,7 @@ export const deleteUser = async (req, res, next) => {
     res.status(204).send();
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      return new AppError({ message: 'User not found' });
+      return next(new AppError('User not found', 404));
     }
     next(err);
   }

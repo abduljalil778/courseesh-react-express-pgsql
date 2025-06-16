@@ -1,6 +1,6 @@
 // server/controllers/bookingsController.js
-import { PrismaClient, Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus } from '@prisma/client'
-const prisma = new PrismaClient();
+import { Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, PaymentStatus } from '@prisma/client'
+import prisma from '../libs/prisma.js';
 import { startOfDay, endOfDay } from 'date-fns'
 import AppError from '../utils/AppError.mjs'; 
 

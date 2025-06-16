@@ -1,13 +1,11 @@
 // src/controllers/authController.js
 // import { PrismaClient } from '@prisma/client';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import prisma from '../libs/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const prisma = new PrismaClient();
 const JWT_EXPIRES_IN = '1d'; // adjust as needed
 
 /**

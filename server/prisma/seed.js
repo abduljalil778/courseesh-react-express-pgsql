@@ -1,8 +1,7 @@
-import pkg from '@prisma/client';
-const { PrismaClient, ClassLevel, Curriculum } = pkg;
-import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+import { ClassLevel, Curriculum } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import prisma from '../libs/prisma.js';
 
 async function main() {
   // 1) USERS

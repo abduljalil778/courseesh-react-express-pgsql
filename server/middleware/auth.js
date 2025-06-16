@@ -1,11 +1,9 @@
 // src/middleware/auth.js
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import prisma from '../libs/prisma.js';
 
 dotenv.config();
-const prisma = new PrismaClient();
 
 /**
  * Verify JWT and attach user to req.user

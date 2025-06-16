@@ -1,6 +1,6 @@
 // server/controllers/bookingSessionController.js
-import { PrismaClient, Prisma, SessionStatus, PayoutStatus } from '@prisma/client';
-const prisma = new PrismaClient();
+import { Prisma, SessionStatus, PayoutStatus } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 
 /**

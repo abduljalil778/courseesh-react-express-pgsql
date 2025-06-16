@@ -1,6 +1,6 @@
 // server/controllers/teachersController.js
-import {Prisma, PrismaClient, PayoutStatus} from '@prisma/client'
-const prisma = new PrismaClient()
+import {Prisma, PayoutStatus} from '@prisma/client'
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 
 // GET /api/my-payouts

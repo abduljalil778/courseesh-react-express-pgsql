@@ -1,8 +1,6 @@
-// server/controllers/paymentsController.js
-import pkg from '@prisma/client';
+import { Prisma, PaymentStatus, BookingStatus, PaymentMethod } from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
-const { PrismaClient, Prisma, PaymentStatus, BookingStatus, PaymentMethod } = pkg;
-const prisma = new PrismaClient();
+import prisma from '../libs/prisma.js';
 
 /**
  * GET /api/payments
@@ -61,7 +59,7 @@ export const getPaymentById = async (req, res, next) => {
       },
     });
     if (!payment) {
-      return new AppError({ message: `Payment record with ID ${id} not found` });
+      return next(new AppError(`Payment record with ID ${id} not found`, 404));
     }
     return res.json(payment);
   } catch (err) {
@@ -83,7 +81,7 @@ export const createPayment = async (req, res, next) => {
   try {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) {
-      return new AppError({ message: `Booking with ID ${bookingId} not found` });
+      return next(new AppError(`Booking with ID ${bookingId} not found`, 404));
     }
 
     // Cek apakah cicilan dengan nomor tersebut sudah ada untuk booking ini (opsional)
@@ -91,7 +89,12 @@ export const createPayment = async (req, res, next) => {
         where: { bookingId, installmentNumber: Number(installmentNumber) }
     });
     if (existingInstallment) {
-        return new AppError({ message: `Installment number ${installmentNumber} already exists for this booking.`});
+        return next(
+          new AppError(
+            `Installment number ${installmentNumber} already exists for this booking.`,
+            400
+          )
+        );
     }
 
 
@@ -108,7 +111,7 @@ export const createPayment = async (req, res, next) => {
   } catch (err) {
     console.error('createPayment Error:', err);
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') { // Foreign key constraint failed
-        return new AppError({ message: `Invalid bookingId: ${bookingId}` });
+        return next(new AppError(`Invalid bookingId: ${bookingId}`, 400));
     }
     next(new AppError(err.message));
   }
@@ -125,10 +128,15 @@ export const updatePayment = async (req, res, next) => {
 
   const dataToUpdate = {};
   if (status !== undefined) {
-    if (!Object.values(PaymentStatus).includes(status)) {
-        return new AppError({ message: `Invalid payment status. Valid are: ${Object.values(PaymentStatus).join(', ')}` });
-    }
-    dataToUpdate.status = status;
+      if (!Object.values(PaymentStatus).includes(status)) {
+          return next(
+            new AppError(
+              `Invalid payment status. Valid are: ${Object.values(PaymentStatus).join(', ')}`,
+              400
+            )
+          );
+      }
+      dataToUpdate.status = status;
   }
   if (amount !== undefined) dataToUpdate.amount = parseFloat(amount);
   if (dueDate !== undefined) dataToUpdate.dueDate = dueDate ? new Date(dueDate) : null;
@@ -240,7 +248,7 @@ export const deletePayment = async (req, res, next) => {
   } catch (err) {
     console.error(`deletePayment Error (ID: ${id}):`, err);
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      return new AppError({ message: `Payment record with ID ${id} not found` });
+      return next(new AppError(`Payment record with ID ${id} not found`, 404));
     }
     next(new AppError(err.message));
   }

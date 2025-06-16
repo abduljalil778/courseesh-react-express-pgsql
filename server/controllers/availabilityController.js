@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
-
-const prisma = new PrismaClient();
 
 export const getMyUnavailableDates = async (req, res, next) => {
   try {

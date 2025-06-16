@@ -1,7 +1,5 @@
-import {PrismaClient} from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
-
-const prisma = new PrismaClient();
+import prisma from '../libs/prisma.js';
 
 // --- GET (Mengambil Data) ---
 
