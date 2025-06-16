@@ -134,7 +134,7 @@ export default function TeacherScheduleDetails() {
             <p><strong>Phone:</strong> {booking.student?.phone || 'N/A'}</p>
             <p><strong>Address:</strong> {booking.address || 'N/A'}</p>
           </div>
-          <p className={`text-sm font-medium mt-2`}>
+          {/* <p className={`text-sm font-medium mt-2`}>
             Booking Status: 
             <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
                 booking.bookingStatus === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
@@ -143,7 +143,7 @@ export default function TeacherScheduleDetails() {
             }`}>
                 {booking.bookingStatus}
             </span>
-          </p>
+          </p> */}
         </div>
 
         {/* Session List */}

@@ -21,16 +21,16 @@ export default function StudentDashboard() {
   }, [clearFilters]);
 
   const fetchCourses = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await getAllCourses();
-      setAllCourses(response.data || []);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load courses.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  setIsLoading(true);
+  try {
+    const response = await getAllCourses();
+    setAllCourses(response.data?.courses || []);
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to load courses.');
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     fetchCourses();

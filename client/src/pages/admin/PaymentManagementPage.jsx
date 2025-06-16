@@ -3,8 +3,24 @@ import { format, parseISO } from 'date-fns';
 import { getAllBookings, updatePayment } from '../../lib/api';
 import { formatCurrencyIDR } from '../../utils/formatCurrency';
 import Swal from 'sweetalert2';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  MagnifyingGlassIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+} from '@heroicons/react/24/solid';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from '@/components/ui/pagination';
+
+const PAGE_SIZE = 8;
 
 const getOverallPaymentStatusForBooking = (booking) => {
   if (!booking.payments || booking.payments.length === 0) {
@@ -45,45 +61,63 @@ const SkeletonBookingCard = () => (
 
 export default function PaymentManagementPage() {
   const [bookings, setBookings] = useState([]);
+  const [totalBookings, setTotalBookings] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedBookingId, setExpandedBookingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortDir, setSortDir] = useState("desc");
   const debounceRef = useRef();
 
-  const loadBookings = useCallback(async (query = '') => {
+  const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
+
+  const loadBookings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getAllBookings(query);
-      setBookings(response.data || []);
+      const params = {
+        page,
+        limit: PAGE_SIZE,
+        sortBy,
+        sortDir,
+        search: searchTerm,
+        filterStatus,
+      };
+      const response = await getAllBookings(params);
+      setBookings(response.data?.bookings || response.data || []);
+      setTotalBookings(response.data?.total || 0);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load bookings.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, sortBy, sortDir, searchTerm, filterStatus]);
 
-  // Debounce for search, call backend after 400ms stop typing
+  // Debounce for search/filter/sort
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      loadBookings(searchTerm);
+      setPage(1);
+      loadBookings();
     }, 400);
     return () => clearTimeout(debounceRef.current);
-  }, [searchTerm, loadBookings]);
-
-  // Initial load (tanpa search term)
-  useEffect(() => {
-    loadBookings('');
     // eslint-disable-next-line
-  }, []);
+  }, [searchTerm, filterStatus, sortBy, sortDir]);
+
+  // Fetch on page change
+  useEffect(() => {
+    loadBookings();
+    // eslint-disable-next-line
+  }, [page]);
 
   const handleStatusUpdate = async (paymentId, newStatus) => {
     try {
       await updatePayment(paymentId, { status: newStatus });
       Swal.fire('Success', 'Payment status updated!', 'success');
-      loadBookings(searchTerm);
+      loadBookings();
     } catch (err) {
       Swal.fire('Error', err?.response?.data?.message || 'Could not update payment status.', 'error');
     }
@@ -93,40 +127,70 @@ export default function PaymentManagementPage() {
     setExpandedBookingId(currentId => (currentId === bookingId ? null : bookingId));
   };
 
+  // Sorting kolom (optional, ex: by price, createdAt, etc)
+  const handleSort = (key) => {
+    if (sortBy === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
+
+  // Filter bookings status (client-side, atau backend-side jika mau)
+  const filteredBookings = bookings.filter(b => {
+    const status = getOverallPaymentStatusForBooking(b).text;
+    return filterStatus === 'ALL' || status === filterStatus;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-gray-800">Payment Management</h1>
-      
-      {/* Search Bar Modern + Clear */}
-      <div className="relative flex-grow max-w-xs mb-2">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search by student, booking ID, email, or course name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-9 text-sm focus:ring-2 focus:ring-indigo-400"
-          aria-label="Search bookings"
-        />
-        {searchTerm && (
-          <button
-            type="button"
-            onClick={() => setSearchTerm('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-            tabIndex={0}
-            aria-label="Clear search"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        )}
+      <h1 className="text-2xl font-bold text-gray-800">Payments</h1>
+      {/* Search, Filter */}
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="relative flex-grow max-w-xs">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by student, booking ID, email, or course name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-9 text-sm focus:ring-2 focus:ring-indigo-400"
+            aria-label="Search bookings"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              tabIndex={0}
+              aria-label="Clear search"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="border-gray-300 rounded-md text-sm py-2 px-2"
+        >
+          <option value="ALL">All Status</option>
+          <option value="FULLY PAID">Fully Paid</option>
+          <option value="PARTIALLY PAID">Partially Paid</option>
+          <option value="PENDING">Pending</option>
+          <option value="HAS FAILED">Has Failed</option>
+          <option value="NO PAYMENTS">No Payments</option>
+        </select>
       </div>
-      
+
+      {/* Booking Card List */}
       <div className="bg-white rounded-lg shadow-lg min-h-[180px]">
         <div className="space-y-2 p-2">
           {isLoading ? (
@@ -137,8 +201,8 @@ export default function PaymentManagementPage() {
             </>
           ) : error ? (
             <div className="text-center text-red-500 py-10">{error}</div>
-          ) : bookings.length > 0 ? (
-            bookings.map(booking => {
+          ) : filteredBookings.length > 0 ? (
+            filteredBookings.map(booking => {
               const paymentStatus = getOverallPaymentStatusForBooking(booking);
               const isExpanded = expandedBookingId === booking.id;
 
@@ -201,6 +265,52 @@ export default function PaymentManagementPage() {
           )}
         </div>
       </div>
+
+      {/* Pagination Modern ala shadcn */}
+      <div className="flex items-center justify-between mt-4">
+        <span className="text-sm text-gray-700">
+          Showing{" "}
+          <span className="font-semibold">
+            {(page - 1) * PAGE_SIZE + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-semibold">
+            {Math.min(page * PAGE_SIZE, totalBookings)}
+          </span>{" "}
+          of <span className="font-semibold">{totalBookings}</span> bookings
+        </span>
+        <div className="flex items-center justify-end mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  aria-disabled={page === 1}
+                  className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, idx) => (
+                <PaginationItem key={idx + 1}>
+                  <PaginationLink
+                    isActive={page === idx + 1}
+                    onClick={() => setPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  aria-disabled={page === totalPages}
+                  className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      </div>
+      {error && <div className="text-red-500 text-center mt-3">{error}</div>}
     </div>
   );
 }

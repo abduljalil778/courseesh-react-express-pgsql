@@ -25,7 +25,7 @@ export default function TeacherDashboard() {
     setError(null);
     try {
       const response = await getAllCourses();
-      setCourses(response.data || []);
+      setCourses(response.data?.courses || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not load your courses. Please try again.');
     } finally {

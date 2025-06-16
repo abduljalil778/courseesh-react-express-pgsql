@@ -8,24 +8,58 @@ import AppError from '../utils/AppError.mjs';
  */
 export const getAllBookings = async (req, res, next) => {
   try {
-    const {search} = req.query;
+    let {
+      search,
+      status,
+      page = 1,
+      limit = 8,
+      sortBy = "createdAt",
+      sortDir = "desc",
+    } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    // Build where condition
     let where = {};
+    // Role based access
     if (req.user.role === 'TEACHER') {
       where = { course: { teacherId: req.user.id } };
     } else if (req.user.role === 'STUDENT') {
       where = { studentId: req.user.id };
     }
 
+    // Search (booking id, student name, course title)
     if (search) {
       where.OR = [
         { id: { contains: search, mode: 'insensitive' } },
         { student: { name: { contains: search, mode: 'insensitive' } } },
         { course: { title: { contains: search, mode: 'insensitive' } } },
+        { student: { email: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
+    // Status (optional)
+    if (status) {
+      where.bookingStatus = status;
+    }
+
+    // Total count for pagination
+    const total = await prisma.booking.count({ where });
+
+    // Sort
+    let orderBy = {};
+    if (["createdAt", "id"].includes(sortBy)) {
+      orderBy[sortBy] = sortDir === "asc" ? "asc" : "desc";
+    } else {
+      orderBy.createdAt = "desc";
+    }
+
+    // Data fetch
     const bookings = await prisma.booking.findMany({
       where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy,
       include: {
         student: {
           select: { id: true, name: true, email: true, phone: true, avatarUrl: true },
@@ -35,6 +69,7 @@ export const getAllBookings = async (req, res, next) => {
             id: true,
             title: true,
             price: true,
+            imageUrl: true,
             teacherId: true,
             teacher: {
               select: { id: true, name: true, email: true, avatarUrl: true },
@@ -42,13 +77,13 @@ export const getAllBookings = async (req, res, next) => {
           },
         },
         sessions: {
-          select: { 
-            id: true, 
-            sessionDate: true, 
-            status: true, 
-            teacherReport: true, 
+          select: {
+            id: true,
+            sessionDate: true,
+            status: true,
+            teacherReport: true,
             studentAttendance: true,
-            isUnlocked: true, 
+            isUnlocked: true,
             sessionCompletedAt: true,
             updatedAt: true
           },
@@ -58,15 +93,16 @@ export const getAllBookings = async (req, res, next) => {
           select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true, proofOfPaymentUrl: true },
           orderBy: { installmentNumber: 'asc' },
         },
-        review: true, 
-        teacherPayouts: true 
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+        review: true,
+        teacherPayouts: true,
+      }
     });
 
-    return res.json(bookings);
+    return res.json({
+      bookings,
+      total,
+    });
+
   } catch (err) {
     console.error('getAllBookings Error:', err);
     next(new AppError(err.message, 500));

@@ -1,14 +1,15 @@
-// src/pages/admin/AdminDashboard.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAdminDashboardStats } from '../../lib/api';
 import Spinner from '../../components/Spinner';
 import { formatCurrencyIDR } from '../../utils/formatCurrency';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Legend as PieLegend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, Users, UserCheck, User, BookOpen, CalendarCheck } from 'lucide-react';
+import { getCategoryLabel } from '../../utils/subjectCategory';
 
+// Untuk warna Pie Chart
+const COLORS = ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE'];
 
-// Komponen untuk kartu statistik KPI
-const StatCard = ({ title, value, icon: Icon }) => ( 
+const StatCard = ({ title, value, icon: Icon }) => (
   <div className="bg-white p-4 rounded-lg shadow-lg flex items-center">
     <div className="p-2.5 bg-primary/10 rounded-full">
       {Icon && <Icon className="h-3 w-3 text-primary" />}
@@ -20,51 +21,47 @@ const StatCard = ({ title, value, icon: Icon }) => (
   </div>
 );
 
-// Komponen untuk grafik popularitas kursus
-const CoursePopularityChart = ({ data }) => {
-  const COLORS = ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE'];
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="count"
-          nameKey="name"
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip formatter={(value) => `${value} bookings`} />
-        <PieLegend />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-};
-
-const TeacherRevenueRanking = ({ data }) => (
- <div className="overflow-hidden rounded-md border">
-   <div className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700">
-     Top Teachers by Revenue
-   </div>
-   <ul className="divide-y divide-gray-200">
-     {data.map((teacher, index) => (
-       <li key={teacher.name} className="px-4 py-3 flex items-center justify-between text-sm">
-         <span className="font-medium text-gray-800">{teacher.name}</span>
-         <span className="text-gray-600">{formatCurrencyIDR(teacher.revenue)}</span>
-       </li>
-     ))}
-     {data.length === 0 && <li className="px-4 py-3 text-sm text-gray-500">No data available.</li>}
-   </ul>
- </div>
+const CoursePopularityChart = ({ data }) => (
+  <ResponsiveContainer width="100%" height={300}>
+    <PieChart>
+      <Pie
+        data={data}
+        cx="50%"
+        cy="50%"
+        labelLine={false}
+        outerRadius={80}
+        fill="#4F46E5"
+        dataKey="count"
+        nameKey="label"
+        label={({ label, percent }) => `${label} ${(percent * 100).toFixed(0)}%`}
+      >
+        {data.map((entry, idx) => (
+          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+        ))}
+      </Pie>
+      <Tooltip formatter={v => `${v} bookings`} />
+    </PieChart>
+  </ResponsiveContainer>
 );
 
+const TeacherRevenueRanking = ({ data }) => (
+  <div className="overflow-hidden rounded-md border">
+    <div className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700">
+      <span role="img" aria-label="star" className="mr-2">⭐</span>
+      Top Teachers by Revenue
+    </div>
+    <ul className="divide-y divide-gray-200">
+      {data.length > 0 ? data.map((teacher, idx) => (
+        <li key={teacher.name} className="px-4 py-3 flex items-center justify-between text-sm">
+          <span className="font-medium text-gray-800">{idx+1}. {teacher.name}</span>
+          <span className="text-gray-600 font-mono">{formatCurrencyIDR(teacher.revenue)}</span>
+        </li>
+      )) : (
+        <li className="px-4 py-3 text-sm text-gray-500">No data available.</li>
+      )}
+    </ul>
+  </div>
+);
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -88,10 +85,16 @@ export default function AdminDashboard() {
     loadStats();
   }, [loadStats]);
 
+  // Map label coursePopularityStats
+  const coursePopularityData = (stats?.coursePopularityStats || []).map(item => ({
+    ...item,
+    label: getCategoryLabel(item.name), // Ubah nama enum ke label
+  }));
+
   if (isLoading) return <div className="flex justify-center p-8"><Spinner size={48} /></div>;
   if (error) return <p className="text-red-500 p-4">{error}</p>;
   if (!stats) return <p className="text-gray-500">No statistics to display.</p>;
-  
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Kartu KPI */}
@@ -104,7 +107,7 @@ export default function AdminDashboard() {
         <StatCard title="Active Bookings" value={stats.kpi.activeBookings} icon={CalendarCheck} />
       </div>
 
-      {/* Grafik Utama */}
+      {/* Grafik utama */}
       <div className="bg-white p-6 rounded-lg shadow-lg">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Bookings in Last 30 Days</h3>
         <ResponsiveContainer width="100%" height={300}>
@@ -119,21 +122,15 @@ export default function AdminDashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* Grafik Sekunder */}
+      {/* Grafik sekunder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Top 5 Popular Courses</h3>
-          <CoursePopularityChart data={stats.coursePopularityStats} />
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">
+            Most Popular Courses <span className="text-xs text-gray-400 font-normal">(Top 5 by Booking)</span>
+          </h3>
+          <CoursePopularityChart data={coursePopularityData} />
         </div>
-        {stats.teacherRevenueRanking && (
-          <TeacherRevenueRanking data={stats.teacherRevenueRanking} />
-        )}
-        {!stats.teacherRevenueRanking && (
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-700">Top Teachers by Revenue</h3>
-            <p className="text-gray-500 mt-2">Loading data...</p>
-          </div>
-        )}
+        <TeacherRevenueRanking data={stats.teacherRevenueRanking || []} />
       </div>
     </div>
   );

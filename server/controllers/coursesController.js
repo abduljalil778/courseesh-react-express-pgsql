@@ -7,14 +7,33 @@ const prisma = new PrismaClient();
 
 export const getAllCourses = async (req, res, next) => {
   try {
+    const { category, search, page = 1, limit = 10, sortBy = "createdAt", sortDir = "desc" } = req.query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+
     const where = {};
-    const { category } = req.query;
     if (req.user?.role === 'TEACHER') {
       where.teacherId = req.user.id;
     }
-
     if (category) {
       where.category = category;
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { teacher: { name: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Untuk total count (tanpa skip/take)
+    const total = await prisma.course.count({ where });
+
+    // Sorting dynamic
+    const orderBy = {};
+    if (sortBy === "price" || sortBy === "title" || sortBy === "createdAt") {
+      orderBy[sortBy] = sortDir === "asc" ? "asc" : "desc";
+    } else {
+      orderBy.createdAt = "desc"; // fallback
     }
 
     const courses = await prisma.course.findMany({
@@ -24,7 +43,6 @@ export const getAllCourses = async (req, res, next) => {
         title: true,
         description: true,
         price: true,
-        // numberOfSessions: true,
         classLevels: true,
         curriculum: true,
         category: true,
@@ -43,19 +61,17 @@ export const getAllCourses = async (req, res, next) => {
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      skip,
+      take,
+      orderBy,
     });
 
-    // Proses data di level aplikasi untuk menghitung rata-rata dan total
+    // Aggregasi rating
     const coursesWithAggregates = courses.map(course => {
       const totalReviews = course.reviews.length;
       const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
       const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
-
       delete course.reviews;
-
       return {
         ...course,
         totalReviews,
@@ -63,13 +79,18 @@ export const getAllCourses = async (req, res, next) => {
       };
     });
 
-    return res.json(coursesWithAggregates);
+    // Kembalikan dengan total untuk frontend pagination
+    return res.json({
+      courses: coursesWithAggregates,
+      total,
+    });
 
   } catch (err) {
     console.error('getAllCourses Error:', err);
     next(new AppError(err.message, 500));
   }
 };
+
 
 export const getCourseById = async (req, res, next) => {
   const { id } = req.params;
@@ -85,7 +106,6 @@ export const getCourseById = async (req, res, next) => {
       }
     });
     
-    // Hitung agregat untuk halaman detail
     const totalReviews = course.reviews.length;
     const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
     const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;

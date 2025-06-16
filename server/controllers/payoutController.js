@@ -6,13 +6,51 @@ const prisma = new PrismaClient()
 // GET /api/payouts
 export const getAllTeacherPayouts = async (req, res, next) => {
   try {
-    const { status, teacherId } = req.query;
+    let {
+      search = "",
+      status,
+      teacherId,
+      page = 1,
+      limit = 8,
+      sortBy = "createdAt",
+      sortDir = "desc"
+    } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 8;
+    const skip = (page - 1) * limit;
+
+    // Build where filter
     const where = {};
     if (status) where.status = status;
     if (teacherId) where.teacherId = teacherId;
+    if (search) {
+      where.OR = [
+        { bookingId: { contains: search, mode: 'insensitive' } },
+        { teacher: { name: { contains: search, mode: 'insensitive' } } },
+        { teacher: { email: { contains: search, mode: 'insensitive' } } },
+        { teacher: { bankAccountHolder: { contains: search, mode: 'insensitive' } } },
+        { teacher: { bankAccountNumber: { contains: search, mode: 'insensitive' } } },
+        { booking: { course: { title: { contains: search, mode: 'insensitive' } } } },
+      ];
+    }
 
+    // Dynamic sorting
+    const orderBy = {};
+    if (["createdAt", "honorariumAmount", "status"].includes(sortBy)) {
+      orderBy[sortBy] = sortDir === "asc" ? "asc" : "desc";
+    } else {
+      orderBy.createdAt = "desc";
+    }
+
+    // Total for pagination
+    const total = await prisma.teacherPayout.count({ where });
+
+    // Get payouts (paginated)
     const payouts = await prisma.teacherPayout.findMany({
       where,
+      skip,
+      take: limit,
       include: {
         teacher: {
           select: {
@@ -27,7 +65,7 @@ export const getAllTeacherPayouts = async (req, res, next) => {
         booking: {
           select: {
             id: true,
-            course: { select: { title: true, imageUrl: true,} },
+            course: { select: { title: true, imageUrl: true } },
             student: { select: { name: true } },
           },
         },
@@ -38,14 +76,18 @@ export const getAllTeacherPayouts = async (req, res, next) => {
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
     });
-    res.json(payouts);
+
+    return res.json({
+      payouts,
+      total
+    });
+
   } catch (err) {
     next(new AppError(err.message || 'Failed to get all payouts', 500));
   }
 };
-
 // GET /api/payout/:payoutId
 export const getTeacherPayoutById = async (req, res, next) => {
     const {id: payoutId} = req.params;

@@ -69,7 +69,7 @@ export default function MyCourseProgress() {
      if (!currentBooking) return "";
      const hasPaidPayment = currentBooking.payments?.some(p => p.status === 'PAID');
      if (currentBooking.bookingStatus === 'PENDING') {
-       return !hasPaidPayment ? 'Waiting Teacher Confirmation' : 'PENDING (Payment Processed)';
+       return !hasPaidPayment ? 'Waiting for Payment' : 'Waiting Teacher Confirmation';
      }
      return currentBooking.bookingStatus;
  };

@@ -91,7 +91,7 @@ export default function MyPayouts() {
                   </div>
                 </div>
 
-                <div className="px-5 py-3 bg-gray-50 flex items-center justify-end gap-3">
+                <div className="px-5 py-3 flex items-center justify-end gap-3">
                   <Button variant="outline" size="sm" onClick={() => setSelectedPayout(payout)}>
                     View Payout Details
                   </Button>

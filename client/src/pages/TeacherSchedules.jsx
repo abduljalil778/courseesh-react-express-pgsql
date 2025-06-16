@@ -1,9 +1,9 @@
-// client/src/pages/TeacherSchedules.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { format, parseISO } from 'date-fns';
+import { BookOpenIcon, UserIcon, AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/solid';
 
 export default function TeacherSchedules() {
   const [activeBookings, setActiveBookings] = useState([]);
@@ -16,7 +16,7 @@ export default function TeacherSchedules() {
     setError(null);
     try {
       const response = await getAllBookings();
-      const relevantBookings = (response.data || []).filter(
+      const relevantBookings = (response.data?.bookings || []).filter(
         booking => booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'COMPLETED'
       );
       setActiveBookings(relevantBookings);
@@ -31,64 +31,97 @@ export default function TeacherSchedules() {
     loadActiveBookings();
   }, [loadActiveBookings]);
 
-  if (isLoading) return <div className="flex justify-center items-center h-screen"><Spinner size={60} /></div>;
-  if (error) return <div className="p-6 text-center text-red-500">{error} <button onClick={loadActiveBookings} className="text-blue-500 underline ml-2">Retry</button></div>;
-  if (!activeBookings.length) return <div className="p-6 text-center text-gray-500">You have no confirmed or completed bookings to manage.</div>;
+  // Status display for teacher
+  const getBookingDisplayStatus = (booking) => {
+    switch (booking.bookingStatus) {
+      case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
+      case 'COMPLETED': return { text: 'Completed', colorClass: 'text-blue-700 bg-blue-100' };
+      default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <Spinner size={60} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-xl text-red-600 mb-4">{error}</p>
+        <button onClick={loadActiveBookings} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!activeBookings.length) {
+    return (
+      <div className="text-center py-10">
+        <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-lg font-medium text-gray-900">
+          You have no confirmed or completed bookings to manage.
+        </h3>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
-        Teaching Schedule & Reports
+        Teaching Schedules
       </h1>
-      <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {activeBookings.map(booking => {
-              const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
-              const totalSessions = booking.sessions?.length || 0;
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {activeBookings.map(booking => {
+          const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
+          const totalSessions = booking.sessions?.length || 0;
+          const status = getBookingDisplayStatus(booking);
 
-              return (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{booking.course?.title}</div>
-                    <div className="text-xs text-gray-500">Booked: {format(parseISO(booking.createdAt), 'dd MMM yyyy')}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{booking.student?.name}</div>
-                    <div className="text-xs text-gray-500">{booking.student?.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {completedSessions} / {totalSessions} Sessions Completed
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      booking.bookingStatus === 'COMPLETED' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                    }`}>
-                      {booking.bookingStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => navigate(`/teacher/schedules/${booking.id}`)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Manage & View Details
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          return (
+            <div
+              key={booking.id}
+              className="bg-white rounded-lg shadow-lg flex flex-col hover:shadow-xl transition-shadow duration-300 cursor-pointer border group"
+              onClick={() => navigate(`/teacher/schedules/${booking.id}`)}
+            >
+              <div className="p-5 flex flex-col flex-grow">
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.colorClass}`}>
+                    {status.text}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                    <BookOpenIcon className="w-4 h-4" /> {booking.course?.title || 'N/A'}
+                  </span>
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800 flex-grow truncate mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <UserIcon className="w-5 h-5 text-indigo-500" /> {booking.student?.name || '-'}
+                  </span>
+                </h2>
+                <div className="text-xs text-gray-500 mb-3 flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  Booked: {format(parseISO(booking.createdAt), 'dd MMM yyyy')}
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0}%` }}
+                    title={`${completedSessions} / ${totalSessions} sessions completed`}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-600 mb-4 text-center">
+                  {completedSessions} / {totalSessions} sessions completed
+                </p>
+                <div className="mt-auto text-center text-sm font-medium text-indigo-600 group-hover:underline">
+                  View & Manage Schedule
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

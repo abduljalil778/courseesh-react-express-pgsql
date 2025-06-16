@@ -14,8 +14,8 @@ api.interceptors.request.use(config => {
 });
 
 // handle get all courses
-export const getAllCourses = async () => {
-  return await api.get('/courses');
+export const getAllCourses = async (params = {}) => {
+  return await api.get('/courses', { params });
 }
 
 // handle get course by ID
@@ -58,10 +58,8 @@ export const updateBooking = async (bookingId, bookingData) => {
 }
 
 // handle get all bookings
-export const getAllBookings = async (searchTerm = '') => {
-  return await api.get('/bookings', {
-    params: { search: searchTerm }
-  });
+export const getAllBookings = async (params = {}) => {
+  return await api.get('/bookings', { params });
 }
 
 // handle get booking by ID
@@ -70,12 +68,8 @@ export const getBookingById = async (bookingId) => {
 }
 
 // handle get all users
-export const getAllUsers = async (searchTerm = '') => {
-  return await api.get('/users', {
-    params: {
-      search: searchTerm,
-    },
-  });
+export const getAllUsers = async (params = {}) => {
+  return await api.get('/users', { params });
 }
 
 // handle create user

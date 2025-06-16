@@ -1,5 +1,3 @@
-// client/src/pages/admin/SettingsPage.jsx
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAppSettings, updateAppSettings } from '@/lib/api';
 import Spinner from '@/components/Spinner';
@@ -69,7 +67,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Application Settings</CardTitle>
-          <CardDescription>Manage global application settings here, such as service fees.</CardDescription>
+          {/* <CardDescription>Manage global application settings here, such as service fees.</CardDescription> */}
         </CardHeader>
         <CardContent className="space-y-6">
           {settings.map(setting => (

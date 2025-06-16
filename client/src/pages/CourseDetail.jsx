@@ -25,7 +25,7 @@ export default function CourseDetail() {
     }
     setIsLoading(true);
     setError(null);
-    setReviews([]); // <-- PERBAIKAN PENTING: Kosongkan review lama di awal fetch
+    setReviews([]);
 
     try {
       // Ambil detail kursus dan review secara bersamaan untuk efisiensi

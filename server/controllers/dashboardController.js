@@ -11,7 +11,6 @@ import { subDays } from 'date-fns';
  */
 export const getDashboardStats = async (req, res, next) => {
   try {
-    // --- Mendefinisikan semua promise query ---
 
     // 1. KPI Cards (Key Performance Indicators)
     const totalUsersPromise = prisma.user.count();
@@ -37,8 +36,6 @@ export const getDashboardStats = async (req, res, next) => {
     const coursePopularityPromise = prisma.booking.groupBy({
         by: ['courseId'],
         _count: { id: true },
-        orderBy: { _count: { id: 'desc' } },
-        take: 5,
     });
 
     // 4. Data untuk Ranking Revenue per Teacher
@@ -77,16 +74,21 @@ export const getDashboardStats = async (req, res, next) => {
     const courseIds = rawCourseData.map(item => item.courseId);
     const coursesInfo = await prisma.course.findMany({
         where: { id: { in: courseIds } },
-        select: { id: true, title: true }
+        select: { id: true, category: true }
     });
-    const coursePopularityStats = rawCourseData.map(item => {
+    const categoryMap = {};
+    rawCourseData.forEach(item => {
         const course = coursesInfo.find(c => c.id === item.courseId);
-        return {
-            name: course?.title || 'Unknown Course',
-            count: item._count.id
-        };
+        const cat = course?.category || 'UNKNOWN';
+        categoryMap[cat] = (categoryMap[cat] || 0) + item._count.id;
     });
+    const coursePopularityStats = Object.entries(categoryMap)
+        .map(([category, count]) => ({ name: category, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
     
+    
+
     // --- Format data untuk chart booking per hari ---
     const bookingsByDay = rawBookingsData.reduce((acc, booking) => {
         const date = booking.createdAt.toISOString().split('T')[0];

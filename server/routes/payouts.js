@@ -5,7 +5,7 @@ import {
     getAllTeacherPayouts,
     getTeacherPayoutById,
     updateTeacherPayout,
-} from '../controllers/teacherPayoutController.js';
+} from '../controllers/payoutController.js';
 import catchAsync from '../utils/catchAsync.js';
 import { 
     payoutIdParamValidator, 
@@ -36,6 +36,7 @@ router.get(
     runValidation,
     catchAsync(getTeacherPayoutById)
 )
+
 
 // Update teacher payout
 router.put(

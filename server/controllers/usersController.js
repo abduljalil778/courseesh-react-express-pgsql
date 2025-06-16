@@ -2,44 +2,65 @@
 import {PrismaClient, Prisma} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/AppError.mjs';
-import { findAllUsers } from '../libs/usersRepository.js';
 const prisma = new PrismaClient();
 
 // GET /api/users
 export const getAllUsers = async (req, res, next) => {
   try {
-    const { search } = req.query;
-    const where = {};
+    // Pagination and filtering
+    const {
+      search = "",
+      role = "",
+      page = 1,
+      limit = 10
+    } = req.query;
+    const pageInt = parseInt(page) || 1;
+    const limitInt = parseInt(limit) || 10;
+    const skip = (pageInt - 1) * limitInt;
 
+    // Filter
+    const where = {};
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
+        { name:  { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
       ];
     }
+    if (role) {
+      where.role = role;
+    }
 
+    // Get total (for pagination)
+    const total = await prisma.user.count({ where });
+
+    // Fetch users for this page
     const users = await prisma.user.findMany({
-        where,
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            role: true,
-            status: true,
-            avatarUrl: true,
-            createdAt: true,
-        },
-        orderBy: {
-            name: "asc",
-        }
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+      orderBy: { name: "asc" },
+      skip,
+      take: limitInt,
     });
 
-    res.json(users);
+    // Return with total count
+    res.json({
+      users,
+      total
+    });
   } catch (err) {
     next(new AppError(err.message))
   }
 };
+
 
 // GET /api/users/:id
 export const getUserById = async (req, res, next) => {
