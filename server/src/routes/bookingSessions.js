@@ -4,7 +4,7 @@ import { markStudentAttendance, submitOrUpdateSessionReport } from '../controlle
 import { upload } from '../middleware/upload.js';
 import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
-import { sessionIdValidator, studentAttendanceValidator, submitSessionReportValidator } from '../validators/bookingSessionValidators.js';
+import { sessionIdValidator, studentAttendanceValidator } from '../validators/bookingSessionValidators.js';
 
 const router = express.Router();
 

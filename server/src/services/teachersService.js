@@ -1,11 +1,11 @@
-import prisma from '../../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
+import teacherRepository from '../repositories/teacherRepository.js';
 
 // GET /api/my-payouts
 export const getMyPayouts = async (req, res, next) => {
   try {
     const loggedInTeacherId = req.user.id;
-    const payouts = await prisma.teacherPayout.findMany({
+    const payouts = await teacherRepository.findMany({
       where: { teacherId: loggedInTeacherId },
       include: {
         booking: {

@@ -19,16 +19,13 @@ export const getAllBookings = async (req, res, next) => {
     page = parseInt(page);
     limit = parseInt(limit);
 
-    // Build where condition
     let where = {};
-    // Role based access
     if (req.user.role === 'TEACHER') {
       where = { course: { teacherId: req.user.id } };
     } else if (req.user.role === 'STUDENT') {
       where = { studentId: req.user.id };
     }
 
-    // Search (booking id, student name, course title)
     if (search) {
       where.OR = [
         { id: { contains: search, mode: 'insensitive' } },
@@ -38,7 +35,6 @@ export const getAllBookings = async (req, res, next) => {
       ];
     }
 
-    // Status (optional)
     if (status) {
       where.bookingStatus = status;
     }
@@ -172,38 +168,6 @@ export const submitOverallBookingReport = async (req, res, next) => { //
         where: { id: bookingId },
         data: dataForBookingUpdate,
       });
-
-      // if (updatedBookingResult.bookingStatus === BookingStatus.COMPLETED && allPaymentsPaid) {
-      //   const existingPayout = await tx.teacherPayout.findUnique({
-      //     where: { bookingId: booking.id },
-      //   });
-
-      //   if (!existingPayout) {
-      //     let serviceFeePercentageString = process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15';
-      //     let serviceFeePercentage = parseFloat(serviceFeePercentageString);
-          
-      //     const feeSetting = await tx.applicationSetting.findUnique({ where: { key: "DEFAULT_SERVICE_FEE_PERCENTAGE" } });
-      //     if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
-      //       serviceFeePercentage = parseFloat(feeSetting.value);
-      //     }
-
-      //     const coursePrice = booking.course.price * booking.sessions.length;
-      //     const serviceFeeAmount = parseFloat((coursePrice * serviceFeePercentage).toFixed(2));
-      //     const honorariumAmount = parseFloat((coursePrice - serviceFeeAmount).toFixed(2));
-
-      //     await tx.teacherPayout.create({
-      //       data: {
-      //         bookingId: booking.id,
-      //         teacherId: booking.course.teacherId,
-      //         coursePriceAtBooking: coursePrice,
-      //         serviceFeePercentage,
-      //         serviceFeeAmount,
-      //         honorariumAmount,
-      //         status: PayoutStatus.PENDING_PAYMENT,
-      //       },
-      //     });
-      //   }
-      // }
 
       return tx.booking.findUnique({
         where: { id: updatedBookingResult.id },
@@ -359,7 +323,6 @@ export const createBooking = async (req, res, next) => {
         }
     }
 
-    // Check teacher availability for each session date
     for (const dateStr of sessionDates) {
         const d = new Date(dateStr);
         const conflictSession = await prisma.bookingSession.findFirst({
@@ -467,12 +430,11 @@ export const createBooking = async (req, res, next) => {
     if (err instanceof AppError) {
         return next(err);
     }
-    // Untuk error yang dilempar sebagai objek dari transaksi
     if (err.statusCode && err.message && !(err instanceof AppError)) {
         return next(new AppError(err.message, err.statusCode));
     }
     console.error(`createBooking Error:`, err);
-    next(new AppError(err.message || 'Failed to create booking.', 500)); // Default ke 500 jika tidak ada status code
+    next(new AppError(err.message || 'Failed to create booking.', 500));
   }
 };
 

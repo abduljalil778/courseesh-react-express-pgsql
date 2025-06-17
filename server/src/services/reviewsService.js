@@ -15,10 +15,10 @@ export const createCourseReview = async (req, res, next) => {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        course: { // Perlu courseId dan teacherId dari kursus
+        course: {
           select: { id: true, teacherId: true }
         },
-        review: true // Untuk cek apakah sudah ada review
+        review: true
       }
     });
 
@@ -43,18 +43,16 @@ export const createCourseReview = async (req, res, next) => {
         bookingId,
         studentId,
         courseId: booking.course.id,
-        teacherId: booking.course.teacherId, // Teacher dari kursus yang dibooking
+        teacherId: booking.course.teacherId,
         rating: Number(rating),
         comment: comment || null,
       },
-      // Anda bisa include relasi jika ingin mengembalikan data yang lebih lengkap
-      // include: { student: {select:{name:true}}, course: {select:{title:true}} }
     });
 
     res.status(201).json(newReview);
   } catch (err) {
     console.error(`Error creating review for booking ID ${bookingId}:`, err);
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') { // Jika bookingId di CourseReview unique constraint fail
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') { 
         return next(new AppError('Review for this booking already exists (P2002).', 409));
     }
     next(new AppError(err.message || 'Failed to create review', 500));
@@ -78,7 +76,6 @@ export const getMyReviewForBooking = async (req, res, next) => {
             return next(new AppError('No review found for this booking.', 404));
         }
 
-        // Pastikan siswa yang meminta adalah siswa yang membuat review
         if (review.studentId !== studentId) {
             return next(new AppError('You are not authorized to view this review.', 403));
         }
@@ -100,7 +97,7 @@ export const getReviewsForCourse = async (req, res, next) => {
     const reviews = await prisma.courseReview.findMany({
       where: { courseId },
       include: {
-        student: { // Hanya ambil nama siswa untuk ditampilkan, jangan email atau data sensitif lain
+        student: {
           select: { name: true, id: true } 
         }
       },
@@ -195,6 +192,3 @@ export const deleteReview = async (req, res, next) => {
     next(new AppError(err.message || 'Failed to delete review', 500));
   }
 }
-
-// Tambahkan fungsi lain jika perlu, misal update/delete review oleh siswa,
-// atau get reviews by teacher

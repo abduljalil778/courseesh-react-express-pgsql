@@ -1,6 +1,5 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import catchAsync from '../utils/catchAsync.js';
 import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar, updateMyPayoutInfo } from '../controllers/usersController.js';
 import { createUserValidator, updateUserValidator, userIdValidator, updatePayoutInfoValidator } from '../validators/usersValidator.js';
 import { runValidation } from '../middleware/validate.js';
@@ -12,14 +11,14 @@ const router = express.Router();
 router.get('/',
   authenticate,
   authorize('ADMIN'),
-  catchAsync(getAllUsers)
+  getAllUsers
 );
 
 // get user by id
 router.get('/:id', 
   userIdValidator,
   runValidation,
-  catchAsync(getUserById)
+  getUserById
 )
 
 // create user
@@ -28,7 +27,7 @@ router.post('/',
   authorize('ADMIN'),
   createUserValidator,
   runValidation,
-  catchAsync(createUser)
+  createUser
 )
 
 // delete user
@@ -37,7 +36,7 @@ router.delete('/:id',
   authorize('ADMIN'),
   userIdValidator,
   runValidation,
-  catchAsync(deleteUser)
+  deleteUser
 )
 
 // update user
@@ -45,14 +44,14 @@ router.put('/:id',
   userIdValidator,
   updateUserValidator,
   runValidation,
-  catchAsync(updateUser)
+  updateUser
 )
 
 router.post(
   '/me/upload-avatar',
   authenticate,
   upload.single('avatar'),
-  catchAsync(uploadAvatar)
+  uploadAvatar
 );
 
 router.put(
@@ -61,7 +60,7 @@ router.put(
     authorize('TEACHER'),
     updatePayoutInfoValidator,
     runValidation,
-    catchAsync(updateMyPayoutInfo)
+    updateMyPayoutInfo
 )
 
 export default router;

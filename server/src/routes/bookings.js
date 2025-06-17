@@ -7,8 +7,12 @@ import {
   createBooking,
   updateBooking,
   deleteBooking,
-  submitOverallBookingReport
+  submitOverallBookingReport,
 } from '../controllers/bookingsController.js';
+import { 
+  createCourseReview,
+  getMyReviewForBooking
+} from '../controllers/reviewsController.js';
 import {
   bookingIdValidator,
   createBookingValidator,
@@ -17,7 +21,6 @@ import {
 } from '../validators/bookingsValidators.js';
 import { runValidation } from '../middleware/validate.js';
 import catchAsync from '../utils/catchAsync.js';
-import { createCourseReview, getMyReviewForBooking } from '../controllers/reviewsController.js';
 import { createReviewValidator } from '../validators/reviewsValidator.js';
 
 const router = express.Router();
