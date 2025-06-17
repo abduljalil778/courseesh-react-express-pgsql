@@ -1,3 +1,5 @@
+// src/pages/UserManagementPage.jsx
+
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { format, parseISO } from "date-fns";
 import {
@@ -6,7 +8,6 @@ import {
   updateUser,
   deleteUser,
 } from "../../lib/api";
-import Spinner from "@/components/Spinner";
 import Swal from "sweetalert2";
 import UserForm from "../../components/UserForm";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +25,17 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
+
+// shadcn dialog
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const PAGE_SIZE = 8;
 
@@ -43,6 +55,7 @@ export default function UserManagementPage() {
 
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
 
+  // Fetch user list (with filters, sort, search, pagination)
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -85,15 +98,7 @@ export default function UserManagementPage() {
     // eslint-disable-next-line
   }, [page]);
 
-  // Modal autofokus
-  useEffect(() => {
-    if (isModalOpen) {
-      setTimeout(() => {
-        document.querySelector(".user-form input")?.focus();
-      }, 100);
-    }
-  }, [isModalOpen]);
-
+  // Modal handler
   const handleOpenCreateForm = () => {
     setEditingUser(null);
     setIsModalOpen(true);
@@ -159,7 +164,7 @@ export default function UserManagementPage() {
     }
   };
 
-  // Sort kolom
+  // Sort columns
   const handleSort = (key) => {
     if (sortBy === key) {
       setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -389,7 +394,7 @@ export default function UserManagementPage() {
         </table>
       </div>
 
-      {/* Pagination Modern ala shadcn */}
+      {/* Pagination ala shadcn */}
       <div className="flex items-center justify-between mt-4">
         <span className="text-sm text-gray-700">
           Showing{" "}
@@ -435,38 +440,33 @@ export default function UserManagementPage() {
       </div>
       {error && <div className="text-red-500 text-center mt-3">{error}</div>}
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-          onClick={handleCloseModal}
-          tabIndex={-1}
-          aria-modal="true"
-          role="dialog"
-        >
-          <div
-            className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md relative user-form"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl"
-              onClick={handleCloseModal}
-              aria-label="Close modal"
-            >
-              &times;
-            </button>
-            <h2 className="text-xl font-bold mb-4">
-              {editingUser ? "Edit User" : "Add New User"}
-            </h2>
-            <UserForm
-              key={editingUser ? editingUser.id : "create"}
-              initialData={editingUser}
-              onSubmit={handleSubmit}
-              onCancel={handleCloseModal}
-            />
-          </div>
-        </div>
-      )}
+      {/* Modal Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+  <DialogContent className="max-w-md w-full p-0">
+    <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogTitle>
+        {editingUser ? "Edit User" : "Add New User"}
+      </DialogTitle>
+      <DialogDescription>
+        {editingUser
+          ? "Update user information below. Leave password blank if not changing."
+          : "Fill in user details to create a new user."}
+      </DialogDescription>
+    </DialogHeader>
+    {/* FORM CONTENT */}
+    <div className="px-6 pb-6 pt-2">
+      <UserForm
+        key={editingUser ? editingUser.id : "create"}
+        initialData={editingUser}
+        onSubmit={handleSubmit}
+        onCancel={handleCloseModal}
+        className="user-form"
+      />
+    </div>
+    <DialogClose asChild>
+    </DialogClose>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

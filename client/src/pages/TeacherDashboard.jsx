@@ -9,8 +9,6 @@ import {
 import Spinner from '../components/Spinner';
 import CourseForm from '../components/CourseForm';
 import Swal from 'sweetalert2';
-import { format, parseISO } from 'date-fns';
-import { formatCurrencyIDR } from '../utils/formatCurrency';
 import CourseCard from '@/components/CourseCard';
 
 export default function TeacherDashboard() {

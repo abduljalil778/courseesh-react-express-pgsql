@@ -151,8 +151,8 @@ export default function CourseForm({
           disabled={watchedClassLevels.includes('UTBK') && watchedClassLevels.length === 1}
           className="w-full h-10 border border-input bg-background px-3 py-2 text-sm rounded-md"
         >
-          <option value="">Select Curriculum (Optional)</option>
-          {CURRICULA.map(curr => (<option key={curr} value={curr}>{curr}</option>))}
+          <option value="">Select Curriculum</option>
+          {CURRICULA.map(curr => (<option key={curr.value} value={curr.value}>{curr.label}</option>))}
         </select>
         {errors.curriculum && <p className="text-sm text-red-500 mt-1">{errors.curriculum.message}</p>}
       </div>

@@ -35,7 +35,7 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
 
       <div className="p-4 flex flex-col flex-grow">
         <p className="text-xs font-semibold text-indigo-600 uppercase mb-1">
-          {course.category} • {course.classLevels?.join(', ') || 'General'}
+          {course.category.replace('_', ' ')} • {course.classLevels?.join(', ') || 'General'}
         </p>
         <h3 className="text-md font-bold text-gray-800 leading-tight flex-grow Htruncate_custom">
           {course.title}
