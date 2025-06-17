@@ -42,3 +42,16 @@ export const removeUnavailableDate = async (req, res, next) => {
     next(new AppError(err.message || 'Failed to delete unavailable date', 500));
   }
 };
+
+
+export const getUnavailableDatesByTeacherId = async (teacherId) => {
+  try {
+    const dates = await prisma.teacherUnavailableDate.findMany({
+      where: { teacherId: teacherId },
+      orderBy: { date: 'asc' },
+    });
+    return dates;
+  } catch (err) {
+    throw new AppError(err.message || 'Failed to fetch unavailable dates by teacher ID', 500);
+  }
+};

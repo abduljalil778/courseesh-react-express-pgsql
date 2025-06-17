@@ -11,7 +11,7 @@ export const createUserValidator = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('phone').optional({ checkFalsy: true }).trim().if(body('phone').notEmpty()).matches(PHONE_REGEX).withMessage('Invalid phone number format (e.g., 081234567890 or +6281234567890, 10-15 digits).'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('role').trim().notEmpty().withMessage('Role is required.').isIn(['ADMIN', 'TEACHER', 'STUDENT']).withMessage('Role must be ADMIN, TEACHER, or STUDENT'),
+  body('role').trim().notEmpty().withMessage('Role is required.').isIn(['ADMIN', 'TEACHER', 'STUDENT', 'FINANCE']).withMessage('Role must be ADMIN, TEACHER, STUDENT, or FINANCE'),
 ];
 
 export const updateUserValidator = [

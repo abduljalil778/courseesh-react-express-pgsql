@@ -20,6 +20,7 @@ import dashboardRoutes from './src/routes/dashboard.js';
 import errorController from './src/services/errorService.js';
 import appSettingRoutes from './src/routes/appSettings.js';
 import availabilityRoutes from './src/routes/availability.js';
+import financeRoutes from './src/routes/finance.js';
 
 dotenv.config();
 
@@ -70,6 +71,7 @@ app.use('/api/auth',    authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/finance', financeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookingsessions', bookingSessionRoutes);
 app.use('/api/teachers', teacherRoutes);

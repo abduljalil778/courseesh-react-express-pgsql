@@ -22,40 +22,44 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// List all payments (ADMIN only)
+// List all payments (ADMIN or FINANCE)
 router.get(
   '/',
-  authorize('ADMIN'),
+  authorize('ADMIN', 'FINANCE'),
   catchAsync(getAllPayments)
 );
 
-// Get a single payment (ADMIN only)
+// Get a single payment (ADMIN or FINANCE)
 router.get(
   '/:id',
+  authorize('ADMIN','FINANCE'),
   paymentIdValidator,
   runValidation,
   catchAsync(getPaymentById)
 );
 
-// Create a payment (ADMIN only)
+// Create a payment (ADMIN or FINANCE)
 router.post(
   '/',
+  authorize('ADMIN','FINANCE'),
   createPaymentValidator,
   runValidation,
   catchAsync(createPayment)
 );
 
-// Update a payment (ADMIN only)
+// Update a payment (ADMIN or FINANCE)
 router.put(
   '/:id',
+  authorize('ADMIN','FINANCE'),
   updatePaymentValidator,
   runValidation,
   catchAsync(updatePayment)
 );
 
-// Delete a payment (ADMIN only)
+// Delete a payment (ADMIN or FINANCE)
 router.delete(
   '/:id',
+  authorize('ADMIN','FINANCE'),
   paymentIdValidator,
   runValidation,
   catchAsync(deletePayment)

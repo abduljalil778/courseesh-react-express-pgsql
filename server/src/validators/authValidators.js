@@ -9,8 +9,8 @@ export const registerValidator = [
     .withMessage('password must be at least 6 chars'),
   body('role')
     .optional()
-    .isIn(['ADMIN','TEACHER','STUDENT'])
-    .withMessage('role must be one of ADMIN, TEACHER, STUDENT'),
+    .isIn(['ADMIN','TEACHER','STUDENT', 'FINANCE'])
+    .withMessage('role must be one of ADMIN, TEACHER, STUDENT', 'FINANCE'),
 ];
 
 export const loginValidator = [

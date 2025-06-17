@@ -189,6 +189,7 @@ enum Role {
   ADMIN
   TEACHER
   STUDENT
+  FINANCE
 }
 
 enum Status {

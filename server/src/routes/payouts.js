@@ -21,7 +21,7 @@ router.use(authenticate);
 // List all teacher payouts
 router.get(
     '/teacher-payouts',
-    authorize('ADMIN'),
+    authorize('ADMIN', 'FINANCE'),
     listPayoutsQueryValidator,
     runValidation,
     catchAsync(getAllTeacherPayouts)
@@ -30,17 +30,17 @@ router.get(
 // get teacher payout by id
 router.get(
     '/teacher-payouts/:payoutId',
-    authorize('ADMIN'),
+    authorize('ADMIN', 'FINANCE'),
     payoutIdParamValidator,
     runValidation,
     catchAsync(getTeacherPayoutById)
 )
 
 
-// Update teacher payout
+// Update teacher payout (ADMIN or FINANCE)
 router.put(
     '/teacher-payouts/:payoutId',
-    authorize('ADMIN'),
+    authorize('ADMIN','FINANCE'),
     upload.single('adminProof'),
     payoutIdParamValidator,
     updatePayoutStatusValidator,
