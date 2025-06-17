@@ -1,11 +1,11 @@
 import AppError from '../utils/AppError.mjs';
-import teacherRepository from '../repositories/teacherRepository.js';
+import payoutRepository from '../repositories/payoutRepository.js';
 
 // GET /api/my-payouts
 export const getMyPayouts = async (req, res, next) => {
   try {
     const loggedInTeacherId = req.user.id;
-    const payouts = await teacherRepository.findMany({
+    const payouts = await payoutRepository.findMany({
       where: { teacherId: loggedInTeacherId },
       include: {
         booking: {
