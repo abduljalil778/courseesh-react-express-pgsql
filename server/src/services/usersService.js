@@ -3,68 +3,93 @@ import bcrypt from 'bcryptjs';
 import AppError from '../utils/AppError.mjs';
 import UserRepository from '../repositories/userRepository.js';
 
-export const getAllUsers = async (query) => {
-  const { search = '', role = '', page = 1, limit = 10 } = query;
-  const pageInt = parseInt(page) || 1;
-  const limitInt = parseInt(limit) || 10;
-  const skip = (pageInt - 1) * limitInt;
-
-  const where = {};
-  if (search) {
-    where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-    ];
-  }
-  if (role) {
-    where.role = role;
-  }
-
-  const total = await UserRepository.count({ where });
-  const users = await UserRepository.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      avatarUrl: true,
-      createdAt: true,
-    },
-    orderBy: { name: 'asc' },
-    skip,
-    take: limitInt,
-  });
-  
-  return { users, total };
-};
-
-
-export const getUserById = async (id) => {
-  const user = await UserRepository.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      avatarUrl: true,
-      createdAt: true,
-    },
-  });
-  if (!user) {
-    throw new AppError('User not found', 404);
-  }
-  return user;
-};
-
-export const createUser = async ({ name, email, password, phone, role, status }) => {
-  const hashed = await bcrypt.hash(password, 10);
+// GET /api/users
+export const getAllUsers = async (req, res, next) => {
   try {
+    // Pagination and filtering
+    const {
+      search = "",
+      role = "",
+      page = 1,
+      limit = 10
+    } = req.query;
+    const pageInt = parseInt(page) || 1;
+    const limitInt = parseInt(limit) || 10;
+    const skip = (pageInt - 1) * limitInt;
+
+    // Filter
+    const where = {};
+    if (search) {
+      where.OR = [
+        { name:  { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (role) {
+      where.role = role;
+    }
+
+    // Get total (for pagination)
+    const total = await UserRepository.count({ where });
+
+    const users = await UserRepository.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+      orderBy: { name: "asc" },
+      skip,
+      take: limitInt,
+    });
+  // Return with total count
+    res.json({
+      users,
+      total
+    });
+  } catch (err) {
+    next(new AppError(err.message))
+  }
+};
+
+
+// GET /api/users/:id
+export const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await UserRepository.findUnique({
+      where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          status: true,
+          avatarUrl: true,
+          createdAt: true
+        }
+    });
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    res.json(user);
+  } catch (err) {
+    next(new AppError(err.message))
+  }
+};
+
+// POST /api/users
+export const createUser = async (req, res, next) => {
+  const {name, email, password, phone, role, status} = req.body;
+  try {
+    const hashed = await bcrypt.hash(password, 10);
     const user = await UserRepository.create({
       data: {
         name,
@@ -84,30 +109,37 @@ export const createUser = async ({ name, email, password, phone, role, status })
         createdAt: true,
       },
     });
-    return user;
-    
+
+    res.status(201).json(user)
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       const field = err.meta?.target?.join(', ');
-      throw new AppError(`${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`, 400);
+      return next(
+        new AppError(
+          `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`,
+          400
+        )
+      );
     }
     throw new AppError(err.message);
   }
 }
 
 // PUT /api/users/:id
-export const updateUser = async (id, data) => {
-  const updateData = {};
-  const { name, email, phone, role, status } = data;
-  if (name   !== undefined) updateData.name = name;
-  if (email  !== undefined) updateData.email = email;
-  if (role   !== undefined) updateData.role = role;
-  if (status !== undefined) updateData.status = status;
-  if (phone  !== undefined) updateData.phone = phone === '' ? null : phone;
+// PUT /api/users/:id
+export const updateUser = async (req, res, next) => {
+    const { id } = req.params;
+    const { name, email, phone, password, role, status } = req.body;
+    const data = {};
+    if (name   != undefined) data.name   = name;
+    if (email  != undefined) data.email  = email;
+    if (role   != undefined) data.role   = role;
+    if (status != undefined) data.status = status;
+    if (phone  != undefined) data.phone  = phone === '' ? null : phone;
 
-  if (Object.keys(updateData).length === 0) {
-    throw new AppError('No fields provided to update', 400);
-  }
+  if (Object.keys(data).length === 0) {
+      return next(new AppError('No fields provided to update', 400));
+    }
 
   try {
     const updatedUser = await UserRepository.update({
@@ -124,66 +156,93 @@ export const updateUser = async (id, data) => {
       },
     });
 
-    return updatedUser;
-
+    return res.json(updatedUser);
+  
     } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === 'P2002') {
         const field = err.meta?.target?.join(', ');
-        throw new AppError(`${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`, 400);
+        return next(
+          new AppError(
+            `${field ? field.charAt(0).toUpperCase() + field.slice(1) : 'Data'} already in use.`,
+            400
+          )
+        );
       }
       if (err.code === 'P2025') {
-        throw new AppError('User not found', 404);
+        return next(new AppError('User not found', 404));
       }
     }
     throw new AppError(err.message);
-  }
+    }
 };
 
 // DELETE /api/users/:id
-export const deleteUser = async (id) => {
+export const deleteUser = async (req, res, next) => {
   try {
-    await UserRepository.delete({ where: { id } });
+    const { id } = req.params;
+    await UserRepository.delete({
+      where: { id },
+    });
+    res.status(204).send();
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      throw new AppError('User not found', 404);
+      return next(new AppError('User not found', 404));
     }
-    throw err;
+    next(err);
   }
 };
 
 // upload avatar
-export const uploadAvatar = async (userId, file) => {
-  if (!file) {
-    throw new AppError('No avatar file uploaded.', 400);
+export const uploadAvatar = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+  if (!req.file) {
+    return next(new AppError('No avatar file uploaded.', 400));
   }
 
-  const avatarUrl = `/uploads/${file.filename}`;
+  const avatarUrl = `/uploads/${req.file.filename}`;
   const updatedUser = await UserRepository.update({
     where: { id: userId },
-    data: { avatarUrl },
+    data: { avatarUrl: avatarUrl },
     select: { id: true, name: true, email: true, avatarUrl: true },
   });
-  return updatedUser;
-};
+  res.json(updatedUser);
+  } catch (err) {
+    next(new AppError(err.message));
+  }
+}
 
- export const updateMyPayoutInfo = async (userId, { bankName, bankAccountHolder, bankAccountNumber }) => {
-  const updatedUser = await UserRepository.update({
-    where: { id: userId },
-    data: {
-      bankName,
-      bankAccountHolder,
-      bankAccountNumber,
-    },
-  });
-  return {
-    id: updatedUser.id,
-    name: updatedUser.name,
-    email: updatedUser.email,
-    role: updatedUser.role,
-    avatarUrl: updatedUser.avatarUrl,
-    bankName: updatedUser.bankName,
-    bankAccountHolder: updatedUser.bankAccountHolder,
-    bankAccountNumber: updatedUser.bankAccountNumber,
-  };
-};
+
+ /**
+ * PUT /api/teachers/me/payout-info
+ * Teacher mengupdate informasi bank mereka sendiri.
+ */
+  export const updateMyPayoutInfo = async (req, res, next) => {
+  const { id: userId } = req.user;
+  const { bankName, bankAccountHolder, bankAccountNumber } = req.body;
+
+  try {
+    const updatedUser = await UserRepository.update({
+      where: { id: userId },
+      data: {
+        bankName,
+        bankAccountHolder,
+        bankAccountNumber,
+      },
+    });
+    res.json({
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatarUrl: updatedUser.avatarUrl,
+        bankName: updatedUser.bankName,
+        bankAccountHolder: updatedUser.bankAccountHolder,
+        bankAccountNumber: updatedUser.bankAccountNumber,
+    });
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+}

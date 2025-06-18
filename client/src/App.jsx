@@ -22,7 +22,8 @@ import BookingManagementPage from './pages/admin/BookingManagementPage';
 import PaymentManagementPage from './pages/admin/PaymentManagementPage';
 import PayoutManagementPage from './pages/admin/PayoutManagementPage';
 import PaymentOptionsPage from './pages/admin/PaymentOptionsPage';
-import SettingsPage from './pages/SettingsPage';
+import ApplicationSettingsPage from './pages/ApplicationSettingsPage';
+import UserSettings from '@/pages/UserSettings';
 
 // Halaman Teacher
 import TeacherDashboard from './pages/TeacherDashboard';
@@ -96,7 +97,7 @@ export default function App() {
               <Route path="payments" element={<PaymentManagementPage />} />
               <Route path="payouts" element={<PayoutManagementPage />} />
               <Route path="payment-options" element={<PaymentOptionsPage />} />
-              <Route path='settings' element={<SettingsPage />} />
+              <Route path='settings' element={<UserSettings />} />
               <Route path="profile" element={<UserProfilePage />} />
             </Route>
 
@@ -116,6 +117,7 @@ export default function App() {
               <Route path="availability" element={<TeacherAvailability />} />
               <Route path="my-payouts" element={<MyPayouts />} />
               <Route path="profile" element={<UserProfilePage />} />
+              <Route path="settings" element={<UserSettings />} />
             </Route>
             
             {/* --- Rute Student --- */}

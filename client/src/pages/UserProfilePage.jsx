@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import PayoutSettingsForm from '@/components/PayoutSettingsForm';
-import TeacherAvailability from '@/components/TeacherAvailability';
 import UserForm from '@/components/UserForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, } from '@/components/ui/dialog';
 
@@ -71,8 +69,6 @@ export default function UserProfilePage() {
       ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${user.avatarUrl}`
       : `https://ui-avatars.com/api/?name=${user.name.replace(/\s/g, '+')}&background=random`;
 
-  const isTeacher = user.role === 'TEACHER';
-
   return (
     <div className="max-w-2xl mx-auto">
       <Card>
@@ -94,30 +90,6 @@ export default function UserProfilePage() {
               >
                 Profile Details
               </button>
-              {isTeacher && (
-                <button
-                  onClick={() => setActiveTab('payout')}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'payout'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Payout Settings
-                </button>
-              )}
-              {isTeacher && (
-                <button
-                  onClick={() => setActiveTab('availability')}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'availability'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Unavailable Dates
-                </button>
-              )}
             </nav>
           </div>
 
@@ -155,17 +127,6 @@ export default function UserProfilePage() {
                   Edit Profile
                 </Button>
               </div>
-            </div>
-          )}
-
-          {activeTab === 'payout' && isTeacher && (
-            <div className="animate-fade-in">
-              <PayoutSettingsForm />
-            </div>
-          )}
-          {activeTab === 'availability' && isTeacher && (
-            <div className="animate-fade-in">
-              <TeacherAvailability />
             </div>
           )}
         </CardContent>

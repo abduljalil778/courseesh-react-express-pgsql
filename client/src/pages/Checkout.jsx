@@ -1,100 +1,139 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getCourseById, createBooking, getMyUnavailableDates } from "../lib/api";
+import { getCourseById, createBooking, getTeacherSchedule } from "../lib/api";
 import Spinner from "../components/Spinner";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrencyIDR } from "../utils/formatCurrency";
-import CustomDateTimePicker from "@/components/CustomTimePicker";
-import { format, parseISO } from "date-fns";
+import CustomDateTimePicker from "@/components/CustomDateTimePicker";
+
+const processSchedule = (scheduleArray) => {
+  const timesByDate = {};
+  if (!Array.isArray(scheduleArray)) return timesByDate;
+
+  scheduleArray.forEach(item => {
+    if (item && item.date) {
+      try {
+        const d = new Date(item.date);
+        if (isNaN(d.getTime())) return;
+
+        const year = d.getFullYear();
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        const hours = d.getHours().toString().padStart(2, '0');
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        const dateKey = `${year}-${month}-${day}`;
+        const timeValue = `${hours}:${minutes}`;
+
+        if (!timesByDate[dateKey]) {
+          timesByDate[dateKey] = [];
+        }
+        timesByDate[dateKey].push(timeValue);
+      } catch (e) {
+        console.error("Failed to process date:", item.date, e);
+      }
+    }
+  });
+  return timesByDate;
+};
 
 export default function Checkout() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user: loggedInUser, loading: authLoading } = useAuth();
 
-  // Data State
+  // --- State Management ---
   const [course, setCourse] = useState(null);
-  const [isLoadingCourse, setIsLoadingCourse] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [unavailableDates, setUnavailableDates] = useState([]); // ["2024-06-20", ...]
-  const [disabledTimesByDate, setDisabledTimesByDate] = useState({}); // {"2024-06-20": ["09:00","10:00"]}
-
-  const ALLOWED_INSTALLMENTS = [2, 3];
-  const SESSION_OPTIONS = [6, 12, 24];
-
-  // Form State
+  const [disabledTimesByDate, setDisabledTimesByDate] = useState({});
   const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    sessionDates: [],
-    paymentMethod: "FULL",
-    installments: 2,
+    fullName: "", email: "", phone: "", address: "",
+    sessionDates: [], paymentMethod: "FULL", installments: 2,
   });
 
+  const SESSION_OPTIONS = [6, 12, 24];
+  const ALLOWED_INSTALLMENTS = [2, 3];
+ 
   const [sessionCount, setSessionCount] = useState(SESSION_OPTIONS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch course, fill default contact, fetch unavailable
-  const loadCourseDetails = useCallback(
-    async (id, currentUser) => {
-      setIsLoadingCourse(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!courseId) {
+        setError("No course ID provided.");
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       setError(null);
       try {
-        const response = await getCourseById(id);
-        const courseData = response.data;
+        const courseResponse = await getCourseById(courseId);
+        const courseData = courseResponse.data;
         setCourse(courseData);
 
-        // Fetch unavailable dates for this teacher (API assumed)
-        const unavailableRes = await getMyUnavailableDates(courseData.teacherId);
-        const unavailableArr = unavailableRes.data || [];
-        setUnavailableDates(unavailableArr.map((d) =>
-          typeof d === "string"
-            ? d
-            : (d.date ? format(parseISO(d.date), "yyyy-MM-dd") : "")
-        ));
-
-        // (Optional: If teacher returns unavailable time slots by date)
-        setDisabledTimesByDate({unavailableRes});
-
-        setForm((f) => ({
-          ...f,
-          sessionDates: Array(sessionCount).fill(null), // One per session, default empty
-          fullName: f.fullName || currentUser?.name || "",
-          email: f.email || currentUser?.email || "",
-          phone: f.phone || currentUser?.phone || "",
-          address: f.address || "",
-        }));
+        if (courseData && courseData.teacherId) {
+          const unavailableRes = await getTeacherSchedule(courseData.teacherId);
+          const unavailableArr = unavailableRes.data.data || [];
+          const processedSchedule = processSchedule(unavailableArr); // Gunakan helper function
+          setDisabledTimesByDate(processedSchedule);
+        } else {
+          throw new Error("Teacher ID not found in the course data response.");
+        }
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load course details.");
+        console.error("Error during data fetch:", err);
+        setError(err.message || "Failed to load course details.");
       } finally {
-        setIsLoadingCourse(false);
+        setIsLoading(false);
       }
-    },
-    [sessionCount]
-  );
+    };
 
-  // Update sessionDates jika sessionCount berubah
-  useEffect(() => {
-    setForm((f) => ({
-      ...f,
-      sessionDates: Array(sessionCount)
-        .fill(null)
-        .map((_, i) => f.sessionDates?.[i] || null),
-    }));
-  }, [sessionCount]);
-
-  useEffect(() => {
-    if (courseId && !authLoading) {
-      loadCourseDetails(courseId, loggedInUser);
-    } else if (!courseId) {
-      setError("No course ID provided.");
-      setIsLoadingCourse(false);
+    if (!authLoading && loggedInUser) {
+      fetchData();
     }
-  }, [courseId, authLoading, loggedInUser, loadCourseDetails]);
+  }, [courseId, authLoading, loggedInUser]);
+
+  useEffect(() => {
+    // Inisialisasi data kontak saat user sudah ada
+    if (loggedInUser) {
+      setForm(f => ({
+        ...f,
+        fullName: f.fullName || loggedInUser.name || "",
+        email: f.email || loggedInUser.email || "",
+        phone: f.phone || loggedInUser.phone || "",
+      }));
+    }
+    // Update jumlah date picker saat sessionCount berubah
+    setForm(f => ({
+      ...f,
+      sessionDates: Array(sessionCount).fill(null).map((_, i) => f.sessionDates?.[i] || null),
+    }));
+  }, [sessionCount, loggedInUser]);
+
+  // real time nonactive times
+  const allDisabledTimes = useMemo(() => {
+    const combined = JSON.parse(JSON.stringify(disabledTimesByDate));
+    form.sessionDates.forEach(date => {
+      if (!date) return;
+      const d = new Date(date);
+      const dateKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+      const timeValue = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      if (!combined[dateKey]) combined[dateKey] = [];
+      if (!combined[dateKey].includes(timeValue)) combined[dateKey].push(timeValue);
+    });
+    return combined;
+  }, [disabledTimesByDate, form.sessionDates]);
+
+  const paymentDetails = useMemo(() => {
+    if (!course) return { total: 0, firstPayment: 0 };
+    const total = course.price * sessionCount;
+    let firstPayment = total;
+    if (form.paymentMethod === "INSTALLMENT") {
+      firstPayment = total / form.installments;
+    }
+    return { total, firstPayment: Math.round(firstPayment) };
+  }, [course, sessionCount, form.paymentMethod, form.installments]);
+
 
   // === HANDLE FORM
   const handleChange = (e) => {
@@ -125,7 +164,6 @@ export default function Checkout() {
   // === SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validasi: semua sesi wajib diisi
     if (form.sessionDates.some((d) => !d)) {
       Swal.fire("Incomplete Data", "Please pick all session dates & times.", "warning");
       return;
@@ -169,19 +207,8 @@ export default function Checkout() {
     }
   };
 
-  // === PAYMENT SUMMARY
-  const paymentDetails = React.useMemo(() => {
-    if (!course) return { total: 0, firstPayment: 0 };
-    const total = course.price * sessionCount;
-    let firstPayment = total;
-    if (form.paymentMethod === "INSTALLMENT") {
-      firstPayment = total / form.installments;
-    }
-    return { total, firstPayment: Math.round(firstPayment) };
-  }, [course, sessionCount, form.paymentMethod, form.installments]);
-
   // === RENDER ===
-  if (authLoading || isLoadingCourse) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Spinner size={60} />
@@ -308,8 +335,8 @@ export default function Checkout() {
                     <CustomDateTimePicker
                       value={dateValue}
                       onChange={(d) => handleSessionDateChange(i, d)}
-                      unavailableDates={unavailableDates}
-                      disabledTimesByDate={disabledTimesByDate}
+                      disabledTimesByDate={allDisabledTimes}
+                      unavailableDates={Object.keys(allDisabledTimes)}
                       minDate={new Date()}
                       label={`Select date & time`}
                     />
@@ -426,7 +453,7 @@ export default function Checkout() {
               </div>
               <button
                 type="submit"
-                disabled={isSubmitting || isLoadingCourse || authLoading}
+                disabled={isSubmitting || isLoading || authLoading}
                 className="mt-6 w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center"
               >
                 {isSubmitting ? (

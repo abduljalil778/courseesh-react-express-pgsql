@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import NewSidebar from './NewSidebar';
-import { Search, Plus, Bell, User, ChevronDown, Settings as IconSettings, LogOut as IconLogout } from 'lucide-react';
+import { Search, Plus, Bell, User, ChevronDown, Settings as IconSettings, LogOut as IconLogout, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {

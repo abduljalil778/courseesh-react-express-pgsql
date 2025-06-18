@@ -137,6 +137,7 @@ export default function UserForm({
               <option value="STUDENT">STUDENT</option>
               <option value="TEACHER">TEACHER</option>
               <option value="ADMIN">ADMIN</option>
+              <option value="FINANCE">FINANCE</option>
             </select>
             {errors.role && <p className="text-red-600 text-sm mt-1">{errors.role.message}</p>}
           </div>

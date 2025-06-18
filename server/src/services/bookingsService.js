@@ -325,9 +325,17 @@ export const createBooking = async (req, res, next) => {
 
     for (const dateStr of sessionDates) {
         const d = new Date(dateStr);
+
+        // Cek konflik dengan sesi booking yang ada pada waktu yang SAMA PERSIS
         const conflictSession = await prisma.bookingSession.findFirst({
             where: {
-                sessionDate: { gte: startOfDay(d), lt: endOfDay(d) },
+                // Perbaikan: Cek waktu yang eksak, bukan rentang harian
+                sessionDate: d, 
+
+                status: {
+                  not: SessionStatus.COMPLETED // <-- Abaikan sesi yang sudah selesai
+                },
+
                 booking: {
                     course: { teacherId: course.teacherId },
                     bookingStatus: { not: BookingStatus.CANCELLED },
@@ -335,16 +343,21 @@ export const createBooking = async (req, res, next) => {
             },
         });
         if (conflictSession) {
-            return next(new AppError(`Teacher is already booked on ${dateStr}`, 400));
+            return next(new AppError(`Teacher is already booked on ${dateStr}, please pick another dates or times`, 400));
         }
+
+        // Cek konflik dengan jadwal unavailable guru pada waktu yang SAMA PERSIS
         const conflictUnavailable = await prisma.teacherUnavailableDate.findFirst({
-            where: { teacherId: course.teacherId, date: { gte: startOfDay(d), lt: endOfDay(d) } },
+            where: { 
+                teacherId: course.teacherId, 
+                // Perbaikan: Cek waktu yang eksak
+                date: d
+            },
         });
         if (conflictUnavailable) {
             return next(new AppError(`Teacher is unavailable on ${dateStr}`, 400));
         }
     }
-
 
     const userDataToUpdate = {};
     if (req.user) {
@@ -387,7 +400,7 @@ export const createBooking = async (req, res, next) => {
           bookingId: newBooking.id,
           installmentNumber: 1,
           amount: totalPrice,
-          status: PayoutStatus.PENDING,
+          status: PayoutStatus.PENDING, // Harusnya PaymentStatus.PENDING
         });
       } else if (paymentMethod === PaymentMethod.INSTALLMENT) {
         const numInstallments = Number(installments);

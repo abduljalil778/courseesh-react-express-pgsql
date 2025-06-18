@@ -6,7 +6,7 @@ export const baseUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Enter a valid email address'),
   phone: z.string().regex(PHONE_REGEX, 'Enter a valid phone number'),
-  role: z.enum(['ADMIN', 'TEACHER', 'STUDENT'], {
+  role: z.enum(['ADMIN', 'TEACHER', 'STUDENT', 'FINANCE'], {
     errorMap: () => ({ message: 'Please select a valid role.' }),
   }),
   status: z.enum(['ACTIVE', 'INACTIVE'], {

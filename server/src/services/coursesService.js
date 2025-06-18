@@ -1,5 +1,6 @@
 import AppError from '../utils/AppError.mjs';
 import CourseRepository from '../repositories/courseRepository.js';
+import prisma from '../../libs/prisma.js';
 
 // --- GET (Mengambil Data) ---
 
@@ -23,7 +24,6 @@ export const getAllCourses = async (req, res, next) => {
       ];
     }
 
-    // Untuk total count (tanpa skip/take)
     const total = await CourseRepository.count({ where });
 
     // Sorting dynamic
@@ -46,6 +46,7 @@ export const getAllCourses = async (req, res, next) => {
         category: true,
         imageUrl: true,
         createdAt: true,
+        teacherId: true,
         teacher: {
           select: {
             id: true,
@@ -84,7 +85,6 @@ export const getAllCourses = async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error('getAllCourses Error:', err);
     next(new AppError(err.message, 500));
   }
 };
@@ -97,6 +97,7 @@ export const getCourseById = async (req, res, next) => {
       where: { id },
       select: {
         id: true, title: true, description: true, price: true,
+        teacherId: true,
         curriculum: true, classLevels: true, imageUrl: true,
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
         reviews: { select: { rating: true } },
@@ -120,6 +121,7 @@ export const getCourseById = async (req, res, next) => {
     next(new AppError(err.message, 500));
   }
 };
+
 
 // --- POST (Membuat Data Baru) ---
 

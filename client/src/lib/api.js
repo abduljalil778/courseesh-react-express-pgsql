@@ -18,6 +18,10 @@ export const getAllCourses = async (params = {}) => {
   return await api.get('/courses', { params });
 }
 
+export const getMyTeacherCourses = () => {
+  return api.get('/courses'); // Tidak perlu parameter, karena backend akan filter otomatis
+};
+
 // handle get course by ID
 export const getCourseById = async (courseId) => {
   return await api.get(`/courses/${courseId}`);
@@ -263,6 +267,15 @@ export const addUnavailableDate = async (date) => {
   return await api.post('/availability', { date });
 };
 
+export const addUnavailableSlots = async (dates) => {
+  return await api.post('/availability/slots', { dates })
+}
+
 export const deleteUnavailableDate = async (id) => {
   return await api.delete(`/availability/${id}`);
 };
+
+
+export const getTeacherSchedule = async (id) => {
+  return await api.get(`/availability/schedule/${id}`)
+}

@@ -38,8 +38,8 @@ export const updateUserValidator = [
     .optional()
     .trim()
     .notEmpty().withMessage('Role cannot be empty if provided.')
-    .isIn(['ADMIN', 'TEACHER', 'STUDENT'])
-    .withMessage('Role must be ADMIN, TEACHER, or STUDENT if provided'),
+    .isIn(['ADMIN', 'TEACHER', 'STUDENT', 'FINANCE'])
+    .withMessage('Role must be ADMIN, TEACHER, STUDENT, or FINANCE if provided'),
 
   body('status')
     .optional()

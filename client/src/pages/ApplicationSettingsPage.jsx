@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-export default function SettingsPage() {
+export default function ApplicationSettingsPage() {
   const [settings, setSettings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,10 +65,6 @@ export default function SettingsPage() {
   return (
     <form onSubmit={handleSubmit}>
       <Card>
-        <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
-          {/* <CardDescription>Manage global application settings here, such as service fees.</CardDescription> */}
-        </CardHeader>
         <CardContent className="space-y-6">
           {settings.map(setting => (
             <div key={setting.key}>

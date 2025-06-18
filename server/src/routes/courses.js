@@ -5,7 +5,7 @@ import {
   getCourseById,
   createCourse,
   updateCourse,
-  deleteCourse
+  deleteCourse,
 } from '../controllers/coursesController..js';
 import catchAsync from '../utils/catchAsync.js';
 import { upload } from '../middleware/upload.js';
@@ -13,14 +13,23 @@ import { getReviewsForCourse } from '../controllers/reviewsController.js';
 
 const router = express.Router();
 
-router.get('/', catchAsync(getAllCourses));
-router.get('/:id', catchAsync(getCourseById));
+router.get(
+  '/',
+  authenticate,
+  catchAsync(getAllCourses)
+);
+
+router.get(
+  '/:id',
+  authenticate,
+  catchAsync(getCourseById)
+);
 
 router.post(
   '/',
   authenticate,
   authorize('TEACHER','ADMIN'),
-  upload.single('thumbnailFile'), // Nama field file dari form
+  upload.single('thumbnailFile'),
   catchAsync(createCourse)
 );
 
