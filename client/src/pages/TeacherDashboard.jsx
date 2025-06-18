@@ -1,7 +1,7 @@
 // src/pages/TeacherDashboard.jsx
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
-  getMyTeacherCourses, // Menggunakan API yang sudah benar
+  getMyTeacherCourses,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -10,7 +10,54 @@ import Spinner from '../components/Spinner';
 import CourseForm from '../components/CourseForm';
 import Swal from 'sweetalert2';
 import CourseCard from '@/components/CourseCard';
-import { useCourseFilterStore } from '@/stores/courseFilterStore'; // <-- LANGKAH 1: Impor store
+import { useCourseFilterStore } from '@/stores/courseFilterStore';
+import { SUBJECT_CATEGORIES } from '@/config';
+import { X } from 'lucide-react';
+
+
+const ActiveFilterPills = () => {
+  const { searchTerm, filterClass, category, setCategory, setFilterClass, setSearchTerm } = useCourseFilterStore();
+
+  const categoryLabel = useMemo(() => {
+    if (!category) return '';
+    const foundCategory = SUBJECT_CATEGORIES.find(cat => cat.value === category);
+    return foundCategory ? foundCategory.label : category;
+  }, [category]);
+
+  const hasActiveFilters = searchTerm || filterClass || category;
+  if (!hasActiveFilters) return null;
+
+  return (
+    <div className="mb-6 flex items-center flex-wrap gap-2">
+      <span className="text-sm font-medium text-gray-600">Filtering by:</span>
+      {category && (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+          {categoryLabel}
+          <button onClick={() => setCategory('')} className="ml-1.5 -mr-1 p-0.5 rounded-full hover:bg-indigo-200">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      )}
+      {filterClass && (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+          {filterClass}
+          <button onClick={() => setFilterClass('')} className="ml-1.5 -mr-1 p-0.5 rounded-full hover:bg-gray-300">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      )}
+       {searchTerm && (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+          "{searchTerm}"
+          <button onClick={() => setSearchTerm('')} className="ml-1.5 -mr-1 p-0.5 rounded-full hover:bg-yellow-200">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      )}
+    </div>
+  );
+};
+
 
 export default function TeacherDashboard() {
   const [courses, setCourses] = useState([]);
@@ -18,15 +65,23 @@ export default function TeacherDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formMode, setFormMode] = useState(null);
+  
+  // Ambil semua state dan setter dari store
+  const { searchTerm, filterClass, category, clearFilters } = useCourseFilterStore();
 
-  // --- LANGKAH 2: Gunakan store untuk mendapatkan nilai filter ---
-  const { searchTerm, filterClass } = useCourseFilterStore();
+  // --- LANGKAH 2: Bersihkan filter saat meninggalkan halaman ---
+  useEffect(() => {
+    // Fungsi cleanup ini akan berjalan saat komponen 'unmount'
+    return () => {
+      clearFilters();
+    }
+  }, [clearFilters]);
+
 
   const loadCourses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Kita sudah menggunakan API yang benar di sini
       const response = await getMyTeacherCourses();
       setCourses(response.data?.courses || []);
     } catch (err) {
@@ -40,25 +95,16 @@ export default function TeacherDashboard() {
     loadCourses();
   }, [loadCourses]);
 
-  // --- LANGKAH 3: Buat daftar kursus yang sudah difilter menggunakan useMemo ---
   const filteredCourses = useMemo(() => {
-    // Jika tidak ada filter, kembalikan semua kursus
-    if (!searchTerm && !filterClass) {
-      return courses;
-    }
-    
-    return courses.filter(course => {
-      // Logika untuk filter berdasarkan kata kunci pencarian (tidak case-sensitive)
+    return courses.filter(c => {
       const searchTermLower = searchTerm.toLowerCase();
-      const titleMatch = course.title.toLowerCase().includes(searchTermLower);
-      
-      // Logika untuk filter berdasarkan level kelas
-      const classLevelMatch = !filterClass || course.classLevels.includes(filterClass);
+      const titleMatch = c.title.toLowerCase().includes(searchTermLower);
+      const categoryMatch = !category || c.category === category;
+      const classLevelMatch = !filterClass || c.classLevels.includes(filterClass);
 
-      return titleMatch && classLevelMatch;
+      return titleMatch && classLevelMatch && categoryMatch;
     });
-  }, [courses, searchTerm, filterClass]); // Dihitung ulang hanya jika salah satu dari ini berubah
-
+  }, [courses, searchTerm, filterClass, category]);
 
 
   const handleAddNewCourseClick = () => {
@@ -113,6 +159,9 @@ export default function TeacherDashboard() {
             Add New Course
           </button>
         </div>
+        
+        {/* --- LANGKAH 3: Tempatkan Komponen Filter Aktif di sini --- */}
+        <ActiveFilterPills />
 
         {/* Error State */}
         {error && <div className="p-6 text-center text-red-600">{error}</div>}
@@ -133,7 +182,7 @@ export default function TeacherDashboard() {
           </div>
         )}
 
-        {/* --- LANGKAH 4: Tampilkan hasil yang sudah difilter --- */}
+        {/* Daftar Kursus */}
         {filteredCourses.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (

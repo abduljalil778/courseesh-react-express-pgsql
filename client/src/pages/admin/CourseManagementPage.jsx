@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { getAllCourses, deleteCourse } from "../../lib/api";
+import { getPublicCourses, deleteCourse } from "../../lib/api";
 import { formatCurrencyIDR } from "../../utils/formatCurrency";
 import Swal from "sweetalert2";
 import { SUBJECT_CATEGORIES } from "../../config";
@@ -55,7 +55,7 @@ export default function CourseManagementPage() {
       };
       if (searchTerm) params.search = searchTerm;
       if (categoryFilter) params.category = categoryFilter;
-      const response = await getAllCourses(params);
+      const response = await getPublicCourses(params);
       setCourses(response.data?.courses || response.data || []);
       setTotalCourses(response.data?.total || 0);
     } catch (err) {

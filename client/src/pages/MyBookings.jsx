@@ -106,7 +106,7 @@ export default function TransactionList() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="container mx-auto px-4 md:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Transaction List</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Daftar Transaksi</h1>
 
         {/* Search */}
         <div className="mb-8">

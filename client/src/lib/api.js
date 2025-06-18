@@ -14,9 +14,9 @@ api.interceptors.request.use(config => {
 });
 
 // handle get all courses
-export const getAllCourses = async (params = {}) => {
-  return await api.get('/courses', { params });
-}
+export const getPublicCourses = (params) => {
+  return api.get('/courses', { params });
+};
 
 export const getMyTeacherCourses = () => {
   return api.get('/courses'); // Tidak perlu parameter, karena backend akan filter otomatis
