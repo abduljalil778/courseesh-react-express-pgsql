@@ -43,6 +43,7 @@ export const getAllCourses = async (req, res, next) => {
         price: true,
         classLevels: true,
         curriculum: true,
+        learningObjectives: true,
         category: true,
         imageUrl: true,
         createdAt: true,
@@ -99,6 +100,7 @@ export const getCourseById = async (req, res, next) => {
         id: true, title: true, description: true, price: true,
         teacherId: true,
         curriculum: true, classLevels: true, imageUrl: true,
+        learningObjectives: true,
         teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
         reviews: { select: { rating: true } },
         category: true,
@@ -116,7 +118,7 @@ export const getCourseById = async (req, res, next) => {
         averageRating
     };
 
-    return res.json(courseWithAggregates);
+    return res.json({data: courseWithAggregates});
   } catch (err) {
     next(new AppError(err.message, 500));
   }
@@ -128,7 +130,16 @@ export const getCourseById = async (req, res, next) => {
 export const createCourse = async (req, res, next) => {
 
   try {
-    const { title, description, price, classLevels, curriculum, category } = req.body;
+    let { title, description, price, classLevels, curriculum, category, learningObjectives } = req.body;
+
+    let parsedObjectives = [];
+    if (learningObjectives && typeof learningObjectives === 'string') {
+      try {
+        parsedObjectives = JSON.parse(learningObjectives);
+      } catch (e) {
+        return next(new AppError('Invalid format for learning objectives.', 400));
+      }
+    }
 
     if (!title || !price || !classLevels) {
       return next(new AppError('Title, price, and class levels are required.', 400));
@@ -144,6 +155,7 @@ export const createCourse = async (req, res, next) => {
       curriculum: curriculum || null,
       category: category || 'UMUM',
       teacherId: req.user.id,
+      learningObjectives: parsedObjectives,
     };
     
     if (req.file) {
@@ -168,15 +180,20 @@ export const updateCourse = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const { title, description, price, classLevels, curriculum, category } = req.body;
+    // Ambil semua field dari body
+    const { title, description, price, classLevels, curriculum, category, learningObjectives } = req.body;
 
+    // Pengecekan otorisasi (tidak berubah, sudah benar)
     const existing = await CourseRepository.findUnique({ where: { id } });
     if (!existing) return next(new AppError('Course not found', 404));
     if (req.user.role === 'TEACHER' && existing.teacherId !== req.user.id) {
       return next(new AppError('You are not authorized to update this course', 403));
     }
 
+    // Siapkan objek untuk menampung data yang akan di-update
     const dataToUpdate = {};
+
+    // Isi objek dataToUpdate hanya dengan field yang ada di request
     if (title) dataToUpdate.title = title;
     if (description !== undefined) dataToUpdate.description = description;
     if (price) dataToUpdate.price = parseFloat(price);
@@ -184,21 +201,40 @@ export const updateCourse = async (req, res, next) => {
     if (curriculum !== undefined) dataToUpdate.curriculum = curriculum || null;
     if (category !== undefined) dataToUpdate.category = category;
 
+    // --- LOGIKA PARSING DAN UPDATE YANG DIPERBAIKI ---
+    // Cek jika learningObjectives ada di dalam request
+    if (learningObjectives !== undefined) {
+      let parsedObjectives = [];
+      // Jika bentuknya string, coba parse. Jika sudah array, langsung gunakan.
+      if (typeof learningObjectives === 'string' && learningObjectives) {
+        try {
+          parsedObjectives = JSON.parse(learningObjectives);
+        } catch (e) {
+          return next(new AppError('Invalid JSON format for learning objectives.', 400));
+        }
+      } else if (Array.isArray(learningObjectives)) {
+        parsedObjectives = learningObjectives;
+      }
+      // Masukkan ke dataToUpdate dengan nama field yang benar
+      dataToUpdate.learningObjectives = parsedObjectives;
+    }
+
+    // Handle file upload (tidak berubah)
     if (req.file) {
       dataToUpdate.imageUrl = `/uploads/${req.file.filename}`;
     }
 
+    // Lakukan update ke database
     const updated = await CourseRepository.update({
       where: { id },
       data: dataToUpdate,
     });
+    
     return res.json(updated);
     
   } catch (error) {
     return next(new AppError(error.message, 500));
-    
   }
-  
 };
 
 // --- DELETE ---

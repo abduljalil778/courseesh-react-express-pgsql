@@ -120,9 +120,9 @@ export default function StudentDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          Selamat datang kembali, {user?.name}!
+          Welcome back, {user?.name}!
         </h1>
-        <p className="mt-2 text-md text-gray-600">Siap untuk belajar hal baru hari ini?</p>
+        <p className="mt-2 text-md text-gray-600">Ready to learn something new today?</p>
       </div>
 
       {/* --- BAGIAN 2: TAMPILAN FILTER AKTIF --- */}

@@ -20,14 +20,12 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
     // Logika default value disederhanakan di sini
     defaultValues: {
       teacherReport: session?.teacherReport || '',
-      // Jika studentAttendance sudah ada (baik true/false), gunakan itu. Jika belum (null/undefined), default ke true (Present).
       studentAttendance: session?.studentAttendance ?? true,
       status: session?.status || 'SCHEDULED',
     },
   });
   
   // useEffect untuk me-reset form jika prop `session` berubah.
-  // Ini penting agar saat modal dibuka untuk sesi yang berbeda, formnya diperbarui.
   useEffect(() => {
     reset({
       teacherReport: session?.teacherReport || '',
@@ -45,7 +43,6 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
     }
   };
 
-  // Fungsi submit sekarang akan mengirim FormData
   const handleFormSubmit = (data) => {
     const payload = {
       ...data,
@@ -66,7 +63,7 @@ export default function SessionReportForm({ session, onSubmit, onCancel, isSubmi
           {...register('teacherReport')}
           rows="4"
           className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Enter notes about the session, student's progress, homework, etc."
+          placeholder="Enter notes about the session, student's progress, learning materials, etc."
         />
         {errors.teacherReport && <p className="text-red-500 text-xs mt-1">{errors.teacherReport.message}</p>}
       </div>

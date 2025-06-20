@@ -98,7 +98,7 @@ export const getReviewsForCourse = async (req, res, next) => {
       where: { courseId },
       include: {
         student: {
-          select: { name: true, id: true } 
+          select: { name: true, id: true, avatarUrl: true } 
         }
       },
       orderBy: {

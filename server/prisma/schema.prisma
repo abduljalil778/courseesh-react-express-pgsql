@@ -36,21 +36,21 @@ model User {
 }
 
 model Course {
-  id               String          @id @default(uuid())
-  title            String
-  description      String
-  price            Float
-  imageUrl         String?
-  numberOfSessions Int?
-  category         SubjectCategory @default(UMUM)
-  classLevels      ClassLevel[] // Array untuk mendukung beberapa kelas
-  curriculum       Curriculum? // null for UTBK
-  teacher          User            @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
-  teacherId        String
-  bookings         Booking[]       @relation("CourseBookings")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  reviews          CourseReview[]
+  id                 String          @id @default(uuid())
+  title              String
+  description        String
+  price              Float
+  imageUrl           String?
+  category           SubjectCategory @default(UMUM)
+  classLevels        ClassLevel[]
+  curriculum         Curriculum? // null for UTBK
+  learningObjectives String[]
+  teacher            User            @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacherId          String
+  bookings           Booking[]       @relation("CourseBookings")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  reviews            CourseReview[]
 }
 
 model Booking {

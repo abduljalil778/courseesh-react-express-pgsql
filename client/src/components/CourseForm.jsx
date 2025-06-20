@@ -1,6 +1,6 @@
 // src/components/CourseForm.jsx
-import React, { useEffect, useState, } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect, useState } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CLASS_LEVELS, CURRICULA, SUBJECT_CATEGORIES } from '../config';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { X, PlusCircle } from 'lucide-react';
 
 const courseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -18,6 +19,7 @@ const courseSchema = z.object({
   classLevels: z.array(z.string()).min(1, { message: 'At least one class level is required.' }),
   curriculum: z.string().optional().default(''),
   category: z.string().min(1, 'Category is required'),
+  learningObjectives: z.array(z.string()).optional(),
 });
 
 export default function CourseForm({
@@ -37,18 +39,31 @@ export default function CourseForm({
     reset,
     watch,
     setValue,
+    control, // <-- Ambil 'control' dari useForm
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(courseSchema),
-    defaultValues: initialData || {
+    defaultValues: {
       title: '', description: '', price: 0,
-      classLevels: [], curriculum: '', category: 'UMUM'
+      classLevels: [], curriculum: '', category: 'UMUM',
+      learningObjectives: [''], // <-- Inisialisasi dengan satu input kosong
+      ...initialData,
     },
+  });
+
+  // --- 3. Gunakan useFieldArray untuk mengelola input dinamis ---
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "learningObjectives"
   });
 
   useEffect(() => {
     if (initialData) {
-      reset({ category: 'UMUM', ...initialData });
+      // Pastikan learningObjectives di-reset dengan benar
+      const objectives = initialData.learningObjectives && initialData.learningObjectives.length > 0 
+        ? initialData.learningObjectives 
+        : [''];
+      reset({ category: 'UMUM', ...initialData, learningObjectives: objectives });
       setPreviewUrl(initialData.imageUrl || null);
       setThumbnailFile(null);
     }
@@ -71,13 +86,22 @@ export default function CourseForm({
 
   const handleFormSubmit = async (data) => {
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
+    
+    // Pisahkan learningObjectives dari data lain
+    const { learningObjectives, ...restOfData } = data;
+
+    Object.entries(restOfData).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         formData.append(key, value.join(','));
       } else {
         formData.append(key, value ?? '');
       }
     });
+
+    // Kirim array sebagai string JSON. Ini cara paling aman untuk FormData.
+    const validObjectives = learningObjectives.filter(obj => obj && obj.trim() !== '');
+    formData.append('learningObjectives', JSON.stringify(validObjectives));
+
     if (thumbnailFile) {
       formData.append('thumbnailFile', thumbnailFile);
     }
@@ -116,6 +140,39 @@ export default function CourseForm({
         <Label htmlFor="description">Description *</Label>
         <Textarea id="description" {...register('description')} />
         {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>}
+      </div>
+      {/* --- 5. Implementasikan UI Input Dinamis --- */}
+      <div className="space-y-2 pt-4 border-t">
+        <Label className="font-semibold">Apa yang Akan Dipelajari</Label>
+        <p className="text-xs text-muted-foreground">Tambahkan poin-poin utama yang akan didapat siswa dari kursus ini.</p>
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-center gap-2">
+            <Input
+              placeholder={`Poin pembelajaran #${index + 1}`}
+              {...register(`learningObjectives.${index}`)}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => remove(index)}
+              disabled={fields.length <= 1}
+              className="shrink-0"
+            >
+              <X className="h-4 w-4 text-red-500" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append("")}
+          className="mt-2"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Tambah Poin
+        </Button>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
