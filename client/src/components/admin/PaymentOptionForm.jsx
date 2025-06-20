@@ -39,7 +39,7 @@ export default function PaymentOptionForm({ initialData = null, onSubmit, onCanc
         {errors.accountNumber && <p className="text-red-500 text-xs mt-1">{errors.accountNumber.message}</p>}
       </div>
       <div>
-        <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700">Bank Logo URL (Optional)</label>
+        <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700">Bank Logo URL</label>
         <input type="text" id="logoUrl" {...register('logoUrl')} className="mt-1 w-full p-2 border rounded-md" />
         {errors.logoUrl && <p className="text-red-500 text-xs mt-1">{errors.logoUrl.message}</p>}
       </div>

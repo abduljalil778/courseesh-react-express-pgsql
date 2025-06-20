@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu";
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
-import { CLASS_LEVELS, SUBJECT_CATEGORIES } from '@/config'; // Asumsi kategori ada di config
+import { CLASS_LEVELS, SUBJECT_CATEGORIES } from '@/config'; 
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 // Komponen kecil untuk daftar link di menu navigasi kanan
@@ -26,16 +26,16 @@ const RightNavLinks = ({ role }) => {
   if (role === 'STUDENT') {
     return (
       <nav className="hidden lg:flex gap-6">
-        <Link to="/student/my-courses" {...commonProps}>Pembelajaran Saya</Link>
-        <Link to="/student/my-bookings" {...commonProps}>Transaksi</Link>
+        <Link to="/student/my-courses" {...commonProps}>My Courses</Link>
+        <Link to="/student/my-bookings" {...commonProps}>Transactions</Link>
       </nav>
     );
   }
   if (role === 'TEACHER') {
     return (
       <nav className="hidden lg:flex gap-6">
-        <Link to="/teacher/bookings" {...commonProps}>Booking Request</Link>
-        <Link to="/teacher/schedules" {...commonProps}>Jadwal</Link>
+        <Link to="/teacher/bookings" {...commonProps}>Bookings</Link>
+        <Link to="/teacher/schedules" {...commonProps}>Schedules</Link>
       </nav>
     );
   }
@@ -65,11 +65,10 @@ export default function Navbar() {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 gap-4 md:gap-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16 gap-4 md:gap-8">
           
           {/* === BAGIAN KIRI: LOGO & KATEGORI === */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-6">
             <Link to={`/${user.role.toLowerCase()}`} className="flex-shrink-0">
               <img className="h-9 w-auto" src="/logo.png" alt="Courseesh Logo" />
             </Link>
@@ -77,7 +76,7 @@ export default function Navbar() {
             <NavigationMenu className="hidden md:flex">
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>Jelajahi</NavigationMenuTrigger>
+                  <NavigationMenuTrigger>Explore</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       {SUBJECT_CATEGORIES.map((cat) => (
@@ -114,7 +113,7 @@ export default function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Cari apa saja"
+                placeholder="Search courses"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded-md pl-9 text-sm"
@@ -124,14 +123,14 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center shrink-0">
                   <Filter className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">{filterClass || "Semua Kelas"}</span>
+                  <span className="hidden md:inline">{filterClass || "All Classes"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuLabel>Filter by Class Level</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={filterClass} onValueChange={setFilterClass}>
-                  <DropdownMenuRadioItem value="">Semua Kelas</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="">All Classes</DropdownMenuRadioItem>
                   {CLASS_LEVELS.map(level => (
                     <DropdownMenuRadioItem key={level} value={level}>{level}</DropdownMenuRadioItem>
                   ))}
@@ -178,7 +177,7 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild><Link to={`/${user.role.toLowerCase()}/profile`} className="cursor-pointer w-full"><UserCircle className="mr-2 h-4 w-4" /><span>Profile</span></Link></DropdownMenuItem>
                 {user.role === 'TEACHER' && <DropdownMenuItem asChild><Link to="/teacher/settings" className="cursor-pointer w-full"><Settings className="mr-2 h-4 w-4" /><span>Settings</span></Link></DropdownMenuItem>}
-                {user.role === 'TEACHER' && <DropdownMenuItem asChild><Link to="/teacher/my-payouts" className="cursor-pointer w-full"><LucideCreditCard className="mr-2 h-4 w-4" /><span>Penghasilan</span></Link></DropdownMenuItem>}
+                {user.role === 'TEACHER' && <DropdownMenuItem asChild><Link to="/teacher/my-payouts" className="cursor-pointer w-full"><LucideCreditCard className="mr-2 h-4 w-4" /><span>Honor</span></Link></DropdownMenuItem>}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" /><span>Logout</span>
@@ -188,7 +187,6 @@ export default function Navbar() {
           </div>
 
         </div>
-      </div>
     </header>
   );
 }

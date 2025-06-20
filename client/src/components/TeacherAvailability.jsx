@@ -7,28 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-
-const generateTimeSlots = (start = "07:00", end = "21:00", step = 30) => {
-  const slots = [];
-  let currentTime = new Date(`1970-01-01T${start}:00`);
-  const endTime = new Date(`1970-01-01T${end}:00`);
-
-  while (currentTime <= endTime) {
-    slots.push(format(currentTime, "HH:mm"));
-    currentTime.setMinutes(currentTime.getMinutes() + step);
-  }
-  return slots;
-};
+import { generateTimeSlots } from '@/utils/timeUtils';
 
 export default function TeacherAvailability() {
-  const [unavailableEntries, setUnavailableEntries] = useState([]); // Menyimpan data lengkap dari API [{id, date}]
+  const [unavailableEntries, setUnavailableEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // State untuk UI interaktif
-  const [selectedDay, setSelectedDay] = useState(null); // Hari yang dipilih di kalender
-  const [selectedTimes, setSelectedTimes] = useState([]); // Jam yang dicentang untuk hari terpilih
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedTimes, setSelectedTimes] = useState([]);
 
   const timeSlots = useMemo(() => generateTimeSlots(), []);
 
@@ -97,12 +86,11 @@ export default function TeacherAvailability() {
     });
 
     try {
-      // Panggil API baru yang bisa menerima array
-      await addUnavailableSlots({ dates: datesToAdd });
+      await addUnavailableSlots(datesToAdd);
       Swal.fire('Success', 'Unavailable slots have been added.', 'success');
       setSelectedDay(null);
       setSelectedTimes([]);
-      await loadDates(); // Muat ulang data
+      await loadDates();
     } catch (err) {
       Swal.fire('Error', err.response?.data?.message || 'Failed to add slots', 'error');
     } finally {

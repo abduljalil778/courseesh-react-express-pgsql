@@ -12,7 +12,7 @@ router.use(authenticate);
 router.get('/', catchAsync(getMyUnavailableDates));
 router.get('/schedule/:id', catchAsync(getTeacherSchedule))
 router.post('/', unavailableDateValidator, runValidation, catchAsync(addUnavailableDate));
-router.post('/slots', authorize('TEACHER'), unavailableDateValidator, runValidation, catchAsync(addUnavailableSlots));
+router.post('/slots', authorize('TEACHER'), catchAsync(addUnavailableSlots));
 router.delete('/:id', unavailableIdValidator, runValidation, catchAsync(removeUnavailableDate));
 
 export default router;

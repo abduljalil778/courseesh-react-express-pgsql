@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 
 export default function MainLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <Navbar />
       <main>
         <div className="container mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
@@ -13,4 +13,4 @@ export default function MainLayout() {
       </main>
     </div>
   );
-}
+} 

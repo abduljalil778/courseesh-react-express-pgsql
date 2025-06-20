@@ -4,6 +4,8 @@ import { getAllBookings } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { format, parseISO } from 'date-fns';
 import { BookOpenIcon, UserIcon, AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/solid';
+import BookingDisplayStatus from '@/components/BookingDisplayStatus';
+import { Badge } from '@/components/ui/badge';
 
 export default function TeacherSchedules() {
   const [activeBookings, setActiveBookings] = useState([]);
@@ -30,15 +32,6 @@ export default function TeacherSchedules() {
   useEffect(() => {
     loadActiveBookings();
   }, [loadActiveBookings]);
-
-  // Status display for teacher
-  const getBookingDisplayStatus = (booking) => {
-    switch (booking.bookingStatus) {
-      case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
-      case 'COMPLETED': return { text: 'Completed', colorClass: 'text-blue-700 bg-blue-100' };
-      default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
-    }
-  };
 
   if (isLoading) {
     return (
@@ -79,7 +72,7 @@ export default function TeacherSchedules() {
         {activeBookings.map(booking => {
           const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
           const totalSessions = booking.sessions?.length || 0;
-          const status = getBookingDisplayStatus(booking);
+          const status = BookingDisplayStatus(booking);
 
           return (
             <div
@@ -89,9 +82,7 @@ export default function TeacherSchedules() {
             >
               <div className="p-5 flex flex-col flex-grow">
                 <div className="flex justify-between items-start mb-2">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.colorClass}`}>
-                    {status.text}
-                  </span>
+                  <Badge className={status.colorClass} variant={status.variant}>{status.text}</Badge>
                   <span className="inline-flex items-center gap-1 text-xs text-gray-400">
                     <BookOpenIcon className="w-4 h-4" /> {booking.course?.title || 'N/A'}
                   </span>

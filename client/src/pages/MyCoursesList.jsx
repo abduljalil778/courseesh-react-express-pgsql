@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
 import Spinner from '../components/Spinner';
+import BookingDisplayStatus from '@/components/BookingDisplayStatus';
+import { Badge } from '@/components/ui/badge';
 
 export default function MyCoursesList() {
   const [bookings, setBookings] = useState([]);
@@ -28,22 +30,6 @@ export default function MyCoursesList() {
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
-
-  const getBookingDisplayStatus = (booking) => {
-    const hasPaidPayment = booking.payments.some(p => p.status === 'PAID');
-    if (booking.bookingStatus === 'PENDING') {
-      if (!hasPaidPayment) {
-        return { text: 'Waiting for Payment', colorClass: 'text-orange-700 bg-orange-100' };
-      }
-      return { text: 'Waiting Teacher Confirmation', colorClass: 'text-yellow-700 bg-yellow-100' };
-    }
-    switch (booking.bookingStatus) {
-      case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
-      case 'COMPLETED': return { text: 'Completed', colorClass: 'text-blue-700 bg-blue-100' };
-      case 'CANCELLED': return { text: 'Cancelled', colorClass: 'text-red-700 bg-red-100' };
-      default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
-    }
-  };
 
   if (isLoading) {
     return (
@@ -83,10 +69,10 @@ export default function MyCoursesList() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">Daftar Kursus</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">Courses List</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {bookings.map(booking => {
-          const displayStatus = getBookingDisplayStatus(booking);
+          const displayStatus = BookingDisplayStatus(booking);
           const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
           const totalSessions = booking.sessions?.length || 0;
 
@@ -98,9 +84,7 @@ export default function MyCoursesList() {
             >
                 <div className="p-5 flex flex-col flex-grow">
                     <div className="flex justify-between items-start mb-2">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${displayStatus.colorClass}`}>
-                            {displayStatus.text}
-                        </span>
+                        <Badge className={displayStatus.colorClass} variant={displayStatus.variant}>{displayStatus.text}</Badge>
                     </div>
                     <h2 className="text-lg font-semibold text-gray-800 leading-tight flex-grow Htruncate_custom">
                         {booking.course?.title || 'N/A'}

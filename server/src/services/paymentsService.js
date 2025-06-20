@@ -150,7 +150,7 @@ export const updatePayment = async (req, res, next) => {
       const payment = await tx.payment.update({
         where: { id: paymentId },
         data: dataToUpdate,
-        include: { // Include booking untuk mendapatkan detail kursus dan pembayaran lain
+        include: { 
           booking: {
             include: {
               payments: { select: { status: true } },
@@ -193,10 +193,10 @@ export const updatePayment = async (req, res, next) => {
           const allInstallmentsPaid = bookingDetails.payments.every(p => p.status === PaymentStatus.PAID);
           if (allInstallmentsPaid && bookingDetails.bookingStatus === BookingStatus.PENDING) {
              // Opsional: Otomatis konfirmasi booking jika semua lunas & status masih pending.
-             // await tx.booking.update({
-             //   where: { id: bookingDetails.id },
-             //   data: { bookingStatus: BookingStatus.CONFIRMED }
-             // });
+            //  await tx.booking.update({
+            //    where: { id: bookingDetails.id },
+            //    data: { bookingStatus: BookingStatus.CONFIRMED }
+            //  });
           }
         }
       } else if (payment.status === PaymentStatus.PAID && payment.booking.paymentMethod === PaymentMethod.FULL) {
@@ -219,7 +219,6 @@ export const updatePayment = async (req, res, next) => {
 
     // Ambil kembali payment yang diupdate dengan relasi yang mungkin berubah
     // untuk respons yang akurat, atau cukup kembalikan hasil transaksi.
-    // Ini contoh sederhana:
     const finalPaymentDetails = await prisma.payment.findUnique({
         where: {id: updatedPayment.id},
         include: { booking: { include: { course: true, student: true, sessions: true, payments: true }}}
@@ -241,7 +240,7 @@ export const updatePayment = async (req, res, next) => {
  * Pertimbangkan konsekuensinya terhadap status booking keseluruhan.
  */
 export const deletePayment = async (req, res, next) => {
-  const { id } = req.params; // ID dari record Payment (cicilan)
+  const { id } = req.params;
   try {
     await prisma.payment.delete({ where: { id } });
     return res.status(204).send();

@@ -1,5 +1,6 @@
 import prisma from '../../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
+import { BookingStatus, SessionStatus } from '@prisma/client'; 
 
 export const getMyUnavailableDates = async (req, res, next) => {
   try {
@@ -10,13 +11,9 @@ export const getMyUnavailableDates = async (req, res, next) => {
     });
     const bookedSessions = await prisma.bookingSession.findMany({
       where: {
-        // ======================================================
-        // PENAMBAHAN KONDISI BARU DI SINI
-        // ======================================================
         status: {
           not: SessionStatus.COMPLETED // <-- Hanya ambil sesi yang BELUM SELESAI
         },
-        // ======================================================
         booking: {
           course:{
             teacherId: id
@@ -112,12 +109,12 @@ export const getUnavailableDatesByTeacherId = async (req, res, next) => {
   }
 };
 
-import { BookingStatus, SessionStatus } from '@prisma/client'; 
+
 
 export const getTeacherSchedule = async (req, res, next) => {
   try {
-    const { teacherId } = req.params;
-
+    const { id: teacherId } = req.params;
+    
     const manuallyUnavailable = await prisma.teacherUnavailableDate.findMany({
       where: { teacherId: teacherId },
       select: { date: true }
@@ -125,16 +122,10 @@ export const getTeacherSchedule = async (req, res, next) => {
 
     const bookedSessions = await prisma.bookingSession.findMany({ 
       where: {
-        // Filter sesi yang statusnya BUKAN COMPLETED
-        status: {
-          not: SessionStatus.COMPLETED
-        },
+        status: { not: SessionStatus.COMPLETED },
         booking: {
           course: {
             teacherId: teacherId
-          },
-          bookingStatus: {
-            not: BookingStatus.CANCELLED
           }
         }
       },

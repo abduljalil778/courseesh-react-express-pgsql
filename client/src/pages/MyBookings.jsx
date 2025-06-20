@@ -5,25 +5,9 @@ import { formatCurrencyIDR } from '../utils/formatCurrency';
 import { MagnifyingGlassIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import BookingDetailModal from '../components/BookingDetailModal';
+import BookingDisplayStatus from '@/components/BookingDisplayStatus';
+import { Badge } from '@/components/ui/badge';
 
-
-
-// Helper status
-const getBookingDisplayStatus = (booking) => {
-  const hasPaidPayment = booking.payments?.some(p => p.status === 'PAID');
-  if (booking.bookingStatus === 'PENDING') {
-    if (!hasPaidPayment) {
-      return { text: 'Waiting for Payment', colorClass: 'text-orange-700 bg-orange-100' };
-    }
-    return { text: 'Waiting Teacher Confirmation', colorClass: 'text-yellow-700 bg-yellow-100' };
-  }
-  switch (booking.bookingStatus) {
-    case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
-    case 'COMPLETED': return { text: 'Completed', colorClass: 'text-blue-700 bg-blue-100' };
-    case 'CANCELLED': return { text: 'Cancelled', colorClass: 'text-red-700 bg-red-100' };
-    default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
-  }
-};
 
 // Skeleton minimal
 const TransactionSkeleton = () => (
@@ -106,7 +90,7 @@ export default function TransactionList() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="container mx-auto px-4 md:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Daftar Transaksi</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Transactions List</h1>
 
         {/* Search */}
         <div className="mb-8">
@@ -167,7 +151,7 @@ export default function TransactionList() {
             </div>
           ) : (
             bookings.map((booking) => {
-              const displayStatus = getBookingDisplayStatus(booking);
+              const displayStatus = BookingDisplayStatus(booking);
               const courseImageUrl = getImageUrl(booking);
               return (
                 <div
@@ -205,9 +189,7 @@ export default function TransactionList() {
                     </div>
                     {/* Status and Payment Method - Moved to top right */}
                     <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
-                      <span className={`px-4 py-2 font-bold text-base rounded-full ${displayStatus.colorClass}`}>
-                        {displayStatus.text}
-                      </span>
+                      <Badge className={displayStatus.colorClass} variant={displayStatus.variant}>{displayStatus.text}</Badge>
                       <div className="text-xs text-gray-500 mt-1">
                         {booking.paymentMethod === 'INSTALLMENT'
                           ? 'Installment Payment'

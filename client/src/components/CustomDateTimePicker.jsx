@@ -4,6 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { format, isBefore, startOfDay, isToday } from "date-fns";
 import { InfoIcon, Calendar as CalendarIcon } from "lucide-react";
+import { generateTimeSlots } from '@/utils/timeUtils';
 
 // Helper function untuk padding nol (misal: 7 -> "07")
 function pad(n) {
@@ -17,7 +18,7 @@ export default function CustomDateTimePicker({
   unavailableDates = [], // Tipe: string[] ["YYYY-MM-DD"]
   disabledTimesByDate = {}, // Tipe: object {"YYYY-MM-DD": ["HH:mm"]}
   minDate = new Date(),
-  timeStep = 30,
+  timeStep = 120,
   minTime = "07:00",
   maxTime = "21:00",
 }) {
@@ -39,16 +40,7 @@ export default function CustomDateTimePicker({
 
   // Generate opsi waktu (misal: ["07:00", "07:30", ...])
   const timeOptions = useMemo(() => {
-    const arr = [];
-    const [minH, minM] = minTime.split(":").map(Number);
-    const [maxH, maxM] = maxTime.split(":").map(Number);
-    let d = new Date(2000, 0, 1, minH, minM);
-    const end = new Date(2000, 0, 1, maxH, maxM);
-    while (d <= end) {
-      arr.push(pad(d.getHours()) + ":" + pad(d.getMinutes()));
-      d = new Date(d.getTime() + timeStep * 60000);
-    }
-    return arr;
+    return generateTimeSlots(minTime, maxTime, timeStep)
   }, [minTime, maxTime, timeStep]);
 
   // Set untuk pencarian tanggal unavailable yang lebih cepat

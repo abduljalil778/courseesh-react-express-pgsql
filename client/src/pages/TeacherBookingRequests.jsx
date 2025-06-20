@@ -1,144 +1,161 @@
-// src/pages/TeacherBookingRequests.jsx (Rename dari TeacherBookings.jsx)
-import React, { useEffect, useState, useCallback } from 'react';
+// src/pages/TeacherBookingRequests.jsx
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getAllBookings, updateBooking } from '../lib/api';
 import Spinner from '../components/Spinner';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 
+
+const TABS = ['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
 export default function TeacherBookingRequests() {
-  const [pendingBookings, setPendingBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeStatus, setActiveStatus] = useState('ALL'); // State untuk tab filter
 
-  const loadPendingBookings = useCallback(async () => {
+  // Ganti nama fungsi agar lebih sesuai
+  const loadAllBookings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getAllBookings(); // Backend filter untuk teacher
-      const filtered = (response.data?.bookings || []).filter(b => b.bookingStatus === 'PENDING');
-      setPendingBookings(filtered);
+      // Panggil API yang sudah difilter oleh backend untuk guru ini
+      const response = await getAllBookings(); 
+      // Simpan semua booking tanpa filter frontend
+      setAllBookings(response.data?.bookings || []);
     } catch (err) {
-      console.error('Could not load pending bookings:', err);
-      setError(err.response?.data?.message || 'Could not load booking requests.');
+      console.error('Could not load bookings:', err);
+      setError(err.response?.data?.message || 'Could not load bookings.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPendingBookings();
-  }, [loadPendingBookings]);
+    loadAllBookings();
+  }, [loadAllBookings]);
 
-  const handleUpdateBookingStatus = async (bookingId, newStatus, actionVerb = "update") => {
-     if (newStatus === 'CANCELLED' || newStatus === 'CONFIRMED') { // Konfirmasi untuk aksi penting
-        const result = await Swal.fire({
-            title: "Are you sure?",
-            text: `Do you want to ${actionVerb} this booking to ${newStatus}?`,
-            icon: newStatus === 'CANCELLED' ? "warning" : "question",
-            showCancelButton: true,
-            confirmButtonColor: newStatus === 'CANCELLED' ? "#d33" : "#3085d6",
-            cancelButtonColor: newStatus === 'CANCELLED' ? "#3085d6" : "#aaa",
-            confirmButtonText: `Yes, ${actionVerb} it!`,
-        });
-        if (!result.isConfirmed) return;
+  // Gunakan useMemo untuk memfilter booking di sisi klien saat tab diganti
+  const filteredBookings = useMemo(() => {
+    if (activeStatus === 'ALL') {
+      return allBookings;
     }
+    return allBookings.filter(b => b.bookingStatus === activeStatus);
+  }, [allBookings, activeStatus]);
+
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
+    const actionVerb = newStatus === 'CONFIRMED' ? 'confirm' : 'cancel';
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `Do you want to ${actionVerb} this booking?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: newStatus === 'CANCELLED' ? "#d33" : "#3085d6",
+      confirmButtonText: `Yes, ${actionVerb} it!`,
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await updateBooking(bookingId, { bookingStatus: newStatus });
       Swal.fire('Status Updated!', `Booking has been ${newStatus.toLowerCase()}.`, 'success');
-      loadPendingBookings();
+      loadAllBookings(); // Muat ulang semua booking
     } catch (err) {
-      Swal.fire('Update Failed', err.response?.data?.message || `Could not ${actionVerb} booking status.`, 'error');
-    }
-  };
-  
-  const getBookingDisplayStatus = (booking) => {
-    const hasPaidPayment = booking.payments.some(p => p.status === 'PAID');
-    if (booking.bookingStatus === 'PENDING') {
-      if (!hasPaidPayment) {
-        return { text: 'Waiting for Payment', colorClass: 'text-orange-700 bg-orange-100' };
-      }
-      return { text: 'Waiting for Confirmation', colorClass: 'text-yellow-700 bg-yellow-100' };
-    }
-    switch (booking.bookingStatus) {
-      case 'CONFIRMED': return { text: 'On Going', colorClass: 'text-green-700 bg-green-100' };
-      case 'COMPLETED': return { text: 'Completed', colorClass: 'text-blue-700 bg-blue-100' };
-      case 'CANCELLED': return { text: 'Cancelled', colorClass: 'text-red-700 bg-red-100' };
-      default: return { text: booking.bookingStatus, colorClass: 'text-gray-700 bg-gray-100' };
+      Swal.fire('Update Failed', err.response?.data?.message || 'Could not update booking status.', 'error');
     }
   };
 
   // --- UI Rendering ---
   if (isLoading) {
-    return (
-          <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-            <Spinner size={60} />
-          </div>
-        );
+    return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
   }
-  if (error) { /* ... error message ... */ }
-
-  if (pendingBookings.length === 0 && !isLoading ) {
-    return (
-        <div className="text-center py-10">
-            {/* ... SVG ikon ... */}
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No Pending Booking Requests</h3>
-            <p className="mt-1 text-sm text-gray-500">You have no new student booking requests at this time.</p>
-        </div>
-    );
+  if (error) {
+    return <div className="text-center py-16 text-red-600">{error}</div>;
   }
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
-        Pending Booking Requests
-      </h1>
-      <div className="space-y-6">
-        {pendingBookings.map(booking => {
-          const displayStatus = getBookingDisplayStatus(booking);
-          return (
-            <div key={booking.id} className="bg-white shadow-lg rounded-xl p-5 md:p-6">
-              <div className="md:flex md:justify-between md:items-start mb-3">
-                  <div>
-                      <h2 className="text-lg md:text-xl font-semibold text-indigo-700">
-                          {booking.course?.title || 'N/A'}
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                          Student: <span className="font-medium">{booking.student?.name || 'N/A'}</span> ({booking.student?.email || 'N/A'})
-                      </p>
-                      <p className="text-xs text-gray-500">Booked on: {format(parseISO(booking.createdAt), 'dd MMM yyyy, HH:mm')}</p>
-                  </div>
-                  <div className="mt-3 md:mt-0 md:text-right">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${displayStatus.colorClass}`}>
-                          {displayStatus.text}
-                      </span>
-                  </div>
-              </div>
-              <div className="mb-3 text-sm text-gray-600">
-                  <strong>Session Dates Requested:</strong> 
-                  {booking.sessions?.length > 0 ? booking.sessions.map(s => format(parseISO(s.sessionDate), 'dd MMM yy')).join(', ') : 'N/A'}
-              </div>
-               <div className="mb-4 text-sm text-gray-600">
-                  <strong>Student Address:</strong> {booking.address}
-              </div>
-              <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-2 sm:space-y-0">
-                  <button
-                      onClick={() => handleUpdateBookingStatus(booking.id, 'CONFIRMED', "confirm")}
-                      className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
-                  >
-                      Confirm Booking
-                  </button>
-                  <button
-                      onClick={() => handleUpdateBookingStatus(booking.id, 'CANCELLED', "cancel")}
-                      className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                  >
-                      Cancel Booking
-                  </button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Bookings</h1>
       </div>
+
+      {/* --- BAGIAN 1: TAB FILTER --- */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveStatus(tab)}
+              className={`${
+                activeStatus === tab
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              {tab.charAt(0) + tab.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* --- BAGIAN 2: DAFTAR BOOKING --- */}
+      {filteredBookings.length === 0 ? (
+        <div className="text-center py-16">
+          <h3 className="text-lg font-medium text-gray-900">No Bookings Found</h3>
+          <p className="mt-1 text-sm text-gray-500">There are no bookings with the status "{activeStatus}".</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredBookings.map(booking => {
+            const displayStatus = BookingDisplayStatus(booking);
+            return (
+              // --- BAGIAN 3: KARTU BOOKING BARU ---
+              <Card key={booking.id} className="overflow-hidden">
+                <CardHeader className="flex flex-row justify-between items-start bg-gray-50 p-4 md:p-5 border-b">
+                  <div>
+                    <CardTitle className="text-lg md:text-xl text-gray-800">{booking.course?.title || 'N/A'}</CardTitle>
+                    <CardDescription className="mt-1">
+                      From: {booking.student?.name || 'N/A'} ({booking.student?.email || 'N/A'})
+                    </CardDescription>
+                    <CardDescription className="text-xs mt-1">
+                      Booked on: {format(parseISO(booking.createdAt), 'dd MMM yyyy, HH:mm')}
+                    </CardDescription>
+                  </div>
+                  <Badge className={displayStatus.colorClass} variant={displayStatus.variant}>{displayStatus.text}</Badge>
+                </CardHeader>
+                <CardContent className="p-4 md:p-5">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2">Session Dates</h4>
+                      {/* --- BAGIAN 4: DAFTAR SESI LEBIH RAPI --- */}
+                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        {booking.sessions?.length > 0 
+                          ? booking.sessions.map(s => <li key={s.id}>{format(parseISO(s.sessionDate), 'eee, dd MMM yyyy @ HH:mm')}</li>) 
+                          : <li>No sessions scheduled</li>
+                        }
+                      </ul>
+                    </div>
+                    <div>
+                       <h4 className="font-semibold text-sm mb-2">Student Address</h4>
+                       <p className="text-sm text-gray-600">{booking.address}</p>
+                    </div>
+                  </div>
+                </CardContent>
+                {/* --- BAGIAN 5: TOMBOL AKSI KONTEKSTUAL --- */}
+                {booking.bookingStatus === 'PENDING' && (
+                  <CardFooter className="bg-gray-50 p-4 flex justify-end space-x-3">
+                    <Button variant="destructive" size="sm" onClick={() => handleUpdateBookingStatus(booking.id, 'CANCELLED')}>Cancel Booking</Button>
+                    <Button variant="default" size="sm" onClick={() => handleUpdateBookingStatus(booking.id, 'CONFIRMED')}>Confirm Booking</Button>
+                  </CardFooter>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

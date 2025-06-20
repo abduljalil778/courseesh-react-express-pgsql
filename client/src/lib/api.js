@@ -267,9 +267,14 @@ export const addUnavailableDate = async (date) => {
   return await api.post('/availability', { date });
 };
 
-export const addUnavailableSlots = async (dates) => {
-  return await api.post('/availability/slots', { dates })
-}
+/**
+ * Menambahkan beberapa slot waktu tidak tersedia untuk guru.
+ * @param {string[]} datesArray - Sebuah array berisi tanggal dalam format ISO string.
+ * @returns {Promise}
+ */
+export const addUnavailableSlots = (datesArray) => {
+  return api.post('/availability/slots', { dates: datesArray });
+};
 
 export const deleteUnavailableDate = async (id) => {
   return await api.delete(`/availability/${id}`);

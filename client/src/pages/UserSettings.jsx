@@ -5,7 +5,6 @@ import PayoutSettingsForm from '@/components/PayoutSettingsForm';
 import TeacherAvailability from '@/components/TeacherAvailability';
 import ApplicationSettingsPage from './ApplicationSettingsPage';
 
-// Ketinggian navbar tetap (header) untuk safe sticky (adjust if needed)
 const NAVBAR_HEIGHT = 68;
 
 const TABS = [
@@ -16,8 +15,8 @@ const TABS = [
 
 const TAB_DESCRIPTIONS = {
   'app-setting': {
-    title: "Application Settings",
-    desc: "Manage global app preferences, notifications, and branding.",
+    // title: "Application Settings",
+    // desc: "Manage global app preferences, notifications, and branding.",
   },
   'payout': {
     title: "Payout Settings",
@@ -35,7 +34,7 @@ export default function UserSettings() {
     () => TABS.filter(tab => tab.visible(user)),
     [user]
   );
-  // Pastikan default tab selalu valid
+
   const [activeTab, setActiveTab] = useState(() => validTabs[0]?.key || '');
   useEffect(() => {
     if (!validTabs.find(t => t.key === activeTab)) {
@@ -48,7 +47,6 @@ export default function UserSettings() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      {/* Sticky Tab Bar */}
       <div
         className="bg-gray-50"
       >
