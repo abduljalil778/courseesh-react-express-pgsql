@@ -42,6 +42,19 @@ app.use(cors({
 // JSON body parser (for JSON APIs)
 app.use(express.json());
 
+// app.use((req, res, next) => {
+//   // Log ini akan berjalan untuk setiap request yang masuk
+//   if (req.originalUrl.includes('/api/')) { // Hanya log untuk request API
+//     console.log('--- Incoming API Request ---');
+//     console.log('Timestamp:', new Date().toISOString());
+//     console.log('Method & URL:', req.method, req.originalUrl);
+//     console.log('Content-Type Header:', req.get('Content-Type'));
+//     console.log('Request Body (setelah express.json):', req.body);
+//     console.log('----------------------------');
+//   }
+//   next(); // Lanjutkan ke middleware/router berikutnya
+// });
+
 // Logging
 app.use(morgan('tiny'));
 

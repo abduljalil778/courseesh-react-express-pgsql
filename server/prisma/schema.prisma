@@ -17,6 +17,11 @@ model User {
   id                String                   @id @default(uuid())
   name              String
   email             String                   @unique
+  headline          String? // Tagline singkat, misal: "Spesialis Matematika & Fisika SMA"
+  bio               String? // Biografi lengkap, bisa mendukung format Markdown
+  websiteUrl        String? // Link ke LinkedIn, portofolio, atau website pribadi
+  certifications    String[] // Array untuk menyimpan daftar sertifikasi
+  education         String[] // Array untuk menyimpan riwayat pendidikan
   phone             String?
   password          String
   role              Role

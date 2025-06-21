@@ -1,12 +1,18 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar, updateMyPayoutInfo } from '../controllers/usersController.js';
+import { getAllUsers, createUser, getUserById, updateUser, deleteUser, uploadAvatar, updateMyPayoutInfo, changePassword, getMyProfile } from '../controllers/usersController.js';
 import { createUserValidator, updateUserValidator, userIdValidator, updatePayoutInfoValidator } from '../validators/usersValidator.js';
 import { runValidation } from '../middleware/validate.js';
 import { upload } from '../middleware/upload.js';
 import catchAsync from '../utils/catchAsync.js';
 
 const router = express.Router();
+
+router.get(
+  '/me/',
+  authenticate,
+  catchAsync(getMyProfile)
+)
 
 // get all users
 router.get('/',
@@ -42,6 +48,7 @@ router.delete('/:id',
 
 // update user
 router.put('/:id',
+  authenticate,
   userIdValidator,
   updateUserValidator,
   runValidation,
@@ -62,6 +69,14 @@ router.put(
     updatePayoutInfoValidator,
     runValidation,
     catchAsync(updateMyPayoutInfo)
+)
+
+
+
+router.put(
+  '/me/change-password',
+  authenticate,
+  catchAsync(changePassword)
 )
 
 export default router;

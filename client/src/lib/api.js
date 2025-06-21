@@ -86,6 +86,20 @@ export const updateUser = async (userId, userData) => {
   return await api.put(`/users/${userId}`, userData);
 }
 
+// handle get my profile
+export const getMyProfile = async () => {
+  return await api.get('/users/me')
+}
+
+//handle change password
+export const changePassword = (data) => {
+  return api.put('/users/me/change-password', data, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
 // handle delete user
 export const deleteUser = async (userId) => {
   return await api.delete(`/users/${userId}`);
@@ -283,4 +297,9 @@ export const deleteUnavailableDate = async (id) => {
 
 export const getTeacherSchedule = async (id) => {
   return await api.get(`/availability/schedule/${id}`)
+}
+
+
+export const getTeacherProfile = async (teacherId) => {
+  return await api.get(`/teachers/${teacherId}/profile`)
 }

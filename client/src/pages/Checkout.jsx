@@ -69,7 +69,7 @@ export default function Checkout() {
       setError(null);
       try {
         const courseResponse = await getCourseById(courseId);
-        const courseData = courseResponse.data;
+        const courseData = courseResponse.data.data;
         setCourse(courseData);
 
         if (courseData && courseData.teacherId) {

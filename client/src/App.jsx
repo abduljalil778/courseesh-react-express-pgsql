@@ -41,6 +41,7 @@ import MyBookings from './pages/MyBookings';
 import CourseDetail from './pages/CourseDetail';
 import PaymentPage from './pages/PaymentPage';
 import Checkout from './pages/Checkout';
+import TeacherProfilePage from './pages/TeacherProfilePage';
 
 
 
@@ -78,8 +79,10 @@ export default function App() {
             <Route element={<PublicLayout />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/teachers/:teacherId" element={<TeacherProfilePage />} />
               
             </Route>
+            
 
             {/* --- Rute Admin --- */}
             <Route

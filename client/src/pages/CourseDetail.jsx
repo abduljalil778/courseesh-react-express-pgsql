@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCourseById, getCourseReviews } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
@@ -45,7 +45,9 @@ const AboutInstructor = ({ teacher }) => (
         <AvatarFallback>{teacher.name?.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
       </Avatar>
       <div>
-        <h3 className="font-bold text-lg text-gray-900">{teacher.name}</h3>
+        <Link to={`/teachers/${teacher.id}`} className="hover:underline" target='_blank'>
+          <h3 className="font-bold text-lg text-gray-900">{teacher.name}</h3>
+        </Link>
         <Badge
           variant="secondary"
           className="bg-blue-500 text-white dark:bg-blue-600"
