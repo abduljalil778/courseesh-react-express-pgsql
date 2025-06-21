@@ -1,6 +1,6 @@
 // src/pages/StudentDashboard.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { getPublicCourses } from '../lib/api'; // Menggunakan nama fungsi API yang lebih deskriptif
+import { getPublicCourses } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import CourseCard from '../components/CourseCard';

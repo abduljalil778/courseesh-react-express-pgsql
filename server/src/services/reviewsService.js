@@ -91,7 +91,7 @@ export const getMyReviewForBooking = async (req, res, next) => {
  * GET /api/courses/:courseId/reviews
  * Mendapatkan semua review untuk sebuah course (bisa untuk publik atau student).
  */
-export const getReviewsForCourse = async (req, res, next) => {
+export const getCourseReviews = async (req, res, next) => {
   const { id: courseId } = req.params;
   try {
     const reviews = await prisma.courseReview.findMany({
@@ -105,7 +105,7 @@ export const getReviewsForCourse = async (req, res, next) => {
         createdAt: 'desc'
       }
     });
-    res.json(reviews);
+    res.json({ data: reviews });
   } catch (err) {
     next(new AppError(err.message || 'Could not fetch reviews for course.', 500));
   }

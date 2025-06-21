@@ -9,9 +9,11 @@ import {
 } from '../controllers/coursesController..js';
 import catchAsync from '../utils/catchAsync.js';
 import { upload } from '../middleware/upload.js';
-import { getReviewsForCourse } from '../controllers/reviewsController.js';
+import { getCourseReviews } from '../controllers/reviewsController.js';
 
 const router = express.Router();
+
+
 
 router.get(
   '/',
@@ -50,7 +52,7 @@ router.delete(
 
 router.get(
   '/:id/reviews',
-  catchAsync(getReviewsForCourse)
+  catchAsync(getCourseReviews)
 )
 
 export default router;

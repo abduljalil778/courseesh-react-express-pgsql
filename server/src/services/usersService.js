@@ -150,6 +150,12 @@ export const getTeacherPublicProfile = async (req, res, next) => {
       prisma.course.findMany({
         where: { teacherId: teacherId },
         include: {
+          teacher: {
+            select: {
+              name: true,
+              avatarUrl: true,
+            }
+          },
           _count: { select: { reviews: true } },
           reviews: { select: { rating: true } }
         }
@@ -236,7 +242,7 @@ export const createUser = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
     const { id } = req.params;
-    console.log('UPDATE USER: Received req.body:', req.body);
+    // console.log('UPDATE USER: Received req.body:', req.body);
     // Ambil semua field dari body
     let { name, email, phone, role, status, headline, bio, websiteUrl, certifications, education } = req.body;
     
@@ -285,7 +291,7 @@ export const updateUser = async (req, res, next) => {
         return next(new AppError('No fields provided to update', 400));
     }
 
-    console.log('UPDATE USER: Data being sent to Prisma:', dataToUpdate);
+    // console.log('UPDATE USER: Data being sent to Prisma:', dataToUpdate);
 
     try {
         const updatedUser = await prisma.user.update({

@@ -19,7 +19,7 @@ export const getPublicCourses = (params) => {
 };
 
 export const getMyTeacherCourses = () => {
-  return api.get('/courses'); // Tidak perlu parameter, karena backend akan filter otomatis
+  return api.get('/courses'); 
 };
 
 // handle get course by ID
