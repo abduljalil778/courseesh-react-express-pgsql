@@ -4,56 +4,69 @@ import { BookingStatus, SessionStatus } from '@prisma/client';
 
 export const getMyUnavailableDates = async (req, res, next) => {
   try {
-    const { id } = req.user
-    const dates = await prisma.teacherUnavailableDate.findMany({
-      where: { teacherId: id },
-      orderBy: { date: 'asc' },
+    const teacherId = req.user.id;
+
+    // 1. Ambil jadwal yang di-set manual (ini yang bisa dihapus)
+    const manuallyUnavailable = await prisma.teacherUnavailableDate.findMany({
+      where: { teacherId },
+      select: { id: true, date: true },
     });
+
+    // 2. Ambil jadwal dari booking siswa (ini tidak bisa dihapus oleh guru)
     const bookedSessions = await prisma.bookingSession.findMany({
       where: {
-        status: {
-          not: SessionStatus.COMPLETED // <-- Hanya ambil sesi yang BELUM SELESAI
-        },
+        status: { not: SessionStatus.COMPLETED },
         booking: {
-          course:{
-            teacherId: id
-          },
-          bookingStatus: {
-            not: BookingStatus.CANCELLED
-          }
+          course: { teacherId: teacherId },
+          bookingStatus: { not: BookingStatus.CANCELLED }
         }
       },
-      select: { sessionDate: true }
+      select: { id: true, sessionDate: true },
     });
 
-    const manuallyUnavailableDates = dates.map(item => ({ date: item.date }));
-    const bookedDates = bookedSessions.map(item => ({ date: item.sessionDate }));
+    // 3. Gabungkan keduanya
+    const manualSlots = manuallyUnavailable.map(item => ({
+      id: item.id,
+      date: item.date,
+      isDeletable: true,
+      type: 'Personal Schedule'
+    }));
 
-    const allUnavailableSlots = [...manuallyUnavailableDates, ...bookedDates];
+    const bookedSlots = bookedSessions.map(item => ({
+      id: item.id,
+      date: item.sessionDate,
+      isDeletable: false,
+      type: 'Booked'
+    }));
+    
+    // Gabungkan dan urutkan berdasarkan tanggal
+    const allUnavailableSlots = [...manualSlots, ...bookedSlots]
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    res.json(allUnavailableSlots);
+    res.json({ data: allUnavailableSlots });
+
   } catch (err) {
     next(new AppError(err.message || 'Failed to fetch unavailable dates', 500));
   }
 };
 
-export const addUnavailableDate = async (req, res, next) => {
-  const { date } = req.body;
-  if (!date || isNaN(new Date(date))) {
-    return next(new AppError('Invalid date', 400));
-  }
-  try {
-    const entry = await prisma.teacherUnavailableDate.create({
-      data: { teacherId: req.user.id, date: new Date(date) },
-    });
-    res.status(201).json(entry);
-  } catch (err) {
-    if (err.code === 'P2002') {
-      return next(new AppError('Date already marked unavailable', 400));
-    }
-    next(new AppError(err.message || 'Failed to add unavailable date', 500));
-  }
-};
+// export const addUnavailableDate = async (req, res, next) => {
+//   const { date } = req.body;
+//   if (!date || isNaN(new Date(date))) {
+//     return next(new AppError('Invalid date', 400));
+//   }
+//   try {
+//     const entry = await prisma.teacherUnavailableDate.create({
+//       data: { teacherId: req.user.id, date: new Date(date) },
+//     });
+//     res.status(201).json(entry);
+//   } catch (err) {
+//     if (err.code === 'P2002') {
+//       return next(new AppError('Date already marked unavailable', 400));
+//     }
+//     next(new AppError(err.message || 'Failed to add unavailable date', 500));
+//   }
+// };
 
 export const addUnavailableSlots = async (req, res, next) => {
   const { dates } = req.body; // Mengharapkan { dates: ["ISO_STRING_1", "ISO_STRING_2", ...] }
@@ -73,7 +86,7 @@ export const addUnavailableSlots = async (req, res, next) => {
     // Gunakan createMany untuk efisiensi
     await prisma.teacherUnavailableDate.createMany({
       data: dataToCreate,
-      skipDuplicates: true, // Abaikan jika ada duplikat untuk mencegah error
+      skipDuplicates: true,
     });
     res.status(201).json({ message: 'Unavailable slots added successfully.' });
   } catch (err) {
@@ -82,10 +95,22 @@ export const addUnavailableSlots = async (req, res, next) => {
 };
 
 export const removeUnavailableDate = async (req, res, next) => {
-  const { id } = req.params;
   try {
+    const { id: unavailableDateId } = req.params;
+    const teacherId = req.user.id;
+    const entryToDelete = await prisma.teacherUnavailableDate.findUnique({
+      where: { id: unavailableDateId },
+    });
+
+    if (!entryToDelete) {
+      return next(new AppError('Unavailable date entry not found.', 404));
+    }
+
+    if (entryToDelete.teacherId !== teacherId) {
+      return next(new AppError('You are not authorized to delete this entry.', 403));
+    }
     await prisma.teacherUnavailableDate.delete({
-      where: { id },
+      where: { id: unavailableDateId },
     });
     res.json({ message: 'Deleted' });
   } catch (err) {
@@ -100,6 +125,7 @@ export const getUnavailableDatesByTeacherId = async (req, res, next) => {
     const data = await prisma.teacherUnavailableDate.findMany({
       where: { teacherId: id },
       select: {
+        id: true,
         date: true,
       }
     });
@@ -117,7 +143,7 @@ export const getTeacherSchedule = async (req, res, next) => {
     
     const manuallyUnavailable = await prisma.teacherUnavailableDate.findMany({
       where: { teacherId: teacherId },
-      select: { date: true }
+      select: { date: true, id: true }
     });
 
     const bookedSessions = await prisma.bookingSession.findMany({ 

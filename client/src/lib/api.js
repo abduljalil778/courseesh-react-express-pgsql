@@ -277,9 +277,9 @@ export const getMyUnavailableDates = async () => {
   return await api.get('/availability');
 };
 
-export const addUnavailableDate = async (date) => {
-  return await api.post('/availability', { date });
-};
+// export const addUnavailableDate = async (date) => {
+//   return await api.post('/availability', { date });
+// };
 
 /**
  * Menambahkan beberapa slot waktu tidak tersedia untuk guru.

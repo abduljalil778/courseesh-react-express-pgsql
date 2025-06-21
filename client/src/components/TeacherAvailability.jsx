@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { generateTimeSlots } from '@/utils/timeUtils';
+import { Badge } from '@/components/ui/badge';
 
 export default function TeacherAvailability() {
   const [unavailableEntries, setUnavailableEntries] = useState([]);
@@ -27,7 +28,7 @@ export default function TeacherAvailability() {
     setError(null);
     try {
       const res = await getMyUnavailableDates();
-      setUnavailableEntries(res.data || []); // Disesuaikan dengan struktur response API Anda
+      setUnavailableEntries(res.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load unavailability data');
     } finally {
@@ -146,15 +147,23 @@ export default function TeacherAvailability() {
               <p className="text-gray-500">No unavailable dates set.</p>
             ) : (
               <ul className="space-y-2 max-h-96 overflow-y-auto">
-                {unavailableEntries
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .map(d => (
+                {unavailableEntries.map(d => (
                   <li key={d.id} className="flex justify-between items-center bg-gray-50 p-3 rounded">
-                    <span>
-                      <span className="font-medium">{format(parseISO(d.date), 'EEEE, dd MMM yyyy')}</span>
-                      <span className="ml-3 text-gray-800 bg-gray-200 px-2 py-1 rounded-full text-sm">{format(parseISO(d.date), 'HH:mm')}</span>
-                    </span>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(d.id)}>Delete</Button>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                      <span>
+                        <span className="font-medium">{format(parseISO(d.date), 'EEEE, dd MMM yyyy')}</span>
+                        <span className="ml-2 text-gray-800 font-bold">{format(parseISO(d.date), 'HH:mm')}</span>
+                      </span>
+                      <Badge variant={d.isDeletable ? "secondary" : "default"} className="mt-1 sm:mt-0 w-fit">
+                        {d.type}
+                      </Badge>
+                    </div>
+                    
+                    {d.isDeletable && (
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(d.id)}>
+                        Delete
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ul>
