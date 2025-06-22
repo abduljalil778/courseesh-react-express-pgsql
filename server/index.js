@@ -24,6 +24,8 @@ import appSettingRoutes from './src/routes/appSettings.js';
 import availabilityRoutes from './src/routes/availability.js';
 import financeRoutes from './src/routes/finance.js';
 import notificationRoutes from './src/routes/notification.route.js';
+import chatRoutes from './src/routes/chat.route.js';
+import prisma from './libs/prisma.js';
 
 dotenv.config();
 
@@ -32,24 +34,78 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
+    // Izinkan koneksi dari origin frontend Anda
+    origin: "http://localhost:5173", 
+    // Izinkan metode yang diperlukan untuk handshake
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
+// Ekspor `io` agar bisa dipakai di service lain
 export { io };
 
 io.on('connection', (socket) => {
-  console.log(`✅ User connected: ${socket.id}`);
-
-
+  console.log(`✅ User Connected: ${socket.id}`);
   const userId = socket.handshake.query.userId;
+
   if (userId) {
     socket.join(userId);
-    console.log(`User ${socket.id} (ID: ${userId}) bergabung ke ruangan pribadinya.`);
+    console.log(`User ${userId} joined their personal room.`);
   }
 
-  // ... (logika untuk 'joinRoom' chat dan 'sendMessage' akan kita letakkan di sini nanti) ...
+  // Event saat user membuka jendela chat
+  socket.on('joinChatRoom', (conversationId) => {
+    if (conversationId) {
+      socket.join(conversationId);
+      console.log(`User ${userId} joined chat room: ${conversationId}`);
+    }
+  });
+
+  // Event saat user mengirim pesan
+  socket.on('sendMessage', async (data) => {
+    console.log('✅ [Socket] Received "sendMessage" event with data:', data);
+    const { conversationId, content, senderId } = data;
+
+    if (!conversationId || !content || !senderId) {
+      console.error('❌ [Socket] Invalid message payload:', data);
+      return; // Hentikan jika data tidak lengkap
+    }
+
+    try {
+      // Otorisasi: Pastikan pengirim adalah bagian dari booking ini
+      // Ini adalah langkah keamanan penting
+      const conversation = await prisma.conversation.findUnique({
+        where: { id: conversationId },
+        include: { booking: { select: { studentId: true, course: { select: { teacherId: true } } } } }
+      });
+      
+      if (!conversation || (senderId !== conversation.booking.studentId && senderId !== conversation.booking.course.teacherId)) {
+        console.error(`❌ [Socket] Unauthorized attempt to send message to conversation ${conversationId} by user ${senderId}`);
+        return;
+      }
+      
+      // 1. Simpan pesan ke database
+      const newMessage = await prisma.message.create({
+        data: {
+          content,
+          conversationId,
+          senderId,
+        },
+        include: {
+          sender: { select: { id: true, name: true, avatarUrl: true } }
+        }
+      });
+      console.log('✅ [Socket] Message saved to DB:', newMessage.id);
+
+      // 2. Kirim pesan ke semua orang di ruangan chat yang sama
+      io.to(conversationId).emit('receiveMessage', newMessage);
+      console.log(`✅ [Socket] Message sent to room: ${conversationId}`);
+
+    } catch (error) {
+      console.error("❌ [Socket] Error while saving/sending message:", error);
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log(`❌ User disconnected: ${socket.id}`);
@@ -65,7 +121,7 @@ app.use(helmet());
 
 // CORS: allow frontend dev port (change for prod)
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', ],
   credentials: true,
 }));
 
@@ -111,6 +167,7 @@ app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/settings', appSettingRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/conversations', chatRoutes)
 
 // === ERROR HANDLER ===
 app.use((req, res, next) => {

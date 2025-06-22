@@ -7,6 +7,12 @@ import Swal from 'sweetalert2';
 import { format, parseISO, } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';
 import CourseReviewForm from '../components/CourseReviewForm';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import ChatWindow from '../components/ChatWindow'; // <-- Impor komponen chat
+import { MessageSquare, ArrowLeft } from 'lucide-react';
+
 
 export default function MyCourseProgress() {
   const { bookingId } = useParams();
@@ -18,33 +24,47 @@ export default function MyCourseProgress() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const fetchBookingDetails = useCallback(async () => {
-    if (!bookingId) {
-      setError("Booking ID is missing.");
-      setIsLoading(false);
-      return;
-    }
-    if (!booking) setIsLoading(true);
+    console.log(`[1] Memulai fetchBookingDetails dengan bookingId: ${bookingId}`);
     setError(null);
     try {
       const response = await getBookingById(bookingId);
-      setBooking(response.data);
+      console.log("[2] Berhasil mendapatkan respons dari API:", response);
+      // Logika untuk mengakses data, dibungkus try-catch kecil untuk keamanan
+      try {
+        const bookingData = response.data;
+        console.log("[3] Berhasil mengekstrak data booking:", bookingData);
+        setBooking(bookingData);
+      } catch (innerErr) {
+        console.error("[ERROR] Gagal mengekstrak .data.data dari respons:", innerErr);
+        setError("Invalid data structure received from server.");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load booking details.');
-    } finally {
-      setIsLoading(false);
+      console.error("[ERROR] Panggilan API getBookingById gagal:", err.response || err);
+      setError(err.response?.data?.message || 'Failed to reload booking details.');
     }
-  }, [bookingId, booking]);
+  }, [bookingId]);
+
 
   useEffect(() => {
-    fetchBookingDetails();
-  }, [bookingId]); 
+    if (!bookingId) {
+      setError("Booking ID is missing from URL.");
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    fetchBookingDetails().finally(() => {
+      setIsLoading(false);
+      console.log("[4] Proses fetch selesai, setIsLoading(false)");
+    });
+  }, [bookingId, fetchBookingDetails]);
 
   const handleMarkAttendance = async (sessionId, attendedStatus) => {
     setSubmittingAttendanceSessionId(sessionId);
     try {
       await api.put(`/bookingsessions/${sessionId}/student-attendance`, { attended: attendedStatus });
       await Swal.fire('Success', 'Attendance marked!', 'success');
-      fetchBookingDetails();
+      await fetchBookingDetails(); // Memanggil fungsi untuk me-refresh data
     } catch (err) {
       Swal.fire('Error', err.response?.data?.message || 'Failed to mark attendance.', 'error');
     } finally {
@@ -57,13 +77,14 @@ export default function MyCourseProgress() {
      try {
          await api.post(`/bookings/${currentBookingId}/review`, reviewData);
          await Swal.fire('Review Submitted!', 'Thank you for your feedback.', 'success');
-         fetchBookingDetails();
+         await fetchBookingDetails(); // Memanggil fungsi untuk me-refresh data
      } catch (err) {
          Swal.fire('Error', err.response?.data?.message || 'Failed to submit review.', 'error');
      } finally {
          setSubmittingReview(false);
      }
   };
+
 
  const getBookingDisplayStatusText = (currentBooking) => {
      if (!currentBooking) return "";
@@ -74,41 +95,60 @@ export default function MyCourseProgress() {
      return currentBooking.bookingStatus;
  };
 
-  if (isLoading) return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
-  if (error) return <div className="p-6 text-center text-red-500">{error} <button onClick={fetchBookingDetails} className="text-blue-500 underline ml-2">Retry</button></div>;
-  if (!booking) return <div className="p-6 text-center text-gray-500">Booking not found or could not be loaded.</div>;
+ console.log("[RENDER] State saat ini:", { isLoading, error, booking });
+
+  if (isLoading) return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Spinner /></div>;
+  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
+  if (!booking) return <div className="p-6 text-center text-gray-500">Booking not found.</div>;
+
+  const canChat = booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'COMPLETED';
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <button onClick={() => navigate('/student/my-courses')} className="mb-4 text-sm text-indigo-600 hover:underline">
-        &larr; Back to My Courses
-      </button>
-      <div className="bg-white shadow-xl rounded-lg p-5 md:p-8">
-        <div className="border-b pb-4 mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-indigo-700">{booking.course?.title}</h1>
-          <div className="mt-2 text-sm text-gray-600 space-y-1">
-            <p><strong>Teacher:</strong> {booking.course?.teacher?.name}</p>
-            <p><strong>Contact Teacher:</strong> {booking.course?.teacher?.phone || 'Not Available'}</p>
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+      {/* --- HEADER HALAMAN --- */}
+      <div>
+        <Button onClick={() => navigate(-1)} variant="ghost" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Kembali
+        </Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">{booking.course?.title}</h1>
+            <p className="mt-1 text-muted-foreground">Oleh: {booking.course?.teacher?.name}</p>
           </div>
-          <p className={`text-md font-medium mt-2`}>
-            Booking Status: 
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                booking.bookingStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : 
-                booking.bookingStatus === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
-                booking.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-700' : 
-                'bg-orange-100 text-orange-700'
-              }`}>
-              {getBookingDisplayStatusText(booking)}
-            </span>
-          </p>
+          {/* --- TOMBOL CHAT --- */}
+          {canChat && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Chat dengan Instruktur
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl p-0">
+                <DialogHeader className="p-4 border-b">
+                  <DialogTitle>Chat: {booking.course?.title}</DialogTitle>
+                </DialogHeader>
+                <ChatWindow booking={booking} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-
-        <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">Session Details & Reports:</h3>
-          {booking.sessions && booking.sessions.length > 0 ? (
+      </div>
+      
+      {/* --- KARTU DETAIL SESI --- */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Detail & Laporan Sesi</CardTitle>
+          <CardDescription>
+            Status Booking: <span className="font-semibold text-indigo-600">{getBookingDisplayStatusText(booking)}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {booking.sessions?.length > 0 ? (
             <ul className="space-y-4">
               {booking.sessions.map((session, index) => (
-                <li key={session.id} className={`p-4 border rounded-lg ${session.isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-100 opacity-80'}`}>
+                <li key={session.id} className={`p-4 border rounded-lg ${session.isUnlocked ? 'bg-white' : 'bg-gray-100'}`}>
                   <div className="flex flex-col sm:flex-row justify-between items-start mb-2">
                     <div className="text-sm flex-grow">
                       <p className="font-semibold text-gray-800">Session {index + 1}: {format(parseISO(session.sessionDate), 'EEEE, dd MMMM yyyy, HH:mm')}</p>
@@ -153,41 +193,39 @@ export default function MyCourseProgress() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 italic">No sessions scheduled for this booking.</p>
+            <p className="text-gray-500 italic">No sessions scheduled.</p>
           )}
-        </div>
-        
-         {booking.overallTeacherReport && (
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Overall Course Report</h3>
-            <div className="bg-yellow-50 p-4 rounded-md text-gray-700">
-               <p className="text-sm whitespace-pre-wrap">{booking.overallTeacherReport}</p>
-               {booking.finalGrade && <p className="text-sm mt-2"><strong>Final Grade:</strong> {booking.finalGrade}</p>}
-            </div>
-          </div>
-        )}
-
-        {booking.bookingStatus === 'COMPLETED' && !booking.review && (
-            <CourseReviewForm 
-                booking={booking}
-                onSubmit={handleSubmitReview}
-                isSubmittingReview={submittingReview}
-            />
-        )}
-        {booking.review && (
-            <div className="mt-6 pt-6 border-t">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Your Review</h3>
-                <div className="p-4 border rounded-md bg-green-50">
-                    <div className="flex items-center mb-1">
-                        {[...Array(5)].map((_, i) => (
-                            <span key={i} className={`text-2xl ${i < booking.review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-                        ))}
-                    </div>
-                    {booking.review.comment && <p className="text-sm text-gray-600 italic">"{booking.review.comment}"</p>}
+        </CardContent>
+      </Card>
+      
+      {/* --- KARTU LAPORAN AKHIR & REVIEW --- */}
+      {(booking.overallTeacherReport || booking.bookingStatus === 'COMPLETED') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Laporan Akhir & Ulasan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {booking.overallTeacherReport && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-700 mb-2">Laporan Akhir dari Guru</h4>
+                <div className="bg-gray-50 p-3 rounded-md text-sm whitespace-pre-wrap">{booking.overallTeacherReport}</div>
+              </div>
+            )}
+            {booking.bookingStatus === 'COMPLETED' && !booking.review && (
+                <CourseReviewForm booking={booking} onSubmit={handleSubmitReview} isSubmittingReview={submittingReview} />
+            )}
+            {booking.review && (
+                <div>
+                  <h4 className="font-semibold text-gray-700 mb-2">Ulasan Anda</h4>
+                  <div className="p-4 border rounded-md bg-green-50">
+                    <StarRating rating={booking.review.rating} size={20} />
+                    <p className="text-sm text-gray-600 italic mt-2">"{booking.review.comment}"</p>
+                  </div>
                 </div>
-            </div>
-        )}
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -213,6 +213,8 @@ export const getBookingById = async (req, res, next) => {
         studentId: true,
         courseId: true,
         address: true,
+        conversationId: true,
+        conversation: {select: {id: true}},
         bookingStatus: true,
         paymentMethod: true,
         totalInstallments: true,
@@ -558,10 +560,26 @@ export const updateBooking = async (req, res, next) => { //
         return next(new AppError(`Cannot change booking status from ${booking.bookingStatus}.`, 400));
     }
 
+    let dataToUpdate = { bookingStatus: newBookingStatus };
+
+    // --- LOGIKA BARU: Buat Conversation saat booking di-confirm ---
+    if (newBookingStatus === BookingStatus.CONFIRMED) {
+      const existingBooking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { conversationId: true }
+      });
+
+      if (!existingBooking.conversationId) {
+        dataToUpdate.conversation = {
+          create: {} // Buat record Conversation baru yang kosong
+        };
+      }
+    }
+
 
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
-      data: { bookingStatus: newBookingStatus },
+      data: dataToUpdate,
       include: { 
         student: { select: { id: true, name: true, email: true, phone: true } },
         course: { select: { id: true, title: true, teacherId: true, teacher: {select: {name: true}} } }, 
@@ -602,7 +620,6 @@ export const updateBooking = async (req, res, next) => { //
     return res.json(updatedBooking);
 
   } catch (err) {
-    console.error(`updateBooking Error (ID: ${id}):`, err);
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return next(new AppError(`Booking with ID ${id} not found for update`, 404));
     }

@@ -313,3 +313,12 @@ export const getNotifications = async (params) => {
 export const markNotificationsAsRead = async () => {
   return await api.post('/notifications/mark-as-read')
 }
+
+// hanle chat
+export const getMyConversations = async () => {
+  return await api.get(`/conversations/my`)
+}
+
+export const getMessagesByBookingId = async (bookingId) => {
+  return await api.get(`/conversations/${bookingId}/message`)
+}

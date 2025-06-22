@@ -43,6 +43,7 @@ import PaymentPage from './pages/PaymentPage';
 import Checkout from './pages/Checkout';
 import TeacherProfilePage from './pages/TeacherProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
+import ChatPage from './pages/ChatPage';
 
 
 
@@ -104,6 +105,7 @@ export default function App() {
               <Route path="payment-options" element={<PaymentOptionsPage />} />
               <Route path='settings' element={<UserSettings />} />
               <Route path="profile" element={<UserProfilePage />} />
+              
             </Route>
 
             {/* --- Rute Teacher --- */}
@@ -124,6 +126,7 @@ export default function App() {
               <Route path="my-payouts" element={<MyPayouts />} />
               <Route path="profile" element={<UserProfilePage />} />
               <Route path="settings" element={<UserSettings />} />
+              <Route path="chat/:bookingId" element={<ChatPage />} />
             </Route>
             
             {/* --- Rute Student --- */}
@@ -144,6 +147,7 @@ export default function App() {
               <Route path="cart/checkout/:courseId" element={<Checkout />} />
               <Route path="bookings/:bookingId/pay" element={<PaymentPage />} />
               <Route path="profile" element={<UserProfilePage />} />
+              <Route path="chat/:bookingId" element={<ChatPage />} />
             </Route>
 
             {/* --- Fallback dan Redirect --- */}
