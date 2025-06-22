@@ -42,6 +42,7 @@ import CourseDetail from './pages/CourseDetail';
 import PaymentPage from './pages/PaymentPage';
 import Checkout from './pages/Checkout';
 import TeacherProfilePage from './pages/TeacherProfilePage';
+import NotificationsPage from './pages/NotificationsPage';
 
 
 
@@ -94,6 +95,7 @@ export default function App() {
               }
             >
               <Route index element={<AdminDashboard />} />
+              <Route path="notifications" element={<NotificationsPage/>}/>
               <Route path="users" element={<UserManagementPage />} />
               <Route path="courses" element={<CourseManagementPage />} />
               <Route path="bookings" element={<BookingManagementPage />} />
@@ -114,6 +116,7 @@ export default function App() {
               }
             >
               <Route index element={<TeacherDashboard />} />
+              <Route path="notifications" element={<NotificationsPage/>}/>
               <Route path="bookings" element={<TeacherBookingRequests />} />
               <Route path="schedules" element={<TeacherSchedules />} />
               <Route path="schedules/:bookingId" element={<TeacherScheduleDetails />} />
@@ -133,6 +136,7 @@ export default function App() {
               }
             >
               <Route index element={<StudentDashboard />} />
+              <Route path='notifications' element={<NotificationsPage/>}/>
               <Route path="my-courses" element={<MyCoursesList />} />
               <Route path="my-courses/:bookingId" element={<MyCourseProgress />} />
               <Route path="my-bookings" element={<MyBookings />} />

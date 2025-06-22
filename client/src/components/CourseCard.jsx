@@ -88,7 +88,7 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
         <div className="p-4 pt-0 border-t mt-auto bg-gray-50 flex space-x-2">
           <Button
             size="sm"
-            variant="outline"
+            variant={'default'}
             className="flex-1"
             onClick={(e) => { e.stopPropagation(); onEdit && onEdit(course); }}
           >

@@ -38,6 +38,8 @@ model User {
   studentReviews    CourseReview[]           @relation("StudentReviews")
   teacherFeedback   CourseReview[]           @relation("TeacherReviews")
   unavailableDates  TeacherUnavailableDate[]
+  notifications     Notification[]           @relation("UserNotifications")
+  sentMessages      Message[]
 }
 
 model Course {
@@ -77,6 +79,8 @@ model Booking {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   review               CourseReview? // Relasi one-to-one dengan review
+  conversation         Conversation?    @relation(fields: [conversationId], references: [id])
+  conversationId       String?          @unique
 }
 
 model BookingSession {
@@ -176,6 +180,34 @@ model PaymentOption {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipient   User     @relation("UserNotifications", fields: [recipientId], references: [id])
+  recipientId String
+  content     String // Isi notifikasi, misal: "Anda memiliki permintaan booking baru."
+  link        String? // URL yang akan dibuka saat notifikasi diklik, misal: "/teacher/bookings"
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  booking   Booking? // Relasi one-to-one dengan Booking
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String       @db.Text
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  sender         User         @relation(fields: [senderId], references: [id])
+  senderId       String
+  createdAt      DateTime     @default(now())
 }
 
 enum PayoutStatus {

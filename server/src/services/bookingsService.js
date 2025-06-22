@@ -2,6 +2,7 @@ import { Prisma, BookingStatus, PaymentMethod, PayoutStatus, SessionStatus, Paym
 import prisma from '../../libs/prisma.js';
 import { startOfDay, endOfDay } from 'date-fns'
 import AppError from '../utils/AppError.mjs'; 
+import { io } from '../../index.js';
 
 /**
  * GET /api/bookings
@@ -329,11 +330,10 @@ export const createBooking = async (req, res, next) => {
         // Cek konflik dengan sesi booking yang ada pada waktu yang SAMA PERSIS
         const conflictSession = await prisma.bookingSession.findFirst({
             where: {
-                // Perbaikan: Cek waktu yang eksak, bukan rentang harian
                 sessionDate: d, 
 
                 status: {
-                  not: SessionStatus.COMPLETED // <-- Abaikan sesi yang sudah selesai
+                  not: SessionStatus.COMPLETED
                 },
 
                 booking: {
@@ -431,11 +431,65 @@ export const createBooking = async (req, res, next) => {
         include: {
           sessions: { orderBy: { sessionDate: 'asc' } },
           payments: { orderBy: { installmentNumber: 'asc' } },
-          course: { select: { title: true, price: true } },
+          course: { select: { title: true, price: true, teacherId: true } },
           student: { select: { name: true, email: true, phone: true } },
         },
       });
     });
+
+    // --- BAGIAN 1: KIRIM NOTIFIKASI KE GURU 
+    const teacherId = newBookingWithDetails.course.teacherId;
+    const studentName = newBookingWithDetails.student.name;
+    const courseTitle = newBookingWithDetails.course.title;
+
+    const teacherNotificationContent = `Anda memiliki permintaan booking baru dari ${studentName} untuk kursus "${courseTitle}".`;
+    
+    // 1a. Simpan notifikasi untuk guru ke DB
+    const teacherNotification = await prisma.notification.create({
+      data: {
+        recipientId: teacherId,
+        content: teacherNotificationContent,
+        link: `/teacher/bookings` // Link untuk guru
+      }
+    });
+
+    // 1b. Kirim event real-time ke guru
+    io.to(teacherId).emit('new_notification', {
+      message: teacherNotificationContent,
+      notification: teacherNotification
+    });
+
+
+    // --- BAGIAN 2: KIRIM NOTIFIKASI KE SEMUA ADMIN 
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+
+    if (admins.length > 0) {
+      const studentName = newBookingWithDetails.student.name;
+      const courseTitle = newBookingWithDetails.course.title;
+      const adminNotificationContent = `Booking baru oleh ${studentName} untuk kursus "${courseTitle}" telah dibuat dan menunggu verifikasi pembayaran.`;
+      
+      // Gunakan perulangan untuk membuat dan mengirim notifikasi satu per satu
+      // Ini memastikan kita mendapatkan objek notifikasi yang lengkap untuk setiap admin
+      for (const admin of admins) {
+        // 1. Buat notifikasi untuk SATU admin, gunakan .create() bukan .createMany()
+        const newAdminNotification = await prisma.notification.create({
+          data: {
+            recipientId: admin.id,
+            content: adminNotificationContent,
+            link: `/admin/payments` // Sesuaikan link jika perlu
+          }
+        });
+
+        // 2. Kirim event dengan payload yang lengkap, termasuk objek notifikasi
+        io.to(admin.id).emit('new_notification', {
+          message: adminNotificationContent,
+          notification: newAdminNotification // <-- Sekarang objeknya ada
+        });
+      }
+    }
 
     res.status(201).json(newBookingWithDetails);
 
@@ -474,6 +528,7 @@ export const updateBooking = async (req, res, next) => { //
     if (!booking) {
       return next(new AppError(`Booking with ID ${bookingId} not found`, 404));
     }
+
 
     // Mencegah pembatalan jika sudah ada pembayaran PAID
     if (newBookingStatus === BookingStatus.CANCELLED) {
@@ -518,6 +573,31 @@ export const updateBooking = async (req, res, next) => { //
         review: true,
       },
     });
+
+    // Kirim notifikasi hanya jika statusnya diubah menjadi CONFIRMED atau CANCELLED
+    if (newBookingStatus === 'CONFIRMED' || newBookingStatus === 'CANCELLED') {
+      const studentId = updatedBooking.student.id;
+      const courseTitle = updatedBooking.course.title;
+      const statusText = newBookingStatus === 'CONFIRMED' ? 'dikonfirmasi' : 'dibatalkan';
+      
+      const notificationContent = `Pemesanan Anda untuk kursus "${courseTitle}" telah ${statusText} oleh instruktur.`;
+      
+      // 1. Simpan notifikasi ke database untuk riwayat
+      const newNotification = await prisma.notification.create({
+        data: {
+          recipientId: studentId,
+          content: notificationContent,
+          link: `/student/my-bookings` // Arahkan siswa ke halaman booking mereka
+        }
+      });
+
+      // 2. Kirim event real-time ke siswa yang bersangkutan
+      io.to(studentId).emit('new_notification', {
+        message: notificationContent,
+        notification: newNotification // Kirim juga objek notifikasi lengkap
+      });
+    }
+
 
     return res.json(updatedBooking);
 

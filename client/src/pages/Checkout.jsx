@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrencyIDR } from "../utils/formatCurrency";
 import CustomDateTimePicker from "@/components/CustomDateTimePicker";
+import { Button } from "@/components/ui/button";
 
 const processSchedule = (scheduleArray) => {
   const timesByDate = {};
@@ -451,10 +452,10 @@ export default function Checkout() {
                   </p>
                 )}
               </div>
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting || isLoading || authLoading}
-                className="mt-6 w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center"
+                className="mt-6 w-full text-white py-3 px-4 rounded-md font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-70 flex items-center justify-center"
               >
                 {isSubmitting ? (
                   <>
@@ -463,7 +464,7 @@ export default function Checkout() {
                 ) : (
                   "Confirm & Proceed"
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

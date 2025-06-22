@@ -23,7 +23,7 @@ const StickyBookingCard = ({ course, onBookNow }) => (
           {formatCurrencyIDR(course.price)}
           <span className="text-base font-medium text-muted-foreground"> / sesi</span>
         </p>
-        <Button size="lg" className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg h-12" onClick={onBookNow}>
+        <Button size="lg" className="w-full hover:bg-indigo-700 text-lg h-12" onClick={onBookNow}>
           Book This Course
         </Button>
         <ul className="mt-6 space-y-3 text-sm">

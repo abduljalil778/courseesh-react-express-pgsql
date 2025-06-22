@@ -13,6 +13,7 @@ import CourseCard from '@/components/CourseCard';
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { SUBJECT_CATEGORIES } from '@/config';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 
 const ActiveFilterPills = () => {
@@ -152,12 +153,12 @@ export default function TeacherDashboard() {
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Courses</h1>
-          <button
+          <Button
             onClick={handleAddNewCourseClick}
-            className="mt-3 sm:mt-0 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="mt-3 sm:mt-0 px-5 py-2.5 text-sm font-medium text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Add New Course
-          </button>
+          </Button>
         </div>
         
         {/* --- LANGKAH 3: Tempatkan Komponen Filter Aktif di sini --- */}

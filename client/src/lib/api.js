@@ -303,3 +303,13 @@ export const getTeacherSchedule = async (id) => {
 export const getTeacherProfile = async (teacherId) => {
   return await api.get(`/teachers/${teacherId}/profile`)
 }
+
+
+// handle notifications
+export const getNotifications = async (params) => {
+  return await api.get('/notifications', { params })
+}
+
+export const markNotificationsAsRead = async () => {
+  return await api.post('/notifications/mark-as-read')
+}

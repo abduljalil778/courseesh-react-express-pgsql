@@ -9,6 +9,7 @@ import {
 import Spinner from '../../components/Spinner';
 import Swal from 'sweetalert2';
 import PaymentOptionForm from '../../components/admin/PaymentOptionForm';
+import { Button } from '@/components/ui/button';
 
 export default function PaymentOptionsPage() {
   const [options, setOptions] = useState([]);
@@ -98,9 +99,9 @@ export default function PaymentOptionsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Payment Options</h1>
-        <button onClick={handleOpenCreateForm} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+        <Button onClick={handleOpenCreateForm} className="px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
           <i className="fas fa-plus mr-2"></i>Add New Bank Account
-        </button>
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-x-auto">

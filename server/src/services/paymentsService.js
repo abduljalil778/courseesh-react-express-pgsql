@@ -1,6 +1,7 @@
 import { Prisma, PaymentStatus, BookingStatus, PaymentMethod } from '@prisma/client';
 import AppError from '../utils/AppError.mjs';
 import prisma from '../../libs/prisma.js';
+import { io } from '../../index.js';
 
 /**
  * GET /api/payments
@@ -169,12 +170,11 @@ export const updatePayment = async (req, res, next) => {
         if (totalCourseSessions > 0 && totalInstallmentsInBooking > 0) {
           const paidInstallmentsCount = bookingDetails.payments.filter(p => p.status === PaymentStatus.PAID).length;
           
-          // Jumlah sesi yang terbuka per cicilan (akan bulat karena angka sesi dan cicilan sudah standar)
           const sessionsPerInstallmentPaid = totalCourseSessions / totalInstallmentsInBooking;
           const cumulativeSessionsToUnlock = sessionsPerInstallmentPaid * paidInstallmentsCount;
 
           const sessionIdsToUnlock = bookingDetails.sessions
-            .slice(0, Math.min(cumulativeSessionsToUnlock, bookingDetails.sessions.length)) // Pastikan tidak melebihi jumlah sesi aktual
+            .slice(0, Math.min(cumulativeSessionsToUnlock, bookingDetails.sessions.length))
             .map(s => s.id);
 
           if (sessionIdsToUnlock.length > 0) {
@@ -213,16 +213,37 @@ export const updatePayment = async (req, res, next) => {
         //     });
         // }
       }
-      // Penting untuk mengembalikan payment yang sudah diupdate, atau data yang relevan
-      return payment; 
-    }); // Akhir transaksi
 
-    // Ambil kembali payment yang diupdate dengan relasi yang mungkin berubah
-    // untuk respons yang akurat, atau cukup kembalikan hasil transaksi.
+      return payment; 
+    }); 
+
     const finalPaymentDetails = await prisma.payment.findUnique({
         where: {id: updatedPayment.id},
-        include: { booking: { include: { course: true, student: true, sessions: true, payments: true }}}
+        include: { booking: { include: { course: true, student: { select: {id: true, name: true, avatarUrl: true}}, sessions: true, payments: true }}}
     });
+
+    // Kirim notifikasi HANYA JIKA status yang diupdate adalah 'PAID'
+    if (dataToUpdate.status === PaymentStatus.PAID && finalPaymentDetails) {
+      const studentId = finalPaymentDetails.booking.student.id;
+      const courseTitle = finalPaymentDetails.booking.course.title;
+      
+      const notificationContent = `Pembayaran Anda untuk kursus "${courseTitle}" telah dikonfirmasi.`;
+      
+      // 1. Simpan notifikasi ke database untuk riwayat
+      const newNotification = await prisma.notification.create({
+        data: {
+          recipientId: studentId,
+          content: notificationContent,
+          link: `/student/my-courses/${finalPaymentDetails.bookingId}` // Arahkan ke halaman progres kursus
+        }
+      });
+
+      // 2. Kirim event real-time ke siswa yang bersangkutan
+      io.to(studentId).emit('new_notification', {
+        message: notificationContent,
+        notification: newNotification
+      });
+    }
 
     return res.json(finalPaymentDetails);
   } catch (err) {

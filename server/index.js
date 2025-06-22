@@ -1,4 +1,6 @@
 import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -21,10 +23,38 @@ import errorController from './src/services/errorService.js';
 import appSettingRoutes from './src/routes/appSettings.js';
 import availabilityRoutes from './src/routes/availability.js';
 import financeRoutes from './src/routes/finance.js';
+import notificationRoutes from './src/routes/notification.route.js';
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
+
+export { io };
+
+io.on('connection', (socket) => {
+  console.log(`✅ User connected: ${socket.id}`);
+
+
+  const userId = socket.handshake.query.userId;
+  if (userId) {
+    socket.join(userId);
+    console.log(`User ${socket.id} (ID: ${userId}) bergabung ke ruangan pribadinya.`);
+  }
+
+  // ... (logika untuk 'joinRoom' chat dan 'sendMessage' akan kita letakkan di sini nanti) ...
+
+  socket.on('disconnect', () => {
+    console.log(`❌ User disconnected: ${socket.id}`);
+  });
+});
 
 // === SETUP DIRECTORY HELPERS ===
 const __filename = fileURLToPath(import.meta.url);
@@ -41,19 +71,6 @@ app.use(cors({
 
 // JSON body parser (for JSON APIs)
 app.use(express.json());
-
-// app.use((req, res, next) => {
-//   // Log ini akan berjalan untuk setiap request yang masuk
-//   if (req.originalUrl.includes('/api/')) { // Hanya log untuk request API
-//     console.log('--- Incoming API Request ---');
-//     console.log('Timestamp:', new Date().toISOString());
-//     console.log('Method & URL:', req.method, req.originalUrl);
-//     console.log('Content-Type Header:', req.get('Content-Type'));
-//     console.log('Request Body (setelah express.json):', req.body);
-//     console.log('----------------------------');
-//   }
-//   next(); // Lanjutkan ke middleware/router berikutnya
-// });
 
 // Logging
 app.use(morgan('tiny'));
@@ -93,6 +110,7 @@ app.use('/api', paymentOptionsRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/settings', appSettingRoutes);
 app.use('/api/availability', availabilityRoutes);
+app.use('/api/notifications', notificationRoutes)
 
 // === ERROR HANDLER ===
 app.use((req, res, next) => {
@@ -103,6 +121,6 @@ app.use(errorController);
 
 // === START SERVER ===
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
+server.listen(PORT, () =>
+  console.log(`🚀 Server running on Socket.IO http://localhost:${PORT}`)
 );

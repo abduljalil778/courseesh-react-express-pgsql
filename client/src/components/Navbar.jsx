@@ -17,6 +17,34 @@ import {
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { CLASS_LEVELS, SUBJECT_CATEGORIES } from '@/config'; 
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { formatDistanceToNow } from 'date-fns';
+import { useNotificationStore } from '@/stores/notificationStore';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+
+const NotificationList = () => {
+  const notifications = useNotificationStore(state => state.notifications);
+
+  if (notifications.length === 0) {
+    return <p className="p-4 text-sm text-center text-muted-foreground">No notifications yet.</p>;
+  }
+
+  return (
+    <div className="max-h-80 overflow-y-auto">
+      {notifications.map(n => (
+        <Link 
+          to={n.link || '#'} 
+          key={n.id} 
+          className={`block p-3 border-b hover:bg-gray-50 ${!n.isRead ? 'bg-indigo-50' : ''}`}
+        >
+          <p className="text-sm text-gray-800">{n.content}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+          </p>
+        </Link>
+      ))}
+    </div>
+  );
+};
 
 // Komponen kecil untuk daftar link di menu navigasi kanan
 const RightNavLinks = ({ role }) => {
@@ -43,6 +71,7 @@ const RightNavLinks = ({ role }) => {
 };
 
 export default function Navbar() {
+  const { unreadCount, markAllAsRead } = useNotificationStore();
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -152,9 +181,33 @@ export default function Navbar() {
             )}
 
             <div className="flex items-center">
-              <Button variant="ghost" size="icon" className="relative" title="Notifications">
-                <Bell className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-              </Button>
+            <Popover onOpenChange={(open) => {
+              // Jika popover dibuka dan ada notifikasi belum dibaca, tandai semua
+              if (open && unreadCount > 0) {
+                markAllAsRead();
+              }
+            }}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative" title="Notifications">
+                  <Bell className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                  {/* Tampilkan badge merah jika ada notifikasi belum dibaca */}
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-xs">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b">
+                  <h3 className="font-semibold">Notifications</h3>
+                </div>
+                <NotificationList />
+                <div className="p-2 text-center border-t">
+                  <Link to={`/${user.role.toLowerCase()}/notifications`} className="text-sm text-indigo-600 hover:underline">View all notification</Link>
+                </div>
+              </PopoverContent>
+            </Popover>
             </div>
             
             {/* User Menu Dropdown (tidak berubah) */}

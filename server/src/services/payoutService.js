@@ -1,6 +1,9 @@
 import { Prisma, PayoutStatus } from '@prisma/client'
 import AppError from '../utils/AppError.mjs';
 import prisma from '../../libs/prisma.js'
+import { io } from '../../index.js';
+import { format } from 'date-fns';
+import { id as localeID} from 'date-fns/locale';
 
 // GET /api/payouts
 export const getAllTeacherPayouts = async (req, res, next) => {
@@ -172,6 +175,35 @@ export const updateTeacherPayout = async (req, res, next) => {
         }
       }
     });
+
+    if (updatedPayout.status === 'PAID') {
+      const teacherId = updatedPayout.teacherId;
+      const courseName = updatedPayout.booking.course.title;
+      const sessionPaid = updatedPayout.bookingSession.sessionDate;
+
+      const formattedSessionDate = format(
+        new Date(sessionPaid), 
+        'EEEE, dd MMMM yyyy, HH:mm', // Format: Hari, tgl Bulan thn, Jam:Menit
+        { locale: localeID } // locale Bahasa Indonesia
+      );
+  
+      const notificationContent = `Selamat, honor anda untuk kursus ${courseName} pada sesi ${formattedSessionDate} telah dibayar.`
+  
+      const newNotification = await prisma.notification.create({
+        data : {
+          recipientId: teacherId,
+          content: notificationContent,
+          link: `/teacher/my-payouts`
+        }
+      })
+  
+      io.to(teacherId).emit('new_notification', {
+        message: notificationContent,
+        notification: newNotification
+      });
+    }
+
+
     res.json(updatedPayout);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {

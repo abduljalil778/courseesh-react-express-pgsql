@@ -36,6 +36,7 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 8;
 
@@ -237,12 +238,12 @@ export default function UserManagementPage() {
           <option value="TEACHER">Teacher</option>
           <option value="STUDENT">Student</option>
         </select>
-        <button
+        <Button
           onClick={handleOpenCreateForm}
-          className="ml-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 flex-shrink-0"
+          className="ml-auto px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-indigo-700 flex-shrink-0"
         >
           Add New User
-        </button>
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
