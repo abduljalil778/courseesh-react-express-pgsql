@@ -1,6 +1,6 @@
 // src/pages/TeacherBookingManageDetail.jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   getBookingById,
   submitOrUpdateSessionReport,
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import ChatWindow from '../components/ChatWindow';
 import { MessageSquare, ArrowLeft, Lock, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 const SESSION_STATUS_COMPLETED = 'COMPLETED';
 
@@ -128,13 +129,26 @@ export default function TeacherScheduleDetails() {
   const allSessionsDone = booking.sessions?.every(s => s.status === 'COMPLETED');
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-8">
-      {/* --- HEADER --- */}
+    <>
       <div>
-        <Button onClick={() => navigate('/teacher/bookings')} variant="ghost" className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kembali ke Daftar Booking
-        </Button>
+      <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate('/teacher')} variant='ghost'>Home</Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate(-1)} variant='ghost'>Daftar Kursus</Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Detail Sesi</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-8">
+      <div>
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{booking.course?.title}</h1>
@@ -147,7 +161,7 @@ export default function TeacherScheduleDetails() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl p-0">
                 <DialogHeader className="p-4 border-b"><DialogTitle>Chat: {booking.course?.title}</DialogTitle></DialogHeader>
-                <ChatWindow booking={booking} />
+                <ChatWindow conversationId={booking.conversation?.id} />
               </DialogContent>
             </Dialog>
           )}
@@ -243,6 +257,6 @@ export default function TeacherScheduleDetails() {
         </div>
       )}
     </div>
-
+    </>
   );
 }

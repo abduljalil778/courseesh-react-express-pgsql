@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
+import { useNavigate } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 
 const TABS = ['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
@@ -17,6 +19,8 @@ export default function TeacherBookingRequests() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeStatus, setActiveStatus] = useState('ALL'); // State untuk tab filter
+
+  const navigate = useNavigate()
 
   // Ganti nama fungsi agar lebih sesuai
   const loadAllBookings = useCallback(async () => {
@@ -77,6 +81,20 @@ export default function TeacherBookingRequests() {
   }
 
   return (
+    <>
+        <div>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate('/teacher')} variant='ghost'>Home</Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Daftar Booking</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        </div>
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Bookings</h1>
@@ -157,5 +175,6 @@ export default function TeacherBookingRequests() {
         </div>
       )}
     </div>
+    </>
   );
 }

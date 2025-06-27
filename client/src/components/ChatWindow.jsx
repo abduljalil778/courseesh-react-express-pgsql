@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useChat } from '../hooks/useChat';
-import { getMessagesByBookingId } from '../lib/api';
+import { getMessagesByConversationId } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,30 +12,30 @@ import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 // `booking` prop berisi data booking untuk mendapatkan conversationId
-export default function ChatWindow({ booking }) {
+export default function ChatWindow({ conversationId }) {
     const { user } = useAuth();
     const [newMessage, setNewMessage] = useState('');
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
     
     // Gunakan conversationId dari booking untuk hook chat
-    const { messages, setMessages, sendMessage } = useChat(booking.conversationId);
+    const { messages, setMessages, sendMessage } = useChat(conversationId);
     const messagesEndRef = useRef(null);
 
     // Fetch riwayat chat saat komponen dibuka
     useEffect(() => {
-        if (!booking.conversationId) {
+        if (!conversationId) {
             setIsLoadingHistory(false);
             setMessages([{content: "Ruang chat akan aktif setelah guru mengkonfirmasi pesanan ini."}]);
             return;
         }
         setIsLoadingHistory(true);
-        getMessagesByBookingId(booking.id)
+        getMessagesByConversationId(conversationId)
             .then(res => {
                 setMessages(res.data.data || []);
             })
             .catch(err => console.error("Failed to load messages", err))
             .finally(() => setIsLoadingHistory(false));
-    }, [booking.id, booking.conversationId, setMessages]);
+    }, [conversationId, setMessages]);
     
     // Auto-scroll ke pesan terbaru
     useEffect(() => {
@@ -70,8 +70,8 @@ export default function ChatWindow({ booking }) {
                 <div ref={messagesEndRef} />
             </div>
             <form onSubmit={handleSend} className="p-4 border-t flex gap-2 bg-gray-50">
-                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Ketik pesan..." disabled={!booking.conversationId} />
-                <Button type="submit" disabled={!booking.conversationId}><Send className="h-4 w-4" /></Button>
+                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Ketik pesan..." disabled={!conversationId} />
+                <Button type="submit" disabled={!conversationId}><Send className="h-4 w-4" /></Button>
             </form>
         </div>
     );

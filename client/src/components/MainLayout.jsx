@@ -24,7 +24,7 @@ export default function MainLayout() {
           <Toaster 
             position="top-right" 
             toastOptions={{
-              duration: 10000,
+              duration: 5000,
               style: {
                 background: '#363636',
                 color: '#fff',

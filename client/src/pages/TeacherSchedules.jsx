@@ -6,6 +6,8 @@ import { format, parseISO } from 'date-fns';
 import { BookOpenIcon, UserIcon, AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/solid';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 export default function TeacherSchedules() {
   const [activeBookings, setActiveBookings] = useState([]);
@@ -64,9 +66,23 @@ export default function TeacherSchedules() {
   }
 
   return (
+    <>
+      <div>
+      <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate('/teacher')} variant='ghost'>Home</Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Daftar Kursus</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
-        Teaching Schedules
+        Daftar Kursus
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {activeBookings.map(booking => {
@@ -115,5 +131,6 @@ export default function TeacherSchedules() {
         })}
       </div>
     </div>
+    </>
   );
 }

@@ -54,16 +54,16 @@ const RightNavLinks = ({ role }) => {
   if (role === 'STUDENT') {
     return (
       <nav className="hidden lg:flex gap-6">
-        <Link to="/student/my-courses" {...commonProps}>My Courses</Link>
-        <Link to="/student/my-bookings" {...commonProps}>Transactions</Link>
+        <Link to="/student/my-courses" {...commonProps}>Pembelajaran Saya</Link>
+        <Link to="/student/my-bookings" {...commonProps}>Transaksi</Link>
       </nav>
     );
   }
   if (role === 'TEACHER') {
     return (
       <nav className="hidden lg:flex gap-6">
-        <Link to="/teacher/bookings" {...commonProps}>Bookings</Link>
-        <Link to="/teacher/schedules" {...commonProps}>Schedules</Link>
+        <Link to="/teacher/bookings" {...commonProps}>Daftar Booking</Link>
+        <Link to="/teacher/schedules" {...commonProps}>Jadwal Mengajar</Link>
       </nav>
     );
   }
@@ -105,7 +105,7 @@ export default function Navbar() {
             <NavigationMenu className="hidden md:flex">
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>Explore</NavigationMenuTrigger>
+                  <NavigationMenuTrigger>Jelajahi</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       {SUBJECT_CATEGORIES.map((cat) => (
@@ -152,14 +152,14 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center shrink-0">
                   <Filter className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">{filterClass || "All Classes"}</span>
+                  <span className="hidden md:inline">{filterClass || "Semua Kelas"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuLabel>Filter by Class Level</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={filterClass} onValueChange={setFilterClass}>
-                  <DropdownMenuRadioItem value="">All Classes</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="">Semua Kelas</DropdownMenuRadioItem>
                   {CLASS_LEVELS.map(level => (
                     <DropdownMenuRadioItem key={level} value={level}>{level}</DropdownMenuRadioItem>
                   ))}

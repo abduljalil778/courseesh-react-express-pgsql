@@ -126,7 +126,7 @@ export default function App() {
               <Route path="my-payouts" element={<MyPayouts />} />
               <Route path="profile" element={<UserProfilePage />} />
               <Route path="settings" element={<UserSettings />} />
-              <Route path="chat/:bookingId" element={<ChatPage />} />
+              <Route path="chat/:conversationId" element={<ChatPage />} />
             </Route>
             
             {/* --- Rute Student --- */}
@@ -147,7 +147,7 @@ export default function App() {
               <Route path="cart/checkout/:courseId" element={<Checkout />} />
               <Route path="bookings/:bookingId/pay" element={<PaymentPage />} />
               <Route path="profile" element={<UserProfilePage />} />
-              <Route path="chat/:bookingId" element={<ChatPage />} />
+              <Route path="chat/:conversationId" element={<ChatPage />} />
             </Route>
 
             {/* --- Fallback dan Redirect --- */}

@@ -7,12 +7,16 @@ import { formatCurrencyIDR } from '../utils/formatCurrency';
 import PayoutDetailModal from '../components/PayoutDetailModal';
 import { BanknotesIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 export default function MyPayouts() {
   const [payouts, setPayouts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPayout, setSelectedPayout] = useState(null);
+
+  const navigate = useNavigate()
 
   const loadMyPayouts = useCallback(async () => {
     setIsLoading(true);
@@ -48,6 +52,19 @@ export default function MyPayouts() {
 
   return (
     <>
+      <div>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Button onClick={() => navigate('/teacher')} variant='ghost'>Home</Button>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator/>
+              <BreadcrumbItem>
+                <BreadcrumbPage>My Payouts</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+      </div>
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
           My Payouts

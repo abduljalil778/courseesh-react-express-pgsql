@@ -4,6 +4,9 @@ import Spinner from '@/components/Spinner';
 import PayoutSettingsForm from '@/components/PayoutSettingsForm';
 import TeacherAvailability from '@/components/TeacherAvailability';
 import ApplicationSettingsPage from './ApplicationSettingsPage';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 const NAVBAR_HEIGHT = 68;
 
@@ -30,6 +33,9 @@ const TAB_DESCRIPTIONS = {
 
 export default function UserSettings() {
   const { user, loading } = useAuth();
+
+  const navigate = useNavigate();
+
   const validTabs = useMemo(
     () => TABS.filter(tab => tab.visible(user)),
     [user]
@@ -46,9 +52,23 @@ export default function UserSettings() {
   if (!user) return <p>User not found.</p>;
 
   return (
+    <>
+    <div>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Button onClick={() => navigate('/teacher')} variant='ghost'>Home</Button>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator/>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Settings</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+      </div>
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <div
-        className="bg-gray-50"
+        className="bg-gray-100"
       >
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">Settings</h1>
@@ -90,5 +110,6 @@ export default function UserSettings() {
         </div>
       </div>
     </div>
+    </>
   );
 }

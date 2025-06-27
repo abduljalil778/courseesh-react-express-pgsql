@@ -319,6 +319,10 @@ export const getMyConversations = async () => {
   return await api.get(`/conversations/my`)
 }
 
-export const getMessagesByBookingId = async (bookingId) => {
-  return await api.get(`/conversations/${bookingId}/message`)
+// export const getMessagesByBookingId = async (bookingId) => {
+//   return await api.get(`/conversations/${bookingId}/message`)
+// }
+
+export const getMessagesByConversationId = async (conversationId) => {
+  return await api.get(`/conversations/${conversationId}/message`)
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
@@ -7,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import BookingDetailModal from '../components/BookingDetailModal';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+
 
 
 // Skeleton minimal
@@ -32,6 +35,7 @@ export default function TransactionList() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const debounceRef = useRef();
   const inputRef = useRef(null);
+  const navigate = useNavigate();
 
   // Fetch bookings
   const fetchBookings = useCallback(async (search = '') => {
@@ -88,9 +92,21 @@ export default function TransactionList() {
   const isEmpty = !isLoading && bookings.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate('/student')} variant='ghost'>Home</Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Daftar Transaksi</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+    <div className="min-h-screen bg-gray-100 pb-20">
       <div className="container mx-auto px-4 md:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Transactions List</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-8">Daftar Transaksi</h1>
 
         {/* Search */}
         <div className="mb-8">
@@ -227,5 +243,6 @@ export default function TransactionList() {
         />
       )}
     </div>
+    </>
   );
 }

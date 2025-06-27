@@ -4,15 +4,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getBookingById, api } from '../lib/api';
 import Spinner from '../components/Spinner';
 import Swal from 'sweetalert2';
-import { format, parseISO, } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';
 import CourseReviewForm from '../components/CourseReviewForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import ChatWindow from '../components/ChatWindow'; // <-- Impor komponen chat
-import { MessageSquare, ArrowLeft } from 'lucide-react';
-
+import ChatWindow from '../components/ChatWindow';
+import { MessageSquare, ArrowLeft, Lock } from 'lucide-react';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 
 export default function MyCourseProgress() {
   const { bookingId } = useParams();
@@ -23,31 +23,21 @@ export default function MyCourseProgress() {
   const [submittingAttendanceSessionId, setSubmittingAttendanceSessionId] = useState(null);
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Fungsi untuk mengambil data, dibungkus useCallback agar stabil
   const fetchBookingDetails = useCallback(async () => {
-    console.log(`[1] Memulai fetchBookingDetails dengan bookingId: ${bookingId}`);
-    setError(null);
+    // Tidak perlu setIsLoading di sini agar refresh data terasa mulus
     try {
       const response = await getBookingById(bookingId);
-      console.log("[2] Berhasil mendapatkan respons dari API:", response);
-      // Logika untuk mengakses data, dibungkus try-catch kecil untuk keamanan
-      try {
-        const bookingData = response.data;
-        console.log("[3] Berhasil mengekstrak data booking:", bookingData);
-        setBooking(bookingData);
-      } catch (innerErr) {
-        console.error("[ERROR] Gagal mengekstrak .data.data dari respons:", innerErr);
-        setError("Invalid data structure received from server.");
-      }
+      setBooking(response.data);
     } catch (err) {
-      console.error("[ERROR] Panggilan API getBookingById gagal:", err.response || err);
       setError(err.response?.data?.message || 'Failed to reload booking details.');
     }
   }, [bookingId]);
 
-
+  // useEffect HANYA untuk memuat data awal
   useEffect(() => {
     if (!bookingId) {
-      setError("Booking ID is missing from URL.");
+      setError("Booking ID is missing.");
       setIsLoading(false);
       return;
     }
@@ -55,16 +45,16 @@ export default function MyCourseProgress() {
     setIsLoading(true);
     fetchBookingDetails().finally(() => {
       setIsLoading(false);
-      console.log("[4] Proses fetch selesai, setIsLoading(false)");
     });
   }, [bookingId, fetchBookingDetails]);
+
 
   const handleMarkAttendance = async (sessionId, attendedStatus) => {
     setSubmittingAttendanceSessionId(sessionId);
     try {
       await api.put(`/bookingsessions/${sessionId}/student-attendance`, { attended: attendedStatus });
       await Swal.fire('Success', 'Attendance marked!', 'success');
-      await fetchBookingDetails(); // Memanggil fungsi untuk me-refresh data
+      await fetchBookingDetails();
     } catch (err) {
       Swal.fire('Error', err.response?.data?.message || 'Failed to mark attendance.', 'error');
     } finally {
@@ -77,7 +67,7 @@ export default function MyCourseProgress() {
      try {
          await api.post(`/bookings/${currentBookingId}/review`, reviewData);
          await Swal.fire('Review Submitted!', 'Thank you for your feedback.', 'success');
-         await fetchBookingDetails(); // Memanggil fungsi untuk me-refresh data
+         await fetchBookingDetails();
      } catch (err) {
          Swal.fire('Error', err.response?.data?.message || 'Failed to submit review.', 'error');
      } finally {
@@ -95,29 +85,45 @@ export default function MyCourseProgress() {
      return currentBooking.bookingStatus;
  };
 
- console.log("[RENDER] State saat ini:", { isLoading, error, booking });
-
   if (isLoading) return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Spinner /></div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!booking) return <div className="p-6 text-center text-gray-500">Booking not found.</div>;
 
   const canChat = booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'COMPLETED';
 
+
   return (
+    <>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate('/student')} variant='ghost'>
+                Home
+              </Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <Button onClick={() => navigate(-1)} variant='ghost'>
+                Daftar Kursus
+              </Button>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator/>
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                Sesi Kursus
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
     <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-      {/* --- HEADER HALAMAN --- */}
       <div>
-        <Button onClick={() => navigate(-1)} variant="ghost" className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kembali
-        </Button>
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{booking.course?.title}</h1>
             <p className="mt-1 text-muted-foreground">Oleh: {booking.course?.teacher?.name}</p>
           </div>
           {/* --- TOMBOL CHAT --- */}
-          {canChat && (
+          {canChat && booking.conversation?.id && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button>
@@ -129,7 +135,7 @@ export default function MyCourseProgress() {
                 <DialogHeader className="p-4 border-b">
                   <DialogTitle>Chat: {booking.course?.title}</DialogTitle>
                 </DialogHeader>
-                <ChatWindow booking={booking} />
+                <ChatWindow conversationId={booking.conversation.id} />
               </DialogContent>
             </Dialog>
           )}
@@ -189,11 +195,12 @@ export default function MyCourseProgress() {
                       </div>
                     </div>
                   )}
+                {!session.isUnlocked && <Lock className="h-3 w-3 text-gray-400 inline-block ml-1.5" title="Locked"/>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 italic">No sessions scheduled.</p>
+            <p className="text-gray-500 italic">No sessions scheduled for this booking.</p>
           )}
         </CardContent>
       </Card>
@@ -227,5 +234,6 @@ export default function MyCourseProgress() {
         </Card>
       )}
     </div>
+    </>
   );
 }
