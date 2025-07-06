@@ -69,6 +69,9 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
         <h3 className="text-base font-bold text-gray-900 leading-snug flex-grow line-clamp-2" title={course.title}>
           {course.title}
         </h3>
+        <p className="text-xs text-gray-900 mt-1 mb-1">
+          {course.curriculum?.replace('_', ' ')}
+        </p>
         <p className="text-xs text-muted-foreground mt-1 mb-2">
           By {teacher?.name || 'N/A'}
         </p>

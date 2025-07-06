@@ -12,7 +12,7 @@ import Swal from 'sweetalert2';
 import CourseCard from '@/components/CourseCard';
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { SUBJECT_CATEGORIES } from '@/config';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 
@@ -157,7 +157,7 @@ export default function TeacherDashboard() {
             onClick={handleAddNewCourseClick}
             className="mt-3 sm:mt-0 px-5 py-2.5 text-sm font-medium text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            Add New Course
+            <Plus/> Add New Course
           </Button>
         </div>
         
@@ -205,7 +205,7 @@ export default function TeacherDashboard() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4 pb-2 border-b">
               <h2 className="text-xl font-semibold text-gray-800">
-                {formMode === 'edit' ? 'Edit Course' : 'Add New Course'}
+                {formMode === 'edit' ? 'Edit Kursus' : 'Buat Kursus Baru'}
               </h2>
               <button onClick={handleCloseForm} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +228,7 @@ export default function TeacherDashboard() {
                 }
               }}
               onCancel={handleCloseForm}
-              submitLabel={formMode === 'edit' ? 'Update Course' : 'Create Course'}
+              submitLabel={formMode === 'edit' ? 'Update Course' : 'Buat Kursus'}
             />
           </div>
         </div>

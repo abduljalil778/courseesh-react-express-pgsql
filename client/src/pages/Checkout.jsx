@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrencyIDR } from "../utils/formatCurrency";
 import CustomDateTimePicker from "@/components/CustomDateTimePicker";
 import { Button } from "@/components/ui/button";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 const processSchedule = (scheduleArray) => {
   const timesByDate = {};
@@ -194,7 +195,7 @@ export default function Checkout() {
         timer: 2500,
         showConfirmButton: false,
         willClose: () => {
-          navigate(`/student/bookings/${newBookingId}/pay`);
+          navigate(`/student/bookings/${newBookingId}/pay`); // redirect to payment page
         },
       });
     } catch (err) {
@@ -224,31 +225,48 @@ export default function Checkout() {
   }
 
   return (
-    <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <>
+    <div>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate('/student')} variant='ghost'>
+            Home
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate(-1)} variant='ghost'>
+            Detail Kursus
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            Checkout
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+    </div>
+    <div className="bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-6xl">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 text-sm text-indigo-600 hover:underline"
-        >
-          &larr; Back to Course Details
-        </button>
-
         <form
           onSubmit={handleSubmit}
           className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12"
         >
           {/* LEFT: Form */}
           <div className="lg:col-span-2 space-y-8">
-            <h1 className="text-3xl font-bold text-gray-800">Booking Checkout</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Detail Booking</h1>
             {/* Contact */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">
-                1. Contact Information
+                1. Informasi Kontak
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                    Full Name *
+                    Nama Lengkap
                   </label>
                   <input
                     type="text"
@@ -262,7 +280,7 @@ export default function Checkout() {
                 </div>
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone Number *
+                    Nomor Telepon
                   </label>
                   <input
                     type="tel"
@@ -276,7 +294,7 @@ export default function Checkout() {
                 </div>
                 <div className="md:col-span-2">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email *
+                    Email
                   </label>
                   <input
                     type="email"
@@ -290,7 +308,7 @@ export default function Checkout() {
                 </div>
                 <div className="md:col-span-2">
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                    Full Address *
+                    Alamat Lengkap
                   </label>
                   <textarea
                     id="address"
@@ -307,11 +325,11 @@ export default function Checkout() {
             {/* Schedule Sessions */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">
-                2. Schedule Your {sessionCount} Sessions *
+                2. Jadwal untuk {sessionCount} Sesi
               </h2>
               <div className="mb-4">
                 <label htmlFor="sessionCount" className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Sessions
+                  Jumlah Sesi
                 </label>
                 <select
                   id="sessionCount"
@@ -322,7 +340,7 @@ export default function Checkout() {
                 >
                   {SESSION_OPTIONS.map((n) => (
                     <option key={n} value={n}>
-                      {n} sessions
+                      {n} Sesi
                     </option>
                   ))}
                 </select>
@@ -331,7 +349,7 @@ export default function Checkout() {
                 {form.sessionDates.map((dateValue, i) => (
                   <div key={i}>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Session {i + 1}
+                      Sesi {i + 1}
                     </label>
                     <CustomDateTimePicker
                       value={dateValue}
@@ -348,7 +366,7 @@ export default function Checkout() {
             {/* Payment */}
             <div className="p-6 bg-white rounded-lg shadow-md">
               <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-3">
-                3. Payment Method
+                3. Metode Pembayaran
               </h2>
               <div className="space-y-4">
                 <label
@@ -417,7 +435,7 @@ export default function Checkout() {
               </h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Course Title:</span>
+                  <span className="text-gray-600">Kursus:</span>
                   <span className="font-medium text-right">{course.title}</span>
                 </div>
                 <div className="flex justify-between">
@@ -470,5 +488,6 @@ export default function Checkout() {
         </form>
       </div>
     </div>
+    </>
   );
 }

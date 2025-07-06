@@ -9,15 +9,16 @@ const navItems = [
    items: [
     { name: 'Dashboard', to: '/admin', icon: HomeIcon, end: true },
     { name: 'Users', to: '/admin/users', icon: UsersIcon },
-    { name: 'Payment', to: '/admin/payments', icon: CreditCardIcon },
+    
     { name: 'Courses', to: '/admin/courses', icon: BookOpenIcon },
     { name: 'Bookings', to: '/admin/bookings', icon: RectangleStackIcon },
 
    ],
  },
  {
-   label: 'TOOLS',
+   label: 'FINANCE',
    items: [
+     { name: 'Payment', to: '/admin/payments', icon: CreditCardIcon },
     { name: 'Payouts', to: '/admin/payouts', icon: BanknotesIcon },
     { name: 'Payment Options', to: '/admin/payment-options', icon: WalletIcon },
    ],

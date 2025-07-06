@@ -68,7 +68,7 @@ export default function TeacherProfileSettings() {
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting || !isDirty}>
           {isSubmitting && <Spinner size={20} className="mr-2" />}
-          Save Changes
+          Simpan Perubahan
         </Button>
       </div>
     </form>

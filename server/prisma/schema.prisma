@@ -17,11 +17,11 @@ model User {
   id                String                   @id @default(uuid())
   name              String
   email             String                   @unique
-  headline          String? // Tagline singkat, misal: "Spesialis Matematika & Fisika SMA"
-  bio               String? // Biografi lengkap, bisa mendukung format Markdown
-  websiteUrl        String? // Link ke LinkedIn, portofolio, atau website pribadi
-  certifications    String[] // Array untuk menyimpan daftar sertifikasi
-  education         String[] // Array untuk menyimpan riwayat pendidikan
+  headline          String?
+  bio               String?
+  websiteUrl        String?
+  certifications    String[]
+  education         String[]
   phone             String?
   password          String
   role              Role
@@ -39,7 +39,8 @@ model User {
   teacherFeedback   CourseReview[]           @relation("TeacherReviews")
   unavailableDates  TeacherUnavailableDate[]
   notifications     Notification[]           @relation("UserNotifications")
-  sentMessages      Message[]
+  conversations     Participant[]
+  sentMessages      Message[]                @relation("SentMessages")
 }
 
 model Course {
@@ -50,7 +51,7 @@ model Course {
   imageUrl           String?
   category           SubjectCategory @default(UMUM)
   classLevels        ClassLevel[]
-  curriculum         Curriculum? // null for UTBK
+  curriculum         Curriculum? 
   learningObjectives String[]
   teacher            User            @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId          String
@@ -78,7 +79,7 @@ model Booking {
   courseCompletionDate DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
-  review               CourseReview? // Relasi one-to-one dengan review
+  review               CourseReview? 
   conversation         Conversation?    @relation(fields: [conversationId], references: [id])
   conversationId       String?          @unique
 }
@@ -107,7 +108,6 @@ model Payment {
   status            PaymentStatus @default(PENDING)
   amount            Float
   dueDate           DateTime?
-  paymentGatewayRef String?
   proofOfPaymentUrl String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -183,21 +183,34 @@ model PaymentOption {
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  recipient   User     @relation("UserNotifications", fields: [recipientId], references: [id])
+  id          String           @id @default(cuid())
+  recipient   User             @relation("UserNotifications", fields: [recipientId], references: [id])
   recipientId String
-  content     String // Isi notifikasi, misal: "Anda memiliki permintaan booking baru."
-  link        String? // URL yang akan dibuka saat notifikasi diklik, misal: "/teacher/bookings"
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  content     String
+  type        NotificationType @default(GENERAL)
+  link        String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
 }
 
 model Conversation {
-  id        String    @id @default(cuid())
-  booking   Booking? // Relasi one-to-one dengan Booking
-  messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String        @id @default(cuid())
+  booking      Booking? 
+  participants Participant[] 
+  messages     Message[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Participant {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  lastReadAt     DateTime? 
+
+  @@unique([userId, conversationId])
 }
 
 model Message {
@@ -205,10 +218,11 @@ model Message {
   content        String       @db.Text
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
-  sender         User         @relation(fields: [senderId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
   senderId       String
   createdAt      DateTime     @default(now())
 }
+
 
 enum PayoutStatus {
   PENDING_PAYMENT
@@ -247,10 +261,10 @@ enum PaymentMethod {
 }
 
 enum ClassLevel {
-  SD //  kelas 1-6
-  SMP //  kelas 7-9
-  SMA //  kelas 10-12
-  UTBK // Untuk UTBK, tidak memiliki kelas
+  SD
+  SMP
+  SMA
+  UTBK
 }
 
 enum Curriculum {
@@ -277,4 +291,11 @@ enum SubjectCategory {
   IPA
   IPS
   UMUM
+}
+
+enum NotificationType {
+  GENERAL
+  BOOKING_STATUS
+  PAYMENT_STATUS
+  NEW_MESSAGE
 }

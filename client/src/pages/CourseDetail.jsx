@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { CheckCircle, BookOpen, Users, BarChart2, Award, BadgeCheckIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 const StickyBookingCard = ({ course, onBookNow }) => (
   <div className="lg:sticky lg:top-24">
@@ -24,12 +25,12 @@ const StickyBookingCard = ({ course, onBookNow }) => (
           <span className="text-base font-medium text-muted-foreground"> / sesi</span>
         </p>
         <Button size="lg" className="w-full hover:bg-indigo-700 text-lg h-12" onClick={onBookNow}>
-          Book This Course
+          Pesan Kursus
         </Button>
         <ul className="mt-6 space-y-3 text-sm">
-          <li className="flex items-center gap-3"><BookOpen className="h-5 w-5 text-indigo-500" /><span>Kurikulum: <span className="font-semibold">{course.curriculum || 'General'}</span></span></li>
+          <li className="flex items-center gap-3"><BookOpen className="h-5 w-5 text-indigo-500" /><span>Kurikulum: <span className="font-semibold">{course.curriculum.replace('_', ' ') || 'General'}</span></span></li>
           <li className="flex items-center gap-3"><Users className="h-5 w-5 text-indigo-500" /><span>Level Kelas: <span className="font-semibold">{course.classLevels?.join(', ')}</span></span></li>
-          <li className="flex items-center gap-3"><Award className="h-5 w-5 text-indigo-500" /><span>Kategori: <span className="font-semibold">{course.category}</span></span></li>
+          <li className="flex items-center gap-3"><Award className="h-5 w-5 text-indigo-500" /><span>Kategori: <span className="font-semibold">{course.category.replace('_', ' ')}</span></span></li>
         </ul>
       </div>
     </div>
@@ -144,7 +145,25 @@ export default function CourseDetail() {
 
 
   return (
-    <div className="bg-gray-50">
+    <>
+    <div>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate('/student')} variant='ghost'>
+            Home
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            Detail Kursus
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+    </div>
+    <div className="bg-gray-100">
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="grid lg:grid-cols-3 lg:gap-x-12">
           
@@ -189,5 +208,6 @@ export default function CourseDetail() {
         </div>
       </div>
     </div>
+    </>
   );
 }

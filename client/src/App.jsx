@@ -37,7 +37,7 @@ import TeacherAvailability from './components/TeacherAvailability';
 import StudentDashboard from './pages/StudentDashboard';
 import MyCoursesList from './pages/MyCoursesList';
 import MyCourseProgress from './pages/MyCourseProgress';
-import MyBookings from './pages/MyBookings';
+import MyBookings from './pages/Transactions';
 import CourseDetail from './pages/CourseDetail';
 import PaymentPage from './pages/PaymentPage';
 import Checkout from './pages/Checkout';
@@ -103,7 +103,7 @@ export default function App() {
               <Route path="payments" element={<PaymentManagementPage />} />
               <Route path="payouts" element={<PayoutManagementPage />} />
               <Route path="payment-options" element={<PaymentOptionsPage />} />
-              <Route path='settings' element={<UserSettings />} />
+              <Route path='settings' element={<ApplicationSettingsPage />} />
               <Route path="profile" element={<UserProfilePage />} />
               
             </Route>
@@ -127,6 +127,7 @@ export default function App() {
               <Route path="profile" element={<UserProfilePage />} />
               <Route path="settings" element={<UserSettings />} />
               <Route path="chat/:conversationId" element={<ChatPage />} />
+              <Route path="chat" element={<ChatPage />} />
             </Route>
             
             {/* --- Rute Student --- */}
@@ -148,6 +149,7 @@ export default function App() {
               <Route path="bookings/:bookingId/pay" element={<PaymentPage />} />
               <Route path="profile" element={<UserProfilePage />} />
               <Route path="chat/:conversationId" element={<ChatPage />} />
+              <Route path="chat" element={<ChatPage />} />
             </Route>
 
             {/* --- Fallback dan Redirect --- */}

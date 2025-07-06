@@ -94,27 +94,27 @@ export default function MyCourseProgress() {
 
   return (
     <>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <Button onClick={() => navigate('/student')} variant='ghost'>
-                Home
-              </Button>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator/>
-            <BreadcrumbItem>
-              <Button onClick={() => navigate(-1)} variant='ghost'>
-                Daftar Kursus
-              </Button>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator/>
-            <BreadcrumbItem>
-              <BreadcrumbPage>
-                Sesi Kursus
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate('/student')} variant='ghost'>
+            Home
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate(-1)} variant='ghost'>
+            Daftar Kursus
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            Sesi Kursus
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
     <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">

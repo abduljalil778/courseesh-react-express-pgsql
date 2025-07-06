@@ -27,7 +27,7 @@ export const updateUserValidator = [
     .customSanitizer(value => (value === '' ? null : value))
     .if((value) => value !== null)
     .matches(PHONE_REGEX)
-    .withMessage('Invalid phone number format. Leave empty or send null to remove.'),
+    .withMessage('Invalid phone number format'),
 
   body('password')
     .optional()

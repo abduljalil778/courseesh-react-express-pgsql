@@ -6,8 +6,9 @@ import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
-// Komponen kecil untuk satu item notifikasi
+// Komponen untuk satu item notifikasi
 const NotificationItem = ({ notification }) => {
   const navigate = useNavigate();
   return (
@@ -29,6 +30,8 @@ export default function NotificationsPage() {
   const [pageInfo, setPageInfo] = useState({ page: 1, totalPages: 1 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   const loadNotifications = useCallback(async (pageNum) => {
     setIsLoading(true);
@@ -58,10 +61,24 @@ export default function NotificationsPage() {
   };
   
   return (
+    <>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Button onClick={() => navigate('/student') } variant='ghost'>
+            Home
+          </Button>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator/>
+        <BreadcrumbItem>
+          <BreadcrumbPage>Notifications</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
     <div className="max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">All Notifications</CardTitle>
+          <CardTitle className="text-2xl">Notifikasi</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -99,5 +116,6 @@ export default function NotificationsPage() {
         )}
       </Card>
     </div>
+    </>
   );
 }

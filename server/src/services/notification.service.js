@@ -2,27 +2,23 @@ import prisma from '../../libs/prisma.js';
 
 /**
  * GET /api/notifications
- * Mengambil semua notifikasi milik user yang login.
  */
 export const getMyNotifications = async (req, res, next) => {
   try {
-    const { page = 1, limit = 15 } = req.query; // Ambil query page/limit
+    const { page = 1, limit = 15 } = req.query;
     const pageInt = parseInt(page);
     const limitInt = parseInt(limit);
     const skip = (pageInt - 1) * limitInt;
 
     const where = { recipientId: req.user.id };
 
-    // Jalankan dua query secara paralel untuk efisiensi
     const [notifications, total] = await Promise.all([
-      // Query 1: Ambil data notifikasi untuk halaman saat ini
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limitInt,
       }),
-      // Query 2: Hitung total notifikasi untuk pagination
       prisma.notification.count({ where }),
     ]);
     
@@ -40,20 +36,29 @@ export const getMyNotifications = async (req, res, next) => {
 
 /**
  * POST /api/notifications/mark-as-read
- * Menandai semua notifikasi yang belum dibaca milik user sebagai sudah dibaca.
  */
 export const markAllAsRead = async (req, res, next) => {
-    try {
+  try {
+    const { type } = req.query; 
+
+        const whereClause = {
+            recipientId: req.user.id,
+            isRead: false,
+        };
+
+        // Jika ada tipe spesifik, tambahkan ke filter
+        if (type === 'GENERAL') {
+            whereClause.type = { not: 'NEW_MESSAGE' };
+        } else if (type === 'NEW_MESSAGE') {
+            whereClause.type = 'NEW_MESSAGE';
+        }
+
         await prisma.notification.updateMany({
-            where: {
-                recipientId: req.user.id,
-                isRead: false,
-            },
-            data: {
-                isRead: true,
-            },
+            where: whereClause,
+            data: { isRead: true },
         });
-        res.status(204).send(); // 204 No Content, artinya sukses tanpa perlu body balasan
+
+        res.status(204).send();
     } catch (err) {
         next(new AppError(err.message, 500));
     }

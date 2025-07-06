@@ -96,7 +96,7 @@ export default function PaymentOptionsPage() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Payment Options</h1>
         <Button onClick={handleOpenCreateForm} className="px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   getBookingById,
-  submitOrUpdateSessionReport,
+  updateSessionReport,
   submitOverallBookingReport,
 } from '../lib/api';
 import Spinner from '../components/Spinner';
@@ -81,7 +81,7 @@ export default function TeacherScheduleDetails() {
   const handleSessionReportSubmit = async (sessionId, data) => {
     setIsSubmittingReport(true);
     try {
-      await submitOrUpdateSessionReport(sessionId, data); 
+      await updateSessionReport(sessionId, data); 
       await Swal.fire('Success', 'Session report saved!', 'success');
       closeSessionReportModal();
       fetchBookingDetails(); // Reload data

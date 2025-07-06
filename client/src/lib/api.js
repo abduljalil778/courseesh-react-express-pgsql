@@ -116,7 +116,7 @@ export const updatePayment = async (paymentId, paymentData) => {
 }
 
 // handle submit session report 
-export const submitOrUpdateSessionReport = async (sessionId, reportData) => {
+export const updateSessionReport = async (sessionId, reportData) => {
   const formData = new FormData();
 
   if (reportData.teacherReport !== undefined) {
@@ -310,8 +310,8 @@ export const getNotifications = async (params) => {
   return await api.get('/notifications', { params })
 }
 
-export const markNotificationsAsRead = async () => {
-  return await api.post('/notifications/mark-as-read')
+export const markNotificationsAsRead = async (type) => {
+  return api.post(`/notifications/mark-as-read${type ? `?type=${type}` : ''}`);
 }
 
 // hanle chat
@@ -325,4 +325,8 @@ export const getMyConversations = async () => {
 
 export const getMessagesByConversationId = async (conversationId) => {
   return await api.get(`/conversations/${conversationId}/message`)
+}
+
+export const markConversationAsRead = async (conversationId) => {
+  return await api.post(`/conversations/${conversationId}/mark-as-read`)
 }

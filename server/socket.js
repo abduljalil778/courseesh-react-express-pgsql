@@ -1,8 +1,8 @@
 // src/socket.js
 import { Server } from 'socket.io';
-import prisma from './libs/prisma.js'; // Sesuaikan path prisma Anda
+import prisma from './libs/prisma.js';
 
-// Fungsi ini akan menerima server HTTP sebagai argumen
+
 export const initSocket = (server) => {
   const io = new Server(server, {
     cors: {
@@ -13,14 +13,12 @@ export const initSocket = (server) => {
   });
 
   // --- Otorisasi Koneksi Socket (Middleware) ---
-  // Ini adalah cara yang lebih bersih untuk menangani otentikasi
   io.use((socket, next) => {
     const userId = socket.handshake.query.userId;
     if (userId) {
-      socket.user = { id: userId }; // Simpan userId di objek socket
+      socket.user = { id: userId };
       return next();
     }
-    // Jika tidak ada userId, tolak koneksi
     return next(new Error('Authentication error: User ID not provided.'));
   });
 
@@ -29,12 +27,10 @@ export const initSocket = (server) => {
   io.on('connection', (socket) => {
     console.log(`✅ User Connected: ${socket.id} (User ID: ${socket.user.id})`);
 
-    // Secara otomatis join ke ruangan pribadi berdasarkan ID user
     socket.join(socket.user.id);
 
-    // --- Menangani Event-event Spesifik ---
     handleChatEvents(socket, io);
-    // Di masa depan, Anda bisa menambahkan handler lain di sini
+
     // handleGameEvents(socket, io); 
     // handleCollaborationEvents(socket, io);
 
@@ -43,14 +39,12 @@ export const initSocket = (server) => {
     });
   });
 
-  // Ekspor `io` agar bisa digunakan di service lain
   return io;
 };
 
 
 // --- Handler Khusus untuk Fitur Chat ---
 const handleChatEvents = (socket, io) => {
-  // Event saat user membuka jendela chat
   socket.on('joinChatRoom', (conversationId) => {
     if (conversationId) {
       socket.join(conversationId);
@@ -62,7 +56,7 @@ const handleChatEvents = (socket, io) => {
   socket.on('sendMessage', async (data) => {
     console.log('✅ [Socket] Received "sendMessage" event with data:', data);
     const { conversationId, content } = data;
-    const senderId = socket.user.id; // Ambil senderId dari objek socket yang sudah terotentikasi
+    const senderId = socket.user.id; 
 
     if (!conversationId || !content) {
       return console.error('❌ [Socket] Invalid message payload from user:', senderId);
@@ -103,9 +97,6 @@ const handleChatEvents = (socket, io) => {
       io.to(conversationId).emit('receiveMessage', newMessage);
       console.log(`✅ [Socket] Message sent to room: ${conversationId}`);
 
-      // ======================================================
-      // AWAL LOGIKA NOTIFIKASI BARU
-      // ======================================================
       // 3. Tentukan siapa penerima notifikasi
       const recipient = (senderId === bookingInfo.student.id) ? bookingInfo.course.teacher : bookingInfo.student;
       const recipientId = recipient.id;
@@ -120,6 +111,7 @@ const handleChatEvents = (socket, io) => {
           recipientId: recipientId,
           content: notificationContent,
           link: notificationLink,
+          type: 'NEW_MESSAGE'
         }
       });
 
@@ -129,10 +121,6 @@ const handleChatEvents = (socket, io) => {
         notification: newNotification
       });
       console.log(`✅ [Socket] Chat notification sent to user: ${recipientId}`);
-      // ======================================================
-      // AKHIR LOGIKA NOTIFIKASI BARU
-      // ======================================================
-
 
     } catch (error) {
       console.error("❌ [Socket] Error in sendMessage handler:", error);

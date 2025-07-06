@@ -3,7 +3,6 @@ import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/api';
 import Swal from 'sweetalert2';
 import { Button } from '@/components/ui/button';
@@ -114,7 +113,7 @@ export default function ProfileForm({ user, onUpdate, onCancel }) {
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting || !isDirty}>
-          {isSubmitting ? <Spinner size={20} className="mr-2" /> : 'Save Changes'}
+          {isSubmitting ? <Spinner size={20} className="mr-2" /> : 'Simpan Perubahan'}
         </Button>
       </div>
     </form>

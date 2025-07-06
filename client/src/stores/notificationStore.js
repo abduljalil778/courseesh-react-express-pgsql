@@ -5,6 +5,7 @@ import { getNotifications, markNotificationsAsRead } from '../lib/api';
 export const useNotificationStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  unreadChatCount: 0,
 
   // Aksi untuk mengambil notifikasi awal dari server
   fetchNotifications: async () => {
@@ -13,7 +14,8 @@ export const useNotificationStore = create((set, get) => ({
       const fetchedNotifications = response.data.data || [];
       set({
         notifications: fetchedNotifications,
-        unreadCount: fetchedNotifications.filter(n => !n.isRead).length,
+        unreadCount: fetchedNotifications.filter(n => !n.isRead && n.type !== 'NEW_MESSAGE').length,
+        unreadChatCount: fetchedNotifications.filter(n => !n.isRead && n.type === 'NEW_MESSAGE').length,
       });
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -23,31 +25,49 @@ export const useNotificationStore = create((set, get) => ({
   // Aksi yang dipanggil oleh Socket.IO saat ada notifikasi baru
   addNotification: (newNotification) => {
     set(state => ({
-      // Tambahkan notifikasi baru di paling atas daftar
       notifications: [newNotification, ...state.notifications],
-      unreadCount: state.unreadCount + 1,
+      unreadCount: newNotification.type !== 'NEW_MESSAGE' ? state.unreadCount + 1 : state.unreadCount,
+      unreadChatCount: newNotification.type === 'NEW_MESSAGE' ? state.unreadChatCount + 1 : state.unreadChatCount,
     }));
   },
 
-  // Aksi untuk menandai semua notifikasi sebagai sudah dibaca
-  markAllAsRead: async () => {
-    // Hanya jalankan jika ada notifikasi yang belum dibaca
+  markAllGeneralAsRead: async () => {
     if (get().unreadCount === 0) return;
 
-    // Reset count di UI secara optimis agar responsif
-    set({ unreadCount: 0 });
+    const originalNotifications = get().notifications;
     
-    // Tandai semua notifikasi di state sebagai sudah dibaca
-    set(state => ({
-      notifications: state.notifications.map(n => ({ ...n, isRead: true })),
-    }));
+    set({
+      unreadCount: 0,
+      notifications: get().notifications.map(n => 
+        n.type !== 'NEW_MESSAGE' ? { ...n, isRead: true } : n
+      ),
+    });
     
     try {
-      // Kirim permintaan ke backend untuk update database
-      await markNotificationsAsRead(); 
+      await markNotificationsAsRead('GENERAL');
     } catch (error) {
-      console.error("Failed to mark notifications as read:", error);
-      // Jika gagal, Anda bisa mengembalikan state ke semula (opsional)
+      console.error("Failed to mark general notifications as read:", error);
+      set({ notifications: originalNotifications, unreadCount: get().unreadCount });
+    }
+  },
+
+  markChatAsRead: async () => {
+    if (get().unreadChatCount === 0) return;
+    
+    const originalNotifications = get().notifications;
+
+    set({ 
+      unreadChatCount: 0,
+      notifications: get().notifications.map(n => 
+        n.type === 'NEW_MESSAGE' ? { ...n, isRead: true } : n
+      )
+    });
+    
+    try {
+      await markNotificationsAsRead('NEW_MESSAGE');
+    } catch (error) {
+      console.error("Failed to mark chat notifications as read:", error);
+      set({ notifications: originalNotifications, unreadChatCount: get().unreadChatCount });
     }
   },
 }));

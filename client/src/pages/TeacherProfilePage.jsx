@@ -11,9 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 
-// Komponen kecil untuk menampilkan daftar (Pendidikan/Sertifikasi)
+// Komponen untuk menampilkan daftar (Pendidikan/Sertifikasi)
 const ProfileListSection = ({ title, items, icon: Icon }) => {
-  // Hanya tampilkan seksi ini jika datanya ada dan tidak kosong
   if (!items || items.length === 0) return null;
   
   return (
@@ -42,7 +41,6 @@ export default function TeacherProfilePage() {
     setIsLoading(true);
     try {
       const res = await getTeacherProfile(teacherId);
-      // Asumsi respons sekarang dibungkus { data: ... }
       setProfileData(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load profile.');
@@ -70,7 +68,6 @@ export default function TeacherProfilePage() {
       <div className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* === KOLOM KIRI (3/12): INFO PROFIL STICKY === */}
           <aside className="lg:col-span-4 xl:col-span-3">
             <div className="bg-white p-6 rounded-lg shadow-lg sticky top-24">
               <Avatar className="h-32 w-32 mx-auto border-4 border-white -mt-24 shadow-xl">
@@ -80,7 +77,6 @@ export default function TeacherProfilePage() {
               <div className="text-center mt-4">
                 <h1 className="text-2xl font-bold text-gray-900">{profile.name}</h1>
                 <p className="text-md text-indigo-600 font-semibold">{profile.headline || 'Instructor'}</p>
-                {/* --- TAMBAHAN BARU: Tanggal Bergabung --- */}
                 <p className="text-xs text-muted-foreground mt-2 flex items-center justify-center gap-2">
                   <CalendarDays className="h-4 w-4" />
                   Bergabung sejak {format(new Date(profile.createdAt), 'MMMM yyyy')}
@@ -97,7 +93,6 @@ export default function TeacherProfilePage() {
                   <p className="text-xs text-muted-foreground">Siswa</p>
                 </div>
               </div>
-               {/* --- TAMBAHAN BARU: Link Kontak --- */}
               {(profile.websiteUrl || profile.email) && <Separator className="my-6" />}
               <div className="space-y-3 text-center">
                  {profile.websiteUrl && (
@@ -109,7 +104,6 @@ export default function TeacherProfilePage() {
             </div>
           </aside>
 
-          {/* === KOLOM KANAN (9/12): KONTEN UTAMA (BIO & KURSUS) === */}
           <main className="lg:col-span-8 xl:col-span-9">
             <Card>
               <CardHeader>
@@ -120,7 +114,6 @@ export default function TeacherProfilePage() {
               </CardContent>
             </Card>
 
-            {/* --- TAMBAHAN BARU: Seksi Kualifikasi --- */}
             <Card className="mt-6">
                <CardHeader>
                 <CardTitle>Kualifikasi</CardTitle>

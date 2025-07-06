@@ -2,20 +2,20 @@ import { getMyNotifications, markAllAsRead } from '../controllers/notification.c
 
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import catchAsync from '../utils/catchAsync.js';
+import asyncHandler from 'express-async-handler';
 
 const router = express.Router()
 
 router.get(
     '/',
     authenticate,
-    catchAsync(getMyNotifications)
+    asyncHandler(getMyNotifications)
 )
 
 router.post(
     '/mark-as-read',
     authenticate,
-    catchAsync(markAllAsRead)
+    asyncHandler(markAllAsRead)
 )
 
 export default router;

@@ -266,7 +266,7 @@ export default function PaymentManagementPage() {
         </div>
       </div>
 
-      {/* Pagination Modern ala shadcn */}
+      {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <span className="text-sm text-gray-700">
           Showing{" "}

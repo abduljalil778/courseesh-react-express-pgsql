@@ -37,6 +37,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const PAGE_SIZE = 8;
 
@@ -242,7 +243,7 @@ export default function UserManagementPage() {
           onClick={handleOpenCreateForm}
           className="ml-auto px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-indigo-700 flex-shrink-0"
         >
-          Add New User
+          <Plus/>Add New User
         </Button>
       </div>
 

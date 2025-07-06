@@ -11,7 +11,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbS
 const NAVBAR_HEIGHT = 68;
 
 const TABS = [
-  { key: 'app-setting', label: 'Application Settings', visible: user => user?.role === 'ADMIN' },
+  // { key: 'app-setting', label: 'Application Settings', visible: user => user?.role === 'ADMIN' },
   { key: 'payout', label: 'Payout Settings', visible: user => user?.role === 'TEACHER' },
   { key: 'availability', label: 'Availability Settings', visible: user => user?.role === 'TEACHER' },
 ];
@@ -23,7 +23,7 @@ const TAB_DESCRIPTIONS = {
   },
   'payout': {
     title: "Payout Settings",
-    desc: "Configure your payout method, bank information, and withdrawal schedule.",
+    desc: "Configure your payout method and bank information.",
   },
   'availability': {
     title: "Availability Settings",
@@ -98,9 +98,9 @@ export default function UserSettings() {
       {/* Tab Content */}
       <div className="max-w-4xl mx-auto pt-2 px-0 md:px-3">
         <div className="animate-fade-in">
-          {activeTab === 'app-setting' && user.role === 'ADMIN' && (
+          {/* {activeTab === 'app-setting' && user.role === 'ADMIN' && (
             <ApplicationSettingsPage />
-          )}
+          )} */}
           {activeTab === 'payout' && user.role === 'TEACHER' && (
             <PayoutSettingsForm />
           )}

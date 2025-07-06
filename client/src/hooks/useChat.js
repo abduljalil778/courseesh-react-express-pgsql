@@ -1,64 +1,44 @@
 // src/hooks/useChat.js
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import { useChatStore } from '../stores/chatStore';
 
-export const useChat = (conversationId) => {
+export const useChat = () => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const { addLiveMessage, activeConversationId } = useChatStore();
   const socketRef = useRef(null);
 
   useEffect(() => {
-    // Jangan buat koneksi jika tidak ada user atau ID percakapan
-    if (!user || !conversationId) return;
-
-    // Inisialisasi koneksi socket
+    if (!user) return;
     const newSocket = io(import.meta.env.VITE_API_URL.replace('/api', ''), {
       query: { userId: user.id },
     });
     socketRef.current = newSocket;
-
-    newSocket.emit('joinChatRoom', conversationId);
-
-    // Mendengarkan pesan baru dari server
-    newSocket.on('receiveMessage', (receivedMessage) => {
-      
-      // Hanya tambahkan pesan ke state jika pengirimnya BUKAN user saat ini.
-      // Pesan dari user saat ini sudah ditambahkan secara optimis oleh sendMessage.
-      if (receivedMessage.senderId !== user.id) {
-        setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-      }
+    
+    newSocket.on('receiveMessage', (message) => {
+      addLiveMessage(message);
     });
 
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [conversationId, user]); // Efek ini akan berjalan lagi jika conversationId atau user berubah
+    return () => { newSocket.disconnect(); };
+  }, [user, addLiveMessage]);
+
+  useEffect(() => {
+    if (socketRef.current && activeConversationId) {
+      socketRef.current.emit('joinChatRoom', activeConversationId);
+    }
+  }, [activeConversationId]);
 
   const sendMessage = useCallback((content) => {
-    if (socketRef.current && content.trim()) {
+    if (socketRef.current && content.trim() && activeConversationId) {
       const messagePayload = {
-        conversationId,
+        conversationId: activeConversationId,
         content: content.trim(),
         senderId: user.id,
       };
-
-      // Optimistic update: Langsung tampilkan pesan di UI pengirim
-      const optimisticMessage = {
-        ...messagePayload,
-        id: `optimistic-${Date.now()}`, // ID sementara
-        createdAt: new Date().toISOString(),
-        sender: {
-          id: user.id,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-        },
-      };
-      setMessages((prev) => [...prev, optimisticMessage]);
-
       socketRef.current.emit('sendMessage', messagePayload);
     }
-  }, [conversationId, user]);
+  }, [activeConversationId, user]);
 
-  return { messages, setMessages, sendMessage };
+  return { sendMessage };
 };

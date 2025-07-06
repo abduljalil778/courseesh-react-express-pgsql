@@ -108,7 +108,7 @@ export default function PaymentPage() {
                     <div>
                       <p className="font-bold text-base">{option.bankName}</p>
                       <p className="text-gray-800">Account Number: <strong className="font-mono">{option.accountNumber}</strong></p>
-                      <p className="text-gray-800">Account Holder: <strong>{option.accountHolder}</strong></p>
+                      <p className="text-gray-800">Name: <strong>{option.accountHolder}</strong></p>
                     </div>
                   </div>
                 ))

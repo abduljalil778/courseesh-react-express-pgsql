@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,8 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import Spinner from '@/components/Spinner';
 import Swal from 'sweetalert2';
 import { EyeIcon, EyeSlashIcon, } from '@heroicons/react/24/solid';
-
-// Impor komponen dari shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -88,7 +85,7 @@ export default function LoginPage() {
         <p>
           Don't have an account?{' '}
           <Link to="/register" className="font-medium text-indigo-600 hover:underline">
-            Sign Up
+            Register Now
           </Link>
         </p>
       </CardFooter>

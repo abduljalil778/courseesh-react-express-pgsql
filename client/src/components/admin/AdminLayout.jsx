@@ -18,7 +18,6 @@ import { Toaster } from 'react-hot-toast';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { formatDistanceToNow } from 'date-fns';
 
-// Komponen daftar notifikasi yang bisa kita gunakan kembali
 const NotificationList = () => {
   const notifications = useNotificationStore(state => state.notifications);
   if (notifications.length === 0) return <p className="p-4 text-sm text-center text-muted-foreground">No new notifications.</p>;
@@ -43,7 +42,7 @@ const NotificationList = () => {
 
 export default function AdminLayout() {
  const { user, logout } = useAuth();
- const { unreadCount, markAllAsRead, fetchNotifications } = useNotificationStore();
+ const { unreadCount, markAllGeneralAsRead, fetchNotifications } = useNotificationStore();
  const location = useLocation();
  const navigate = useNavigate();
  
@@ -76,13 +75,12 @@ export default function AdminLayout() {
        <div className="flex-grow flex flex-col">
          <header className="bg-white shadow-sm h-14 flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
            <div className="flex items-center">
-             {/* ... tombol hamburger ... */}
+
              <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
            </div>
            <div className="flex items-center space-x-3">
              
-             {/* 2. Ubah Ikon Lonceng menjadi Popover Interaktif */}
-             <Popover onOpenChange={(open) => { if (open && unreadCount > 0) markAllAsRead(); }}>
+             <Popover onOpenChange={(open) => { if (open) markAllGeneralAsRead()}}>
                <PopoverTrigger asChild>
                  <button className="relative p-2 rounded-full hover:bg-gray-100">
                    <Bell className="h-5 w-5 text-gray-500 hover:text-gray-700" />
@@ -97,7 +95,7 @@ export default function AdminLayout() {
                  <div className="p-3 border-b"><h3 className="font-semibold">Notifications</h3></div>
                  <NotificationList />
                  <div className='p-2 text-center border-t'>
-                  <Link to={`notifications`} className="text-sm text-indigo-600 hover:underline">View all notificcations</Link>
+                  <Link to={`notifications`} className="text-sm text-indigo-600 hover:underline">Lihat semua notifikasi</Link>
                  </div>
                </PopoverContent>
              </Popover>
@@ -105,7 +103,6 @@ export default function AdminLayout() {
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
                  <Button variant="ghost" className="flex items-center">
-                    {/* 3. Perbaiki Tampilan Avatar */}
                     <Avatar className="w-8 h-8 mr-2">
                         <AvatarImage src={userAvatarUrl} alt={user?.name} />
                         <AvatarFallback>{user?.name?.split(' ').map(n=>n[0]).join('')}</AvatarFallback>

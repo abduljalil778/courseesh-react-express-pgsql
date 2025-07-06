@@ -1,8 +1,8 @@
-// src/components/Navbar.jsx
+
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, UserCircle, Menu, X, Search, Filter, Bell, Settings, LucideCreditCard } from 'lucide-react';
+import { LogOut, UserCircle, Menu, X, Search, Filter, Bell, Settings, LucideCreditCard, Mail, } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -16,37 +16,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { CLASS_LEVELS, SUBJECT_CATEGORIES } from '@/config'; 
-import { ShoppingCartIcon } from '@heroicons/react/24/outline';
-import { formatDistanceToNow } from 'date-fns';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import ConversationList from '@/components/ConversationList';
+import NotificationList from '@/components/NotificationList';
 
-const NotificationList = () => {
-  const notifications = useNotificationStore(state => state.notifications);
 
-  if (notifications.length === 0) {
-    return <p className="p-4 text-sm text-center text-muted-foreground">No notifications yet.</p>;
-  }
-
-  return (
-    <div className="max-h-80 overflow-y-auto">
-      {notifications.map(n => (
-        <Link 
-          to={n.link || '#'} 
-          key={n.id} 
-          className={`block p-3 border-b hover:bg-gray-50 ${!n.isRead ? 'bg-indigo-50' : ''}`}
-        >
-          <p className="text-sm text-gray-800">{n.content}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-          </p>
-        </Link>
-      ))}
-    </div>
-  );
-};
-
-// Komponen kecil untuk daftar link di menu navigasi kanan
 const RightNavLinks = ({ role }) => {
   const commonProps = {
     className: "text-sm font-medium text-muted-foreground transition-colors hover:text-primary",
@@ -71,13 +46,13 @@ const RightNavLinks = ({ role }) => {
 };
 
 export default function Navbar() {
-  const { unreadCount, markAllAsRead } = useNotificationStore();
+  const { unreadCount, unreadChatCount, markAllGeneralAsRead, markChatAsRead } = useNotificationStore();
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Ambil state dan setter dari store
-  const { searchTerm, setSearchTerm, filterClass, setFilterClass, setCategory } = useCourseFilterStore();
+  const { searchTerm, setSearchTerm, filterClass, setFilterClass, setCategory,  } = useCourseFilterStore();
 
   const isDashboard = location.pathname.includes('/student') || location.pathname.includes('/teacher');
 
@@ -116,7 +91,6 @@ export default function Navbar() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 setCategory(cat.value);
-                                // Arahkan ke halaman dashboard utama untuk melihat hasil filter
                                 navigate(`/${user.role.toLowerCase()}`);
                               }}
                               className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
@@ -172,25 +146,41 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <RightNavLinks role={user.role} />
             
-            {user.role === 'STUDENT' && (
+            {/* {user.role === 'STUDENT' && (
               <div className="flex items-center">
               <Button variant="ghost" size="icon" className="relative" title="Notifications">
                 <ShoppingCartIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
               </Button>
             </div>
-            )}
+            )} */}
+
+            <Popover onOpenChange={(open) => { if (open) markChatAsRead() }}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative" title="Chats">
+                  <Mail className="h-6 w-6 text-gray-500 hover:text-gray-900" />
+                  {unreadChatCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-xs">
+                      {unreadChatCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b"><h3 className="font-semibold">Pesan</h3></div>
+                <ConversationList />
+                <div className="p-2 text-center border-t">
+                  <Link to={`/${user.role.toLowerCase()}/chat`} className="text-sm text-indigo-600 hover:underline">Buka semua chat</Link>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <div className="flex items-center">
             <Popover onOpenChange={(open) => {
-              // Jika popover dibuka dan ada notifikasi belum dibaca, tandai semua
-              if (open && unreadCount > 0) {
-                markAllAsRead();
-              }
+              if (open) markAllGeneralAsRead();
             }}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative" title="Notifications">
                   <Bell className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                  {/* Tampilkan badge merah jika ada notifikasi belum dibaca */}
                   {unreadCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-xs">
                       {unreadCount > 9 ? '9+' : unreadCount}
@@ -204,13 +194,13 @@ export default function Navbar() {
                 </div>
                 <NotificationList />
                 <div className="p-2 text-center border-t">
-                  <Link to={`/${user.role.toLowerCase()}/notifications`} className="text-sm text-indigo-600 hover:underline">View all notification</Link>
+                  <Link to={`/${user.role.toLowerCase()}/notifications`} className="text-sm text-indigo-600 hover:underline">Lihat semua notifikasi</Link>
                 </div>
               </PopoverContent>
             </Popover>
             </div>
             
-            {/* User Menu Dropdown (tidak berubah) */}
+            {/* User Menu Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
