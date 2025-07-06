@@ -20,7 +20,6 @@ export default function PaymentPage() {
     }
     setIsLoading(true);
     try {
-      // Ambil data booking dan opsi pembayaran secara bersamaan untuk efisiensi
       const [bookingResponse, optionsResponse] = await Promise.all([
         getBookingById(bookingId),
         getActivePaymentOptions()
@@ -38,18 +37,23 @@ export default function PaymentPage() {
     fetchData();
   }, [fetchData]);
 
-  // Kalkulasi jumlah yang harus dibayar
-  const amountToPay = useMemo(() => {
-    if (!booking) return 0;
-    // Jika pembayaran cicilan, ambil jumlah cicilan pertama
-    if (booking.paymentMethod === 'INSTALLMENT') {
-      const firstInstallment = booking.payments?.find(p => p.installmentNumber === 1);
-      return firstInstallment?.amount || 0;
+  const paymentDetails = useMemo(() => {
+    if (!booking) return { amount: 0, installmentNumber: null };
+    
+    const nextPayment = booking.payments?.find(p => p.status === 'PENDING');
+
+    if (nextPayment) {
+      return {
+        amount: nextPayment.amount,
+        installmentNumber: nextPayment.installmentNumber
+      };
     }
-    // Jika pembayaran penuh, ambil harga total kursus
-    return (booking.course?.price || 0) * (booking.sessions?.length || 0);
+
+    return { amount: 0, installmentNumber: null };
   }, [booking]);
-//   console.log('Booking data received on Payment Page:', JSON.stringify(booking, null, 2));
+
+  const { amount: amountToPay, installmentNumber } = paymentDetails;
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -64,6 +68,20 @@ export default function PaymentPage() {
   
   if (!booking) {
     return <div className="p-6 text-center text-gray-500">Booking details not found.</div>;
+  }
+  
+  if (amountToPay === 0) {
+    return (
+       <div className="container mx-auto max-w-2xl p-4 md:p-8">
+          <div className="bg-white rounded-lg shadow-xl p-6 md:p-8 text-center">
+             <h1 className="text-2xl font-bold text-gray-800">No Pending Payments</h1>
+             <p className="mt-2 text-gray-600">All payments for this booking have been settled.</p>
+             <Link to="/student/my-bookings" className="mt-6 inline-block text-indigo-600 hover:underline font-medium">
+                &larr; Back to My Transactions
+            </Link>
+          </div>
+       </div>
+    )
   }
 
   return (
@@ -89,8 +107,16 @@ export default function PaymentPage() {
               <span className="font-semibold text-gray-800 text-right">{booking.course?.title}</span>
             </div>
             <div className="flex justify-between font-bold text-lg">
-              <span className="text-gray-800">Amount to Pay:</span>
-              <span className="text-indigo-600">{formatCurrencyIDR(amountToPay)}</span>
+              <span className="text-gray-800">
+                Amount to Pay
+                {booking.paymentMethod === 'INSTALLMENT' && installmentNumber && (
+                  <span className="text-sm font-normal text-gray-500 ml-2">(Installment #{installmentNumber})</span>
+                )}
+                :
+              </span>
+              <span className="text-indigo-600">
+                {formatCurrencyIDR(amountToPay)}
+              </span>
             </div>
           </div>
         </div>
@@ -121,14 +147,14 @@ export default function PaymentPage() {
               Important: Please include your Booking ID in the transfer description/notes for faster verification.
             </p>
             <p className="mt-4">
-              After payment, our admin will verify your transaction within 1x24 hours on business days. You can check your booking status on the "My Bookings" page.
+              After payment, our admin will verify your transaction within 1x24 hours on business days. You can check your booking status on the "Transaction" page.
             </p>
           </div>
         </div>
         
         <div className="mt-8 text-center">
             <Link to="/student/my-bookings" className="text-indigo-600 hover:underline font-medium">
-                Check My Booking Status &rarr;
+                Check My Transaction Status &rarr;
             </Link>
         </div>
       </div>

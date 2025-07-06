@@ -340,7 +340,7 @@ export default function Checkout() {
                 >
                   {SESSION_OPTIONS.map((n) => (
                     <option key={n} value={n}>
-                      {n} Sesi
+                      {n} Sessions
                     </option>
                   ))}
                 </select>

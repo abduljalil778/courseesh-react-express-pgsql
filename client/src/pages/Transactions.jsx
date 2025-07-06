@@ -26,6 +26,24 @@ const TransactionSkeleton = () => (
   </div>
 );
 
+// Helper function bisa diletakkan di sini atau diimpor
+const findNextDuePayment = (booking) => {
+  if (!booking || !booking.payments) return null;
+  
+  // Untuk pembayaran penuh yang masih pending
+  if (booking.paymentMethod === 'FULL' && booking.payments[0]?.status === 'PENDING') {
+      return booking.payments[0];
+  }
+
+  // Untuk cicilan, cari yang pertama kali pending
+  if (booking.paymentMethod === 'INSTALLMENT') {
+      return booking.payments.find(p => p.status === 'PENDING');
+  }
+
+  return null;
+};
+
+
 export default function TransactionList() {
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +109,7 @@ export default function TransactionList() {
 
   // List kosong/empty
   const isEmpty = !isLoading && bookings.length === 0;
+  
 
   return (
     <>
@@ -170,6 +189,8 @@ export default function TransactionList() {
             bookings.map((booking) => {
               const displayStatus = BookingDisplayStatus(booking);
               const courseImageUrl = getImageUrl(booking);
+              // const requiresPayment = displayStatus.text === 'Waiting for Payment';
+              const nextPayment = findNextDuePayment(booking);
               return (
                 <div
                   key={booking.id}
@@ -213,22 +234,30 @@ export default function TransactionList() {
                           : 'Full Payment'}
                       </div>
                     </div>
-                    {/* Button - Moved to bottom right */}
-                    <div className="mt-4 md:mt-0 self-end flex justify-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="
-                          font-semibold text-base flex items-center gap-2
-                          min-w-[200px]
-                          w-full md:w-auto
-                          "
-                        onClick={() => setSelectedBooking(booking)}
-                      >
-                        <CreditCardIcon className="h-4 w-4" />
-                        Kelola Pembayaran
-                      </Button>
-                    </div>
+                    {/* ++ Tombol Aksi ++ */}
+                    <div className="mt-4 md:mt-0 self-end flex items-center justify-end gap-3">
+  {/* Tombol ini akan selalu ada untuk membuka modal detail */}
+  <Button
+    size="sm"
+    variant="outline"
+    onClick={() => setSelectedBooking(booking)}
+  >
+    Lihat Detail
+  </Button>
+
+  {/* Tombol bayar hanya muncul jika diperlukan */}
+  {nextPayment && (
+    <Button
+      size="sm"
+      onClick={() => navigate(`/student/bookings/${booking.id}/pay`)}
+    >
+      <CreditCardIcon className="h-4 w-4 mr-2" />
+      {booking.paymentMethod === 'INSTALLMENT' 
+        ? `Bayar Cicilan ${nextPayment.installmentNumber}` 
+        : 'Lanjutkan Pembayaran'}
+    </Button>
+  )}
+</div>
                   </div>
                 </div>
               );
