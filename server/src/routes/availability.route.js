@@ -1,6 +1,5 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import catchAsync from '../utils/catchAsync.js';
 import asyncHandler from 'express-async-handler';
 import { getMyUnavailableDates, removeUnavailableDate, getTeacherSchedule, addUnavailableSlots } from '../controllers/availability.controller.js';
 import { unavailableDateValidator, unavailableIdValidator } from '../validators/availabilityValidator.js';
