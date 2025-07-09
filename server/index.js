@@ -19,7 +19,7 @@ import teacherRoutes from './src/routes/teachers.route.js';
 import payoutRoutes from './src/routes/payouts.route.js';
 import paymentOptionsRoutes from './src/routes/paymentOptions.route.js';
 import dashboardRoutes from './src/routes/dashboard.route.js';
-import errorController from './src/services/error.service.js';
+import errorHandler from './src/middleware/error.js';
 import appSettingRoutes from './src/routes/appSettings.route.js';
 import availabilityRoutes from './src/routes/availability.route.js';
 import financeRoutes from './src/routes/finance.route.js';
@@ -97,7 +97,7 @@ app.use((req, res, next) => {
   next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
 });
 
-app.use(errorController);
+app.use(errorHandler);
 
 // START SERVER
 const PORT = process.env.PORT || 4000;

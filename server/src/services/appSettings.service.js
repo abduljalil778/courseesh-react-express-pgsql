@@ -1,23 +1,32 @@
 import prisma from '../../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 
-// GET /api/admin/settings
-export const getAllSettings = async (req, res, next) => {
+/**
+ * Service untuk mengambil semua pengaturan aplikasi.
+ * @returns {Promise<Array>}
+ */
+export async function getAllSettingsService() {
   try {
-    const settings = await prisma.applicationSetting.findMany({
+    return await prisma.applicationSetting.findMany({
       orderBy: { key: 'asc' },
     });
-    res.json(settings);
   } catch (err) {
-    next(new AppError('Failed to retrieve settings', 500));
+    throw new AppError('Failed to retrieve settings', 500);
   }
 };
 
-// PUT /api/admin/settings
-export const updateSettings = async (req, res, next) => {
-  const settingsToUpdate = req.body; // Expects an array of { key, value }
+/**
+ * Service untuk memperbarui pengaturan aplikasi.
+ * @param {Array<{key: string, value: string}>} settingsToUpdate - Array dari objek pengaturan.
+ * @returns {Promise<void>}
+ */
+export async function updateSettingsService(settingsToUpdate) {
+  if (!Array.isArray(settingsToUpdate) || settingsToUpdate.length === 0) {
+    throw new AppError('No settings provided for update.', 400);
+  }
 
   try {
+    // Gunakan transaksi untuk memastikan semua pembaruan berhasil atau tidak sama sekali
     const updatePromises = settingsToUpdate.map(setting =>
       prisma.applicationSetting.update({
         where: { key: setting.key },
@@ -26,9 +35,11 @@ export const updateSettings = async (req, res, next) => {
     );
 
     await prisma.$transaction(updatePromises);
-
-    res.json({ message: 'Settings updated successfully.' });
   } catch (err) {
-    next(new AppError('Failed to update settings', 500));
+    // Menangkap error jika salah satu kunci (key) tidak ditemukan
+    if (err.code === 'P2025') {
+       throw new AppError('One or more setting keys were not found.', 404);
+    }
+    throw new AppError('Failed to update settings', 500);
   }
 };

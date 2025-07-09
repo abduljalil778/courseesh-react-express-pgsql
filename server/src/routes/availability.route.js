@@ -11,7 +11,6 @@ router.use(authenticate);
 
 router.get('/', asyncHandler(getMyUnavailableDates));
 router.get('/schedule/:id', asyncHandler(getTeacherSchedule))
-// router.post('/', unavailableDateValidator, runValidation, catchAsync(addUnavailableDate));
 router.post('/slots', authorize('TEACHER'), asyncHandler(addUnavailableSlots));
 router.delete('/:id', asyncHandler(removeUnavailableDate));
 

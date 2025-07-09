@@ -1,17 +1,21 @@
 import prisma from '../../libs/prisma.js';
+import AppError from '../utils/AppError.mjs';
 
 /**
- * GET /api/notifications
+ * Service untuk mengambil notifikasi milik user yang sedang login.
+ * @param {string} userId - ID dari user yang sedang login.
+ * @param {object} query - Opsi query seperti { page, limit }.
+ * @returns {Promise<{data: Array, total: number, page: number, totalPages: number}>}
  */
-export const getMyNotifications = async (req, res, next) => {
+export async function getMyNotificationsService(userId, query = {}) {
+  const { page = 1, limit = 15 } = query;
+  const pageInt = parseInt(page);
+  const limitInt = parseInt(limit);
+  const skip = (pageInt - 1) * limitInt;
+
+  const where = { recipientId: userId };
+
   try {
-    const { page = 1, limit = 15 } = req.query;
-    const pageInt = parseInt(page);
-    const limitInt = parseInt(limit);
-    const skip = (pageInt - 1) * limitInt;
-
-    const where = { recipientId: req.user.id };
-
     const [notifications, total] = await Promise.all([
       prisma.notification.findMany({
         where,
@@ -22,44 +26,40 @@ export const getMyNotifications = async (req, res, next) => {
       prisma.notification.count({ where }),
     ]);
     
-    res.status(200).json({ 
+    return { 
       data: notifications,
       total,
       page: pageInt,
       totalPages: Math.ceil(total / limitInt)
-    });
-
+    };
   } catch (err) {
-    next(new AppError(err.message, 500));
+    throw new AppError(err.message, 500);
   }
 };
 
 /**
- * POST /api/notifications/mark-as-read
+ * Service untuk menandai semua notifikasi sebagai telah dibaca.
+ * @param {string} userId - ID dari user yang sedang login.
+ * @param {string} type - Tipe notifikasi yang akan ditandai ('GENERAL' atau 'NEW_MESSAGE').
  */
-export const markAllAsRead = async (req, res, next) => {
-  try {
-    const { type } = req.query; 
+export async function markAllAsReadService(userId, type) {
+    const whereClause = {
+        recipientId: userId,
+        isRead: false,
+    };
 
-        const whereClause = {
-            recipientId: req.user.id,
-            isRead: false,
-        };
+    if (type === 'GENERAL') {
+        whereClause.type = { not: 'NEW_MESSAGE' };
+    } else if (type === 'NEW_MESSAGE') {
+        whereClause.type = 'NEW_MESSAGE';
+    }
 
-        // Jika ada tipe spesifik, tambahkan ke filter
-        if (type === 'GENERAL') {
-            whereClause.type = { not: 'NEW_MESSAGE' };
-        } else if (type === 'NEW_MESSAGE') {
-            whereClause.type = 'NEW_MESSAGE';
-        }
-
+    try {
         await prisma.notification.updateMany({
             where: whereClause,
             data: { isRead: true },
         });
-
-        res.status(204).send();
     } catch (err) {
-        next(new AppError(err.message, 500));
+        throw new AppError(err.message, 500);
     }
 };

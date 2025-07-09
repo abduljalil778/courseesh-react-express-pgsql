@@ -4,13 +4,12 @@ import AppError from '../utils/AppError.mjs';
 import { subDays } from 'date-fns';
 
 /**
- * GET /api/admin/stats
- * Mengambil semua data agregat untuk dashboard admin.
+ * Service untuk mengambil semua data agregat untuk dashboard admin.
+ * @returns {Promise<object>} Objek berisi semua statistik untuk dashboard.
  */
-export const getDashboardStats = async (req, res, next) => {
+export async function getDashboardStatsService() {
   try {
-
-    // 1. KPI Cards (Key Performance Indicators)
+    // 1. Definisi query untuk KPI Cards
     const totalUsersPromise = prisma.user.count();
     const totalTeachersPromise = prisma.user.count({ where: { role: Role.TEACHER } });
     const totalStudentsPromise = prisma.user.count({ where: { role: Role.STUDENT } });
@@ -21,7 +20,7 @@ export const getDashboardStats = async (req, res, next) => {
         where: { status: 'PAID' }
     });
     
-    // 2. Data Grafik Booking (30 hari terakhir)
+    // 2. Query untuk data grafik Booking (30 hari terakhir)
     const thirtyDaysAgo = subDays(new Date(), 30);
     const bookingsOverTimePromise = prisma.booking.groupBy({
         by: ['createdAt'],
@@ -30,14 +29,13 @@ export const getDashboardStats = async (req, res, next) => {
         orderBy: { createdAt: 'asc' }
     });
 
-    // 3. Data Grafik Popularitas Kursus (Top 5)
+    // 3. Query untuk data grafik Popularitas Kursus
     const coursePopularityPromise = prisma.booking.groupBy({
         by: ['courseId'],
         _count: { id: true },
     });
 
-    // 4. Data untuk Ranking Revenue per Teacher
-    // Ambil semua pembayaran lunas dan sertakan detail guru terkait
+    // 4. Query untuk data ranking revenue per guru
     const paidPaymentsForRankingPromise = prisma.payment.findMany({
         where: { status: 'PAID' },
         include: {
@@ -45,9 +43,7 @@ export const getDashboardStats = async (req, res, next) => {
                 select: {
                     course: {
                         select: {
-                            teacher: {
-                                select: { id: true, name: true }
-                            }
+                            teacher: { select: { id: true, name: true } }
                         }
                     }
                 }
@@ -55,45 +51,40 @@ export const getDashboardStats = async (req, res, next) => {
         }
     });
 
-    // --- Jalankan semua query secara paralel ---
+    // Jalankan semua query secara paralel menggunakan transaksi
     const [
         usersCount, teachersCount, studentsCount, coursesCount,
         activeBookingsCount, revenueResult,
         rawBookingsData, rawCourseData,
-        paidPaymentsForRanking // <-- Hasil dari query baru
+        paidPaymentsForRanking
     ] = await prisma.$transaction([
         totalUsersPromise, totalTeachersPromise, totalStudentsPromise, totalCoursesPromise,
         activeBookingsPromise, totalRevenuePromise,
         bookingsOverTimePromise, coursePopularityPromise,
-        paidPaymentsForRankingPromise // <-- Jalankan query baru
+        paidPaymentsForRankingPromise
     ]);
 
-    // --- Format data untuk chart popularitas kursus ---
+    //  Format data untuk chart popularitas kursus 
     const courseIds = rawCourseData.map(item => item.courseId);
     const coursesInfo = await prisma.course.findMany({
         where: { id: { in: courseIds } },
         select: { id: true, category: true }
     });
-    const categoryMap = {};
-    rawCourseData.forEach(item => {
+    const categoryMap = rawCourseData.reduce((acc, item) => {
         const course = coursesInfo.find(c => c.id === item.courseId);
-        const cat = course?.category || 'UNKNOWN';
-        categoryMap[cat] = (categoryMap[cat] || 0) + item._count.id;
-    });
+        const category = course?.category || 'UNKNOWN';
+        acc[category] = (acc[category] || 0) + item._count.id;
+        return acc;
+    }, {});
     const coursePopularityStats = Object.entries(categoryMap)
         .map(([category, count]) => ({ name: category, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
     
-    
-
-    // --- Format data untuk chart booking per hari ---
+    // Format data untuk chart booking per hari
     const bookingsByDay = rawBookingsData.reduce((acc, booking) => {
         const date = booking.createdAt.toISOString().split('T')[0];
-        if (!acc[date]) {
-            acc[date] = 0;
-        }
-        acc[date] += booking._count.id;
+        acc[date] = (acc[date] || 0) + booking._count.id;
         return acc;
     }, {});
     const bookingStats = Object.keys(bookingsByDay).map(date => ({
@@ -101,24 +92,22 @@ export const getDashboardStats = async (req, res, next) => {
         Bookings: bookingsByDay[date]
     }));
 
-    // --- Proses data ranking revenue per teacher ---
-    const teacherRevenueMap = new Map();
-    paidPaymentsForRanking.forEach(payment => {
+    // Proses data ranking revenue per guru
+    const teacherRevenueMap = paidPaymentsForRanking.reduce((acc, payment) => {
         const teacher = payment.booking?.course?.teacher;
         if (teacher) {
-            const currentRevenue = teacherRevenueMap.get(teacher.id) || { name: teacher.name, revenue: 0 };
-            teacherRevenueMap.set(teacher.id, {
-                ...currentRevenue,
-                revenue: currentRevenue.revenue + (payment.amount || 0)
-            });
+            const current = acc.get(teacher.id) || { name: teacher.name, revenue: 0 };
+            current.revenue += payment.amount || 0;
+            acc.set(teacher.id, current);
         }
-    });
+        return acc;
+    }, new Map());
     const teacherRevenueRanking = Array.from(teacherRevenueMap.values())
         .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5); // Ambil top 5
+        .slice(0, 5);
 
-    // --- Gabungkan semua hasil ---
-    const stats = {
+    // Gabungkan semua hasil menjadi satu objek
+    return {
       kpi: {
         totalUsers: usersCount,
         totalTeachers: teachersCount,
@@ -129,12 +118,10 @@ export const getDashboardStats = async (req, res, next) => {
       },
       bookingStats,
       coursePopularityStats,
-      teacherRevenueRanking, // Tambahkan data yang sudah diproses
+      teacherRevenueRanking,
     };
 
-    res.json(stats);
   } catch (err) {
-    console.error("Dashboard Stats Error:", err);
-    next(new AppError('Failed to load dashboard statistics.', 500));
+    throw new AppError('Failed to load dashboard statistics.', 500);
   }
 };

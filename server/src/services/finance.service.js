@@ -2,7 +2,11 @@ import prisma from '../../libs/prisma.js';
 import AppError from '../utils/AppError.mjs';
 import { subDays } from 'date-fns';
 
-export const getFinanceRecap = async (req, res, next) => {
+/**
+ * Service untuk mengambil rekapitulasi keuangan (pemasukan dan pengeluaran).
+ * @returns {Promise<object>} Objek berisi rekap keuangan mingguan, bulanan, dan tahunan.
+ */
+export async function getFinanceRecapService() {
   try {
     const now = new Date();
     const ranges = {
@@ -29,8 +33,8 @@ export const getFinanceRecap = async (req, res, next) => {
       };
     }
 
-    res.json(result);
+    return result;
   } catch (err) {
-    next(new AppError(err.message || 'Failed to fetch finance recap', 500));
+    throw new AppError(err.message || 'Failed to fetch finance recap', 500);
   }
 };

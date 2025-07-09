@@ -1,18 +1,21 @@
 import AppError from '../utils/AppError.mjs';
 import CourseRepository from '../repositories/courseRepository.js';
-import prisma from '../../libs/prisma.js';
 
-// --- GET (Mengambil Data) ---
-
-export const getAllCourses = async (req, res, next) => {
-  try {
-    const { category, search, page = 1, limit = 10, sortBy = "createdAt", sortDir = "desc" } = req.query;
+/**
+ * Service untuk mengambil semua kursus dengan filter, paginasi, dan sorting.
+ * @param {object} filters - Opsi filter: { category, search, page, limit, sortBy, sortDir }.
+ * @param {object} user - Objek user yang sedang login (untuk filter berdasarkan guru).
+ * @returns {Promise<{courses: Array, total: number}>}
+ */
+export async function getAllCoursesService(filters = {}, user = null) {
+    const { category, search, page = 1, limit = 10, sortBy = "createdAt", sortDir = "desc" } = filters;
     const take = parseInt(limit);
     const skip = (parseInt(page) - 1) * take;
 
     const where = {};
-    if (req.user?.role === 'TEACHER') {
-      where.teacherId = req.user.id;
+    // Jika user adalah guru, hanya tampilkan kursus miliknya
+    if (user?.role === 'TEACHER') {
+      where.teacherId = user.id;
     }
     if (category) {
       where.category = category;
@@ -26,126 +29,96 @@ export const getAllCourses = async (req, res, next) => {
 
     const total = await CourseRepository.count({ where });
 
-    // Sorting dynamic
     const orderBy = {};
-    if (sortBy === "price" || sortBy === "title" || sortBy === "createdAt") {
+    if (["price", "title", "createdAt"].includes(sortBy)) {
       orderBy[sortBy] = sortDir === "asc" ? "asc" : "desc";
     } else {
-      orderBy.createdAt = "desc"; // fallback
+      orderBy.createdAt = "desc"; // Fallback
     }
 
     const courses = await CourseRepository.findMany({
       where,
       select: {
-        id: true,
-        title: true,
-        description: true,
-        price: true,
-        classLevels: true,
-        curriculum: true,
-        learningObjectives: true,
-        category: true,
-        imageUrl: true,
-        createdAt: true,
-        teacherId: true,
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          }
-        },
-        reviews: {
-          select: {
-            rating: true,
-          }
-        }
+        id: true, title: true, description: true, price: true,
+        classLevels: true, curriculum: true, learningObjectives: true,
+        category: true, imageUrl: true, createdAt: true, teacherId: true,
+        teacher: { select: { id: true, name: true, avatarUrl: true } },
+        reviews: { select: { rating: true } }
       },
       skip,
       take,
       orderBy,
     });
 
-    // Aggregasi rating
+    // Agregasi rating dilakukan di sini, di dalam service layer
     const coursesWithAggregates = courses.map(course => {
       const totalReviews = course.reviews.length;
       const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
       const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
       delete course.reviews;
-      return {
-        ...course,
-        totalReviews,
-        averageRating,
-      };
+      return { ...course, totalReviews, averageRating };
     });
 
-    // Kembalikan dengan total untuk frontend pagination
-    return res.json({
-      courses: coursesWithAggregates,
-      total,
-    });
+    return { courses: coursesWithAggregates, total };
+}
 
-  } catch (err) {
-    next(new AppError(err.message, 500));
-  }
-};
-
-
-export const getCourseById = async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const course = await CourseRepository.findUnique({
-      where: { id },
-      select: {
-        id: true, title: true, description: true, price: true,
-        teacherId: true,
-        curriculum: true, classLevels: true, imageUrl: true,
-        learningObjectives: true,
-        teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
-        reviews: { select: { rating: true } },
-        category: true,
-      }
-    });
-    
-    const totalReviews = course.reviews.length;
-    const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
-    const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
-    delete course.reviews;
-
-    const courseWithAggregates = {
-        ...course,
-        totalReviews,
-        averageRating
-    };
-
-    return res.json({data: courseWithAggregates});
-  } catch (err) {
-    next(new AppError(err.message, 500));
-  }
-};
-
-
-// --- POST (Membuat Data Baru) ---
-
-export const createCourse = async (req, res, next) => {
-
-  try {
-    let { title, description, price, classLevels, curriculum, category, learningObjectives } = req.body;
-
-    let parsedObjectives = [];
-    if (learningObjectives && typeof learningObjectives === 'string') {
-      try {
-        parsedObjectives = JSON.parse(learningObjectives);
-      } catch (e) {
-        return next(new AppError('Invalid format for learning objectives.', 400));
-      }
+/**
+ * Service untuk mengambil satu kursus berdasarkan ID.
+ * @param {string} courseId - ID dari kursus.
+ * @returns {Promise<object>}
+ */
+export async function getCourseByIdService(courseId) {
+  const course = await CourseRepository.findUnique({
+    where: { id: courseId },
+    select: {
+      id: true, title: true, description: true, price: true, teacherId: true,
+      curriculum: true, classLevels: true, imageUrl: true, learningObjectives: true,
+      teacher: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      reviews: { select: { rating: true } },
+      category: true,
     }
+  });
+
+  if (!course) {
+    throw new AppError('Course not found', 404);
+  }
+
+  // Agregasi rating
+  const totalReviews = course.reviews.length;
+  const sumOfRatings = course.reviews.reduce((acc, review) => acc + review.rating, 0);
+  const averageRating = totalReviews > 0 ? sumOfRatings / totalReviews : 0;
+  delete course.reviews;
+
+  return { ...course, totalReviews, averageRating };
+}
+
+/**
+ * Service untuk membuat kursus baru.
+ * @param {object} courseData - Data untuk kursus baru.
+ * @param {object} user - User yang membuat kursus (guru).
+ * @param {object} file - File thumbnail yang diunggah (dari multer).
+ * @returns {Promise<object>}
+ */
+export async function createCourseService(courseData, user, file) {
+    let { title, description, price, classLevels, curriculum, category, learningObjectives } = courseData;
 
     if (!title || !price || !classLevels) {
-      return next(new AppError('Title, price, and class levels are required.', 400));
+      throw new AppError('Title, price, and class levels are required.', 400);
     }
     
-    const parsedClassLevels = typeof classLevels === 'string' ? classLevels.split(',') : [];
+    // Parsing data dari form-data yang mungkin berupa string
+    let parsedObjectives = [];
+    if (learningObjectives && typeof learningObjectives === 'string') {
+        try {
+            parsedObjectives = JSON.parse(learningObjectives);
+        } catch (e) {
+            throw new AppError('Invalid JSON format for learning objectives.', 400);
+        }
+    } else if (Array.isArray(learningObjectives)) {
+        parsedObjectives = learningObjectives;
+    }
+    
+    const parsedClassLevels = typeof classLevels === 'string' ? classLevels.split(',') : classLevels;
 
     const data = {
       title,
@@ -154,104 +127,71 @@ export const createCourse = async (req, res, next) => {
       classLevels: parsedClassLevels,
       curriculum: curriculum || null,
       category: category || 'UMUM',
-      teacherId: req.user.id,
+      teacherId: user.id,
       learningObjectives: parsedObjectives,
     };
     
-    if (req.file) {
-      data.imageUrl = `/uploads/${req.file.filename}`;
+    if (file) {
+      data.imageUrl = `/uploads/${file.filename}`;
     }
 
-    const course = await CourseRepository.create({ data });
+    return await CourseRepository.create({ data });
+}
 
-    return res.status(201).json(course);
-  } catch (error) {
-    return next(new AppError(error.message, 500));
+/**
+ * Service untuk memperbarui kursus.
+ * @param {string} courseId - ID kursus yang akan diperbarui.
+ * @param {object} dataToUpdate - Data yang akan diperbarui.
+ * @param {object} user - User yang melakukan request (untuk otorisasi).
+ * @param {object} file - File baru yang diunggah (jika ada).
+ * @returns {Promise<object>}
+ */
+export async function updateCourseService(courseId, dataToUpdate, user, file) {
+    const existingCourse = await CourseRepository.findUnique({ where: { id: courseId } });
+    if (!existingCourse) {
+        throw new AppError('Course not found', 404);
+    }
     
-  }
-
-  
-};
-
-export const updateCourse = async (req, res, next) => {
-  try {
-    if (!req.body && !req.file) {
-      return next(new AppError('No data received', 400));
+    if (user.role === 'TEACHER' && existingCourse.teacherId !== user.id) {
+        throw new AppError('You are not authorized to update this course', 403);
     }
 
-    const { id } = req.params;
-    // Ambil semua field dari body
-    const { title, description, price, classLevels, curriculum, category, learningObjectives } = req.body;
-
-    // Pengecekan otorisasi (tidak berubah, sudah benar)
-    const existing = await CourseRepository.findUnique({ where: { id } });
-    if (!existing) return next(new AppError('Course not found', 404));
-    if (req.user.role === 'TEACHER' && existing.teacherId !== req.user.id) {
-      return next(new AppError('You are not authorized to update this course', 403));
+    // Proses data yang mungkin datang sebagai string dari FormData
+    if (dataToUpdate.price) dataToUpdate.price = parseFloat(dataToUpdate.price);
+    if (dataToUpdate.classLevels && typeof dataToUpdate.classLevels === 'string') {
+        dataToUpdate.classLevels = dataToUpdate.classLevels.split(',');
     }
-
-    // Siapkan objek untuk menampung data yang akan di-update
-    const dataToUpdate = {};
-
-    // Isi objek dataToUpdate hanya dengan field yang ada di request
-    if (title) dataToUpdate.title = title;
-    if (description !== undefined) dataToUpdate.description = description;
-    if (price) dataToUpdate.price = parseFloat(price);
-    if (classLevels) dataToUpdate.classLevels = typeof classLevels === 'string' ? classLevels.split(',') : classLevels;
-    if (curriculum !== undefined) dataToUpdate.curriculum = curriculum || null;
-    if (category !== undefined) dataToUpdate.category = category;
-
-    // --- LOGIKA PARSING DAN UPDATE YANG DIPERBAIKI ---
-    // Cek jika learningObjectives ada di dalam request
-    if (learningObjectives !== undefined) {
-      let parsedObjectives = [];
-      // Jika bentuknya string, coba parse. Jika sudah array, langsung gunakan.
-      if (typeof learningObjectives === 'string' && learningObjectives) {
+    if (dataToUpdate.learningObjectives && typeof dataToUpdate.learningObjectives === 'string') {
         try {
-          parsedObjectives = JSON.parse(learningObjectives);
+            dataToUpdate.learningObjectives = JSON.parse(dataToUpdate.learningObjectives);
         } catch (e) {
-          return next(new AppError('Invalid JSON format for learning objectives.', 400));
+            throw new AppError('Invalid JSON format for learning objectives.', 400);
         }
-      } else if (Array.isArray(learningObjectives)) {
-        parsedObjectives = learningObjectives;
-      }
-      // Masukkan ke dataToUpdate dengan nama field yang benar
-      dataToUpdate.learningObjectives = parsedObjectives;
     }
 
-    // Handle file upload (tidak berubah)
-    if (req.file) {
-      dataToUpdate.imageUrl = `/uploads/${req.file.filename}`;
+    if (file) {
+        dataToUpdate.imageUrl = `/uploads/${file.filename}`;
     }
 
-    // Lakukan update ke database
-    const updated = await CourseRepository.update({
-      where: { id },
+    return await CourseRepository.update({
+      where: { id: courseId },
       data: dataToUpdate,
     });
-    
-    return res.json(updated);
-    
-  } catch (error) {
-    return next(new AppError(error.message, 500));
-  }
-};
+}
 
-// --- DELETE ---
-
-export const deleteCourse = async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const existing = await CourseRepository.findUnique({ where: { id } });
-    if (!existing) {
-      return next(new AppError(`Course with id=${id} not found`, 404));
+/**
+ * Service untuk menghapus kursus.
+ * @param {string} courseId - ID kursus yang akan dihapus.
+ * @param {object} user - User yang melakukan request (untuk otorisasi).
+ * @returns {Promise<void>}
+ */
+export async function deleteCourseService(courseId, user) {
+    const existingCourse = await CourseRepository.findUnique({ where: { id: courseId } });
+    if (!existingCourse) {
+        throw new AppError(`Course with id=${courseId} not found`, 404);
     }
-    if (req.user.role === 'TEACHER' && existing.teacherId !== req.user.id) {
-      return next(new AppError('Cannot delete a course you do not own', 403));
+    if (user.role === 'TEACHER' && existingCourse.teacherId !== user.id) {
+        throw new AppError('Cannot delete a course you do not own', 403);
     }
-    await CourseRepository.delete({ where: { id } });
-    return res.status(204).send();
-  } catch (err) {
-    next(new AppError(err.message, 500));
-  }
-};
+    await CourseRepository.delete({ where: { id: courseId } });
+}

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import ChatWindow from '../components/ChatWindow';
 import { MessageSquare, ArrowLeft, Lock } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import StarRating from '@/components/StarRating';
 
 export default function MyCourseProgress() {
   const { bookingId } = useParams();
