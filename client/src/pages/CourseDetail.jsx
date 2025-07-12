@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCourseById, getCourseReviews } from '../lib/api';
-import Spinner from '../components/Spinner';
+import CourseDetailSkeleton from '@/components/CourseDetailSkeleton';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 import { format, parseISO } from 'date-fns';
 import StarRating from '../components/StarRating';
@@ -84,7 +84,7 @@ const ReviewsSection = ({ reviews, totalReviews }) => (
             {review.comment && <p className="text-gray-700 text-sm italic">"{review.comment}"</p>}
           </div>
         ))}
-        {/* Anda bisa menambahkan tombol "Lihat semua review" di sini jika mau */}
+        {/* bisa menambahkan tombol "Lihat semua review" di sini jika perlu */}
       </div>
     ) : (
       <p className="text-gray-500 text-center py-4">Belum ada ulasan untuk kursus ini.</p>
@@ -127,7 +127,7 @@ export default function CourseDetail() {
   }, [fetchData]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
+    return <CourseDetailSkeleton/>
   }
   
   if (error) {
@@ -177,12 +177,12 @@ export default function CourseDetail() {
               </div>
             </div>
             
-            {/* --- PERUBAHAN UTAMA 1: MENAMPILKAN DESKRIPSI --- */}
+            {/* --- MENAMPILKAN DESKRIPSI --- */}
             <div className="prose max-w-none mb-8">
               <p>{course.description}</p>
             </div>
             
-            {/* --- PERUBAHAN UTAMA 2: MENAMPILKAN "WHAT YOU'LL LEARN" --- */}
+            {/* --- MENAMPILKAN "WHAT YOU'LL LEARN" --- */}
             {course.learningObjectives && course.learningObjectives.length > 0 && (
               <div className="p-6 border bg-white border-gray-200 rounded-lg mb-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Apa yang akan Anda Pelajari</h2>

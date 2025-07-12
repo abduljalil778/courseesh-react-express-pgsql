@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAdminDashboardStats } from '../../lib/api';
-import Spinner from '../../components/Spinner';
+import AdminDashboardSkeleton from '@/components/AdminDashboardSkeleton';
 import { formatCurrencyIDR } from '../../utils/formatCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, Users, UserCheck, User, BookOpen, CalendarCheck } from 'lucide-react';
@@ -91,8 +91,10 @@ export default function AdminDashboard() {
     label: getCategoryLabel(item.name), // Ubah nama enum ke label
   }));
 
-  if (isLoading) return <div className="flex justify-center p-8"><Spinner size={48} /></div>;
+  if (isLoading) return <AdminDashboardSkeleton />
+
   if (error) return <p className="text-red-500 p-4">{error}</p>;
+  
   if (!stats) return <p className="text-gray-500">No statistics to display.</p>;
 
   return (

@@ -2,11 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getMyProfile } from '../lib/api';
-import Spinner from '@/components/Spinner';
+import ProfilePageSkeleton from '@/components/ProfilePageSkeleton';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
-
-// Impor komponen-komponen baru yang akan kita buat
 import AvatarManager from '@/components/profile/AvatarManager';
 import PublicProfileCard from '@/components/profile/PublicProfileCard';
 import SecurityCard from '@/components/profile/SecurityCard';
@@ -38,13 +36,13 @@ export default function UserProfilePage() {
     loadProfile();
   }, [loadProfile]);
 
-  // Fungsi ini akan kita teruskan ke komponen anak setelah update berhasil
+  // Fungsi untuk handle pembaruan profil
   const handleProfileUpdate = (updatedUserData) => {
     updateUserContext(updatedUserData);
     setProfileData(updatedUserData);
   };
 
-  if (isLoading) return <div className="flex justify-center p-8"><Spinner /></div>;
+  if (isLoading) return <ProfilePageSkeleton />;
   if (error) return <div className="text-center p-6 text-red-500">{error}</div>;
   if (!profileData) return <p>User profile could not be loaded.</p>;
 

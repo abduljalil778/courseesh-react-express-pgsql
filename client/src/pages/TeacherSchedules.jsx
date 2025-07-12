@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
-import Spinner from '../components/Spinner';
+import MyCourseCardSkeleton from '@/components/MyCourseCardSkeleton';
 import { format, parseISO } from 'date-fns';
 import { BookOpenIcon, UserIcon, AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/solid';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
@@ -35,14 +35,6 @@ export default function TeacherSchedules() {
     loadActiveBookings();
   }, [loadActiveBookings]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Spinner size={60} />
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="p-6 text-center">
@@ -50,17 +42,6 @@ export default function TeacherSchedules() {
         <button onClick={loadActiveBookings} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Retry
         </button>
-      </div>
-    );
-  }
-
-  if (!activeBookings.length) {
-    return (
-      <div className="text-center py-10">
-        <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-lg font-medium text-gray-900">
-          You have no confirmed or completed bookings to manage.
-        </h3>
       </div>
     );
   }
@@ -80,15 +61,30 @@ export default function TeacherSchedules() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
-        Daftar Kursus
-      </h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activeBookings.map(booking => {
-          const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
-          const totalSessions = booking.sessions?.length || 0;
-          const status = BookingDisplayStatus(booking);
+      <div className="container mx-auto p-4 md:p-6 lg:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 pb-4 border-b">
+          Jadwal Mengajar
+        </h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            // Jika sedang loading, tampilkan 6 buah skeleton
+            Array.from({ length: 6 }).map((_, index) => <MyCourseCardSkeleton key={index} />)
+          ) : activeBookings.length === 0 ? (
+            // Jika tidak loading dan tidak ada data, tampilkan pesan kosong
+            <div className="col-span-full text-center py-10">
+              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">
+                Anda belum memiliki jadwal mengajar aktif.
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">Jadwal akan muncul di sini setelah Anda mengkonfirmasi permintaan booking.</p>
+            </div>
+          ) : (
+            // Jika tidak loading dan ada data, tampilkan kartu kursus
+            activeBookings.map(booking => {
+                const completedSessions = booking.sessions?.filter(s => s.status === 'COMPLETED').length || 0;
+                const totalSessions = booking.sessions?.length || 0;
+                const status = BookingDisplayStatus(booking);
 
           return (
             <div
@@ -126,11 +122,12 @@ export default function TeacherSchedules() {
                   View & Manage Schedule
                 </div>
               </div>
-            </div>
-          );
-        })}
+             </div>
+              );
+            })
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 }

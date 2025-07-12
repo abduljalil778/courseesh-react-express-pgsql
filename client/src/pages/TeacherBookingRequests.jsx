@@ -1,7 +1,7 @@
 // src/pages/TeacherBookingRequests.jsx
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getAllBookings, updateBooking } from '../lib/api';
-import Spinner from '../components/Spinner';
+import BookingCardSkeleton from '@/components/BookingCardSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -18,16 +18,16 @@ export default function TeacherBookingRequests() {
   const [allBookings, setAllBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeStatus, setActiveStatus] = useState('ALL'); // State untuk tab filter
+  const [activeStatus, setActiveStatus] = useState('ALL');
 
   const navigate = useNavigate()
 
-  // Ganti nama fungsi agar lebih sesuai
+  // fetch semua booking dari API
   const loadAllBookings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Panggil API yang sudah difilter oleh backend untuk guru ini
+      // Panggil API untuk guru ini
       const response = await getAllBookings(); 
       // Simpan semua booking tanpa filter frontend
       setAllBookings(response.data?.bookings || []);
@@ -43,7 +43,7 @@ export default function TeacherBookingRequests() {
     loadAllBookings();
   }, [loadAllBookings]);
 
-  // Gunakan useMemo untuk memfilter booking di sisi klien saat tab diganti
+  // untuk memfilter booking di sisi klien saat tab diganti
   const filteredBookings = useMemo(() => {
     if (activeStatus === 'ALL') {
       return allBookings;
@@ -71,11 +71,7 @@ export default function TeacherBookingRequests() {
       Swal.fire('Update Failed', err.response?.data?.message || 'Could not update booking status.', 'error');
     }
   };
-
-  // --- UI Rendering ---
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>;
-  }
+  
   if (error) {
     return <div className="text-center py-16 text-red-600">{error}</div>;
   }
@@ -100,38 +96,37 @@ export default function TeacherBookingRequests() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Bookings</h1>
       </div>
 
-      {/* --- BAGIAN 1: TAB FILTER --- */}
+      {/* TAB FILTER */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
-          {TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveStatus(tab)}
-              className={`${
+          <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+            {TABS.map(tab => (
+              <Button variant='ghost' key={tab} onClick={() => setActiveStatus(tab)} className={`${
                 activeStatus === tab
                   ? 'border-indigo-500 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               {tab.charAt(0) + tab.slice(1).toLowerCase()}
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
 
-      {/* --- BAGIAN 2: DAFTAR BOOKING --- */}
-      {filteredBookings.length === 0 ? (
-        <div className="text-center py-16">
-          <h3 className="text-lg font-medium text-gray-900">No Bookings Found</h3>
-          <p className="mt-1 text-sm text-gray-500">There are no bookings with the status "{activeStatus}".</p>
-        </div>
-      ) : (
         <div className="space-y-6">
-          {filteredBookings.map(booking => {
-            const displayStatus = BookingDisplayStatus(booking);
-            return (
-              // --- BAGIAN 3: KARTU BOOKING BARU ---
-              <Card key={booking.id} className="overflow-hidden">
+          {isLoading ? (
+            // Jika sedang loading, tampilkan 3 buah skeleton
+            Array.from({ length: 3 }).map((_, index) => <BookingCardSkeleton key={index} />)
+          ) : filteredBookings.length === 0 ? (
+            <div className="text-center py-16">
+              <h3 className="text-lg font-medium text-gray-900">No Bookings Found</h3>
+              <p className="mt-1 text-sm text-gray-500">There are no bookings with the status "{activeStatus}".</p>
+            </div>
+          ) : (
+            // tampilkan data booking 
+            filteredBookings.map(booking => {
+              const displayStatus = BookingDisplayStatus(booking);
+              return (
+                <Card key={booking.id} className="overflow-hidden">
                 <CardHeader className="flex flex-row justify-between items-start bg-gray-50 p-4 md:p-5 border-b">
                   <div>
                     <CardTitle className="text-lg md:text-xl text-gray-800">{booking.course?.title || 'N/A'}</CardTitle>
@@ -148,7 +143,6 @@ export default function TeacherBookingRequests() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold text-sm mb-2">Session Dates</h4>
-                      {/* --- BAGIAN 4: DAFTAR SESI LEBIH RAPI --- */}
                       <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                         {booking.sessions?.length > 0 
                           ? booking.sessions.map(s => <li key={s.id}>{format(parseISO(s.sessionDate), 'eee, dd MMM yyyy @ HH:mm')}</li>) 
@@ -162,19 +156,19 @@ export default function TeacherBookingRequests() {
                     </div>
                   </div>
                 </CardContent>
-                {/* --- BAGIAN 5: TOMBOL AKSI KONTEKSTUAL --- */}
+                {/* TOMBOL AKSI */}
                 {booking.bookingStatus === 'PENDING' && (
                   <CardFooter className="bg-gray-50 p-4 flex justify-end space-x-3">
                     <Button variant="destructive" size="sm" onClick={() => handleUpdateBookingStatus(booking.id, 'CANCELLED')}>Cancel Booking</Button>
                     <Button variant="default" size="sm" onClick={() => handleUpdateBookingStatus(booking.id, 'CONFIRMED')}>Confirm Booking</Button>
                   </CardFooter>
                 )}
-              </Card>
-            );
-          })}
+               </Card>
+              );
+            })
+          )}
         </div>
-      )}
-    </div>
+      </div>
     </>
   );
 }

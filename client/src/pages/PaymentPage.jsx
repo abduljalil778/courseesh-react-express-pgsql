@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getBookingById, getActivePaymentOptions } from '../lib/api';
-import Spinner from '../components/Spinner';
+import PaymentPageSkeleton from '@/components/PaymentPageSkeleton';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 
 export default function PaymentPage() {
@@ -55,11 +55,7 @@ export default function PaymentPage() {
   const { amount: amountToPay, installmentNumber } = paymentDetails;
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <Spinner size={60} />
-      </div>
-    );
+    return <PaymentPageSkeleton />
   }
   
   if (error) {

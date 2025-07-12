@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getTeacherProfile } from '../lib/api';
-import Spinner from '../components/Spinner';
+import TeacherProfilePageSkeleton from '@/components/TeacherProfilePageSkeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import CourseCard from '../components/CourseCard';
 import { Users, BookOpen, Linkedin, Mail, GraduationCap, Award, CalendarDays } from 'lucide-react';
@@ -53,8 +53,10 @@ export default function TeacherProfilePage() {
     loadProfile();
   }, [loadProfile]);
 
-  if (isLoading) return <div className="flex justify-center items-center h-screen"><Spinner size={60} /></div>;
+  if (isLoading) return <TeacherProfilePageSkeleton />
+
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
+  
   if (!profileData) return <div className='p-6 text-center text-gray-500'>Profile not found.</div>;
 
   const { profile, courses, stats } = profileData;

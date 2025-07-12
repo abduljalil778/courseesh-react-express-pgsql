@@ -64,16 +64,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// RATE LIMIT (Production only)
-if (process.env.NODE_ENV === 'production') {
-  app.use('/api', rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-  }));
-  console.log('✅ Rate limiter active');
-} else {
-  console.log('development mode');
-}
+// // RATE LIMIT (Production only)
+// app.use('/api', rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 100,
+// }));
+// console.log('✅ Rate limiter active');
 
 // ROUTES
 app.use('/api/auth',    authRoutes);

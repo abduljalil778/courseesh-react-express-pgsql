@@ -8,7 +8,7 @@ import CourseRepository from '../repositories/courseRepository.js';
  * @returns {Promise<{courses: Array, total: number}>}
  */
 export async function getAllCoursesService(filters = {}, user = null) {
-    const { category, search, page = 1, limit = 10, sortBy = "createdAt", sortDir = "desc" } = filters;
+    const { category, classLevel, search, page = 1, limit = 10, sortBy = "createdAt", sortDir = "desc" } = filters;
     const take = parseInt(limit);
     const skip = (parseInt(page) - 1) * take;
 
@@ -19,6 +19,11 @@ export async function getAllCoursesService(filters = {}, user = null) {
     }
     if (category) {
       where.category = category;
+    }
+    if (classLevel) {
+      where.classLevels = {
+        has: classLevel
+      }
     }
     if (search) {
       where.OR = [

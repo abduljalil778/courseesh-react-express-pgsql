@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCourseById, createBooking, getTeacherSchedule } from "../lib/api";
-import Spinner from "../components/Spinner";
+import CheckoutPageSkeleton from '@/components/CheckoutPageSkeleton';
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrencyIDR } from "../utils/formatCurrency";
@@ -137,7 +137,7 @@ export default function Checkout() {
   }, [course, sessionCount, form.paymentMethod, form.installments]);
 
 
-  // === HANDLE FORM
+  // HANDLE FORM
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "sessionCount") {
@@ -163,7 +163,7 @@ export default function Checkout() {
     });
   };
 
-  // === SUBMIT
+  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.sessionDates.some((d) => !d)) {
@@ -209,13 +209,9 @@ export default function Checkout() {
     }
   };
 
-  // === RENDER ===
+  // RENDER 
   if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Spinner size={60} />
-      </div>
-    );
+    return <CheckoutPageSkeleton/>
   }
   if (error) {
     return <div className="p-6 text-center text-red-500">{error}</div>;
@@ -429,7 +425,7 @@ export default function Checkout() {
           </div>
           {/* RIGHT: Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-56">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-4 mb-4">
                 Order Summary
               </h2>

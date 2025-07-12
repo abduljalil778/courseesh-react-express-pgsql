@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBookingById, api } from '../lib/api';
-import Spinner from '../components/Spinner';
+import CourseProgressSkeleton from '@/components/CourseProgressSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';
@@ -86,8 +86,10 @@ export default function MyCourseProgress() {
      return currentBooking.bookingStatus;
  };
 
-  if (isLoading) return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Spinner /></div>;
+  if (isLoading) return <CourseProgressSkeleton/>;
+
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
+  
   if (!booking) return <div className="p-6 text-center text-gray-500">Booking not found.</div>;
 
   const canChat = booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'COMPLETED';

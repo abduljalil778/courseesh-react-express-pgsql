@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import ProfileForm from './ProfileForm'; // Kita akan panggil form di sini
+import ProfileForm from './ProfileForm';
 
 // Komponen kecil untuk menampilkan data (read-only)
 const ProfileDisplayView = ({ user }) => (

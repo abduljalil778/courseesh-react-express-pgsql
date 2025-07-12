@@ -6,7 +6,7 @@ import {
   updateSessionReport,
   submitOverallBookingReport,
 } from '../lib/api';
-import Spinner from '../components/Spinner';
+import CourseProgressSkeleton from '@/components/CourseProgressSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import SessionReportForm from '../components/SessionReportForm';
@@ -34,7 +34,7 @@ export default function TeacherScheduleDetails() {
   const [isOverallModalOpen, setIsOverallModalOpen] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
-  // --- Logika Fetching Data ---
+  // Fetching Data
   const fetchBookingDetails = useCallback(async () => {
     if (!bookingId) {
       setError("Booking ID is missing.");
@@ -77,7 +77,7 @@ export default function TeacherScheduleDetails() {
     setSelectedSession(null);
   };
 
-  // --- HANDLE SUBMIT DIPERBARUI UNTUK FORM DATA ---
+  // HANDLE SUBMIT DIPERBARUI UNTUK FORM DATA
   const handleSessionReportSubmit = async (sessionId, data) => {
     setIsSubmittingReport(true);
     try {
@@ -121,8 +121,10 @@ export default function TeacherScheduleDetails() {
   
   
   
-  if (isLoading) return <div className="flex justify-center items-center h-screen"><Spinner size={60} /></div>;
+  if (isLoading) return <CourseProgressSkeleton />;
+
   if (error) return <div className="p-6 text-center text-red-500">{error} <button onClick={fetchBookingDetails} className="text-blue-500 underline ml-2">Retry</button></div>;
+  
   if (!booking) return <div className="p-6 text-center text-gray-500">Booking not found.</div>;
   
   const canChat = booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'COMPLETED';

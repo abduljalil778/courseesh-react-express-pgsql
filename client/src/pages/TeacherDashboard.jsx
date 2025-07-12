@@ -6,7 +6,6 @@ import {
   updateCourse,
   deleteCourse,
 } from '../lib/api';
-import Spinner from '../components/Spinner';
 import CourseForm from '../components/CourseForm';
 import Swal from 'sweetalert2';
 import CourseCard from '@/components/CourseCard';
@@ -14,6 +13,7 @@ import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { SUBJECT_CATEGORIES } from '@/config';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CourseCardSkeleton from '@/components/CourseCardSkeleton';
 
 
 const ActiveFilterPills = () => {
@@ -67,46 +67,35 @@ export default function TeacherDashboard() {
   const [error, setError] = useState(null);
   const [formMode, setFormMode] = useState(null);
   
-  // Ambil semua state dan setter dari store
   const { searchTerm, filterClass, category, clearFilters } = useCourseFilterStore();
 
-  // --- LANGKAH 2: Bersihkan filter saat meninggalkan halaman ---
   useEffect(() => {
-    // Fungsi cleanup ini akan berjalan saat komponen 'unmount'
-    return () => {
-      clearFilters();
-    }
+    return () => { clearFilters(); }
   }, [clearFilters]);
 
-
+  // Fetching Data untuk Mengirim Filter
   const loadCourses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getMyTeacherCourses();
+      const params = {
+        search: searchTerm,
+        category: category,
+        classLevel: filterClass,
+      };
+      // Panggil API untuk mendapatkan kursus berdasarkan filter
+      const response = await getMyTeacherCourses(params);
       setCourses(response.data?.courses || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not load your courses. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchTerm, filterClass, category]);
 
   useEffect(() => {
     loadCourses();
   }, [loadCourses]);
-
-  const filteredCourses = useMemo(() => {
-    return courses.filter(c => {
-      const searchTermLower = searchTerm.toLowerCase();
-      const titleMatch = c.title.toLowerCase().includes(searchTermLower);
-      const categoryMatch = !category || c.category === category;
-      const classLevelMatch = !filterClass || c.classLevels.includes(filterClass);
-
-      return titleMatch && classLevelMatch && categoryMatch;
-    });
-  }, [courses, searchTerm, filterClass, category]);
-
 
   const handleAddNewCourseClick = () => {
     setEditingCourse(null);
@@ -153,40 +142,29 @@ export default function TeacherDashboard() {
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Courses</h1>
-          <Button
-            onClick={handleAddNewCourseClick}
-            className="mt-3 sm:mt-0 px-5 py-2.5 text-sm font-medium text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            <Plus/> Add New Course
+          <Button onClick={handleAddNewCourseClick} >
+            <Plus className="mr-2 h-4 w-4"/> Add New Course
           </Button>
         </div>
         
-        {/* --- LANGKAH 3: Tempatkan Komponen Filter Aktif di sini --- */}
         <ActiveFilterPills />
 
-        {/* Error State */}
         {error && <div className="p-6 text-center text-red-600">{error}</div>}
-
-        {/* Loading State */}
-        {isLoading && <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><Spinner size={60} /></div>}
-
-        {/* No Data State (termasuk saat hasil filter kosong) */}
-        {!isLoading && filteredCourses.length === 0 && (
-          <div className="text-center py-10">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            </svg>
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No Courses Found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || filterClass ? "Try adjusting your search or filter criteria." : "Get started by creating a new course."}
-            </p>
-          </div>
-        )}
-
-        {/* Daftar Kursus */}
-        {filteredCourses.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCourses.map((course) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            // Jika sedang loading, tampilkan 6 buah skeleton
+            Array.from({ length: 6 }).map((_, index) => <CourseCardSkeleton key={index} />)
+          ) : courses.length === 0 ? (
+            <div className="col-span-full text-center py-10">
+              <svg className="mx-auto h-12 w-12 text-gray-400" /* ... */ />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">No Courses Found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchTerm || filterClass || category ? "Try adjusting your filter criteria." : "Get started by creating a new course."}
+              </p>
+            </div>
+          ) : (
+            // Tampilkan data kursus 
+            courses.map((course) => (
               <CourseCard
                 key={course.id}
                 course={course}
@@ -194,9 +172,9 @@ export default function TeacherDashboard() {
                 onEdit={handleEditCourseClick}
                 onDelete={handleDelete}
               />
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* Modal untuk CourseForm */}

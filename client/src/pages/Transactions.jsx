@@ -9,24 +9,11 @@ import BookingDetailModal from '../components/BookingDetailModal';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import TransactionSkeleton from '@/components/TransactionSkeleton';
 
 
 
-// Skeleton minimal
-const TransactionSkeleton = () => (
-  <div className="bg-white rounded-2xl shadow flex items-center p-6 my-4 animate-pulse min-h-[112px]">
-    <div className="w-24 h-24 rounded-xl bg-gray-200 mr-6" />
-    <div className="flex-1 space-y-3">
-      <div className="h-6 w-2/5 bg-gray-200 rounded" />
-      <div className="h-4 w-1/4 bg-gray-100 rounded" />
-      <div className="h-4 w-1/3 bg-gray-100 rounded" />
-      <div className="h-4 w-1/6 bg-gray-100 rounded" />
-    </div>
-    <div className="h-9 w-36 bg-gray-200 rounded-full ml-auto" />
-  </div>
-);
-
-// Helper function bisa diletakkan di sini atau diimpor
+// Helper function
 const findNextDuePayment = (booking) => {
   if (!booking || !booking.payments) return null;
   
