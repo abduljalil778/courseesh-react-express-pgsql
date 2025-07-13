@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { getPublicCourses } from '../lib/api';
 import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import CourseCard from '../components/CourseCard';
-import CourseCardSkeleton from '../components/CourseCardSkeleton';
+import CourseCardSkeleton from '../components/skeleton/CourseCardSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { X } from 'lucide-react';
 import { SUBJECT_CATEGORIES } from '@/config';

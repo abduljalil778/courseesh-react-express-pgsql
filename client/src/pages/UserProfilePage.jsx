@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getMyProfile } from '../lib/api';
-import ProfilePageSkeleton from '@/components/ProfilePageSkeleton';
+import ProfilePageSkeleton from '@/components/skeleton/ProfilePageSkeleton';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import AvatarManager from '@/components/profile/AvatarManager';

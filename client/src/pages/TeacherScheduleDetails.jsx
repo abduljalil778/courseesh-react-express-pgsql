@@ -6,7 +6,7 @@ import {
   updateSessionReport,
   submitOverallBookingReport,
 } from '../lib/api';
-import CourseProgressSkeleton from '@/components/CourseProgressSkeleton';
+import CourseProgressSkeleton from '@/components/skeleton/CourseProgressSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import SessionReportForm from '../components/SessionReportForm';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAdminDashboardStats } from '../../lib/api';
-import AdminDashboardSkeleton from '@/components/AdminDashboardSkeleton';
+import AdminDashboardSkeleton from '@/components/skeleton/AdminDashboardSkeleton';
 import { formatCurrencyIDR } from '../../utils/formatCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, Users, UserCheck, User, BookOpen, CalendarCheck } from 'lucide-react';

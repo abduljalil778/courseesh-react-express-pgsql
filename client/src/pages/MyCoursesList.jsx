@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
-import MyCourseCardSkeleton from '@/components/MyCourseCardSkeleton';
+import MyCourseCardSkeleton from '@/components/skeleton/MyCourseCardSkeleton';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -87,7 +87,7 @@ export default function MyCoursesList() {
               return (
                 <div 
                   key={booking.id} 
-                  className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                  className="animate-fade-in bg-white rounded-lg shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 cursor-pointer"
                   onClick={() => navigate(`/student/my-courses/${booking.id}`)}
                 >
                   <div className="p-5 flex flex-col flex-grow">

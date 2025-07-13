@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCourseById, createBooking, getTeacherSchedule } from "../lib/api";
-import CheckoutPageSkeleton from '@/components/CheckoutPageSkeleton';
+import CheckoutPageSkeleton from '@/components/skeleton/CheckoutPageSkeleton';
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrencyIDR } from "../utils/formatCurrency";

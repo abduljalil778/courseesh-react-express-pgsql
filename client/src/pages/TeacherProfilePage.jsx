@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getTeacherProfile } from '../lib/api';
-import TeacherProfilePageSkeleton from '@/components/TeacherProfilePageSkeleton';
+import TeacherProfilePageSkeleton from '@/components/skeleton/TeacherProfilePageSkeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import CourseCard from '../components/CourseCard';
 import { Users, BookOpen, Linkedin, Mail, GraduationCap, Award, CalendarDays } from 'lucide-react';

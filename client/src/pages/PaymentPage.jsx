@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getBookingById, getActivePaymentOptions } from '../lib/api';
-import PaymentPageSkeleton from '@/components/PaymentPageSkeleton';
+import PaymentPageSkeleton from '@/components/skeleton/PaymentPageSkeleton';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 
 export default function PaymentPage() {

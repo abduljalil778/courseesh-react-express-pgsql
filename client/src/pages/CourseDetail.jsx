@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCourseById, getCourseReviews } from '../lib/api';
-import CourseDetailSkeleton from '@/components/CourseDetailSkeleton';
+import CourseDetailSkeleton from '@/components/skeleton/CourseDetailSkeleton';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 import { format, parseISO } from 'date-fns';
 import StarRating from '../components/StarRating';

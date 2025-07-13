@@ -1,7 +1,7 @@
 // src/pages/TeacherBookingRequests.jsx
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getAllBookings, updateBooking } from '../lib/api';
-import BookingCardSkeleton from '@/components/BookingCardSkeleton';
+import BookingCardSkeleton from '@/components/skeleton/BookingCardSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';

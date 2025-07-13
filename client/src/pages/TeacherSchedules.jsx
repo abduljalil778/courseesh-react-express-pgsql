@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBookings } from '../lib/api';
-import MyCourseCardSkeleton from '@/components/MyCourseCardSkeleton';
+import MyCourseCardSkeleton from '@/components/skeleton/MyCourseCardSkeleton';
 import { format, parseISO } from 'date-fns';
 import { BookOpenIcon, UserIcon, AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/solid';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';

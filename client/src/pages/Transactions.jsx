@@ -9,7 +9,7 @@ import BookingDetailModal from '../components/BookingDetailModal';
 import BookingDisplayStatus from '@/components/BookingDisplayStatus';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import TransactionSkeleton from '@/components/TransactionSkeleton';
+import TransactionSkeleton from '@/components/skeleton/TransactionSkeleton';
 
 
 
@@ -181,7 +181,7 @@ export default function TransactionList() {
               return (
                 <div
                   key={booking.id}
-                  className="relative bg-white rounded-2xl shadow-md flex flex-col md:flex-row items-center px-4 py-6 md:p-6 mb-6 group transition hover:shadow-lg"
+                  className="animate-fade-in relative bg-white rounded-2xl shadow-md flex flex-col md:flex-row items-center px-4 py-6 md:p-6 mb-6 group transition hover:shadow-lg"
                 >
                   {/* Image */}
                   <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center text-gray-300 font-bold text-2xl relative">
@@ -212,7 +212,6 @@ export default function TransactionList() {
                         Total: {formatCurrencyIDR((booking.course?.price || 0) * (booking.sessions?.length || 0))}
                       </div>
                     </div>
-                    {/* Status and Payment Method - Moved to top right */}
                     <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
                       <Badge className={displayStatus.colorClass} variant={displayStatus.variant}>{displayStatus.text}</Badge>
                       <div className="text-xs text-gray-500 mt-1">
@@ -221,30 +220,29 @@ export default function TransactionList() {
                           : 'Full Payment'}
                       </div>
                     </div>
-                    {/* ++ Tombol Aksi ++ */}
+                    {/* Tombol Aksi */}
                     <div className="mt-4 md:mt-0 self-end flex items-center justify-end gap-3">
-  {/* Tombol ini akan selalu ada untuk membuka modal detail */}
-  <Button
-    size="sm"
-    variant="outline"
-    onClick={() => setSelectedBooking(booking)}
-  >
-    Lihat Detail
-  </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedBooking(booking)}
+                      >
+                        Lihat Detail
+                      </Button>
 
-  {/* Tombol bayar hanya muncul jika diperlukan */}
-  {nextPayment && (
-    <Button
-      size="sm"
-      onClick={() => navigate(`/student/bookings/${booking.id}/pay`)}
-    >
-      <CreditCardIcon className="h-4 w-4 mr-2" />
-      {booking.paymentMethod === 'INSTALLMENT' 
-        ? `Bayar Cicilan ${nextPayment.installmentNumber}` 
-        : 'Lanjutkan Pembayaran'}
-    </Button>
-  )}
-</div>
+                      {/* Tombol bayar */}
+                      {nextPayment && (
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/student/bookings/${booking.id}/pay`)}
+                        >
+                          <CreditCardIcon className="h-4 w-4 mr-2" />
+                          {booking.paymentMethod === 'INSTALLMENT' 
+                            ? `Bayar Cicilan ${nextPayment.installmentNumber}` 
+                            : 'Lanjutkan Pembayaran'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

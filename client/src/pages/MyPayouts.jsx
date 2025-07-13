@@ -1,7 +1,7 @@
 // client/src/pages/MyPayouts.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { getMyPayoutsTeacher } from '../lib/api';
-import Spinner from '../components/Spinner';
+import PayoutCardSkeleton from '@/components/skeleton/PayoutCardSkeleton';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyIDR } from '../utils/formatCurrency';
 import PayoutDetailModal from '../components/PayoutDetailModal';
@@ -46,9 +46,7 @@ export default function MyPayouts() {
 
   const placeholderImage = "/placeholder-course.jpg";
 
-  if (isLoading) return <div className="flex justify-center items-center h-screen"><Spinner size={60} /></div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
-  if (payouts.length === 0) return <div className="p-6 text-center text-gray-500">You have no payouts yet.</div>;
 
   return (
     <>
@@ -71,7 +69,14 @@ export default function MyPayouts() {
         </h1>
         
         <div className="space-y-4">
-          {payouts.map((payout) => {
+          {isLoading ? (
+            // Jika sedang loading, tampilkan 3 buah skeleton
+            Array.from({ length: 3 }).map((_, index) => <PayoutCardSkeleton key={index} />)
+          ) : payouts.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">You have no payouts yet.</div>
+          ) : (
+            // Jika sudah selesai, tampilkan data
+            payouts.map((payout) => {
             const courseImageUrl = payout.booking?.course?.imageUrl
               ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${payout.booking.course.imageUrl}`
               : placeholderImage;
@@ -121,8 +126,9 @@ export default function MyPayouts() {
                   )}
                 </div>
               </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 

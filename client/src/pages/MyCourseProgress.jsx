@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBookingById, api } from '../lib/api';
-import CourseProgressSkeleton from '@/components/CourseProgressSkeleton';
+import CourseProgressSkeleton from '@/components/skeleton/CourseProgressSkeleton';
 import Swal from 'sweetalert2';
 import { format, parseISO } from 'date-fns';
 import AttendanceButton from '../components/AttendanceButton';

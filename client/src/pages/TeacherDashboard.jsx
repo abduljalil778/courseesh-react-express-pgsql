@@ -13,7 +13,7 @@ import { useCourseFilterStore } from '@/stores/courseFilterStore';
 import { SUBJECT_CATEGORIES } from '@/config';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import CourseCardSkeleton from '@/components/CourseCardSkeleton';
+import CourseCardSkeleton from '@/components/skeleton/CourseCardSkeleton';
 
 
 const ActiveFilterPills = () => {
