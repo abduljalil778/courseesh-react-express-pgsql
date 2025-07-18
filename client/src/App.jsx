@@ -24,6 +24,7 @@ import PayoutManagementPage from './pages/admin/PayoutManagementPage';
 import PaymentOptionsPage from './pages/admin/PaymentOptionsPage';
 import ApplicationSettingsPage from './pages/ApplicationSettingsPage';
 import UserSettings from '@/pages/UserSettings';
+import HonorariumManagementPage from '@/pages/admin/HonorariumManagementPage';
 
 // Halaman Teacher
 import TeacherDashboard from './pages/TeacherDashboard';
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="bookings" element={<BookingManagementPage />} />
               <Route path="payments" element={<PaymentManagementPage />} />
               <Route path="payouts" element={<PayoutManagementPage />} />
+              <Route path="honorariums" element={<HonorariumManagementPage />} />
               <Route path="payment-options" element={<PaymentOptionsPage />} />
               <Route path='settings' element={<ApplicationSettingsPage />} />
               <Route path="profile" element={<UserProfilePage />} />

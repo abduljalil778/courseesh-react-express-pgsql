@@ -51,7 +51,7 @@ model Course {
   imageUrl           String?
   category           SubjectCategory @default(UMUM)
   classLevels        ClassLevel[]
-  curriculum         Curriculum? 
+  curriculum         Curriculum?
   learningObjectives String[]
   teacher            User            @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
   teacherId          String
@@ -73,31 +73,31 @@ model Booking {
   paymentMethod        PaymentMethod    @default(FULL)
   totalInstallments    Int?
   payments             Payment[]
-  teacherPayouts       TeacherPayout[]
   overallTeacherReport String?
   finalGrade           String?
   courseCompletionDate DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
-  review               CourseReview? 
+  review               CourseReview?
   conversation         Conversation?    @relation(fields: [conversationId], references: [id])
   conversationId       String?          @unique
 }
 
 model BookingSession {
-  id                  String         @id @default(ulid())
+  id                  String         @id @default(uuid())
   booking             Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingId           String
   sessionDate         DateTime
   status              SessionStatus? @default(SCHEDULED)
   isUnlocked          Boolean        @default(false)
   teacherReport       String?
+  payoutId            String?
+  payout              TeacherPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
   teacherUploadedFile String?
   studentAttendance   Boolean?
   sessionCompletedAt  DateTime?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  TeacherPayout       TeacherPayout?
 }
 
 model Payment {
@@ -114,24 +114,22 @@ model Payment {
 }
 
 model TeacherPayout {
-  id                     String          @id @default(uuid())
-  booking                Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId              String
-  bookingSession         BookingSession? @relation(fields: [bookingSessionId], references: [id], onDelete: Cascade)
-  bookingSessionId       String?         @unique
-  teacher                User            @relation("TeacherPayouts", fields: [teacherId], references: [id])
+  id                     String           @id @default(uuid())
+  periodStartDate        DateTime
+  periodEndDate          DateTime
+  totalSessions          Int
+  sessions               BookingSession[] // Relasi one-to-many ke banyak sesi
+  teacher                User             @relation("TeacherPayouts", fields: [teacherId], references: [id])
   teacherId              String
-  coursePriceAtBooking   Float
-  serviceFeePercentage   Float
-  serviceFeeAmount       Float
   honorariumAmount       Float
-  status                 PayoutStatus    @default(PENDING_PAYMENT)
+  serviceFeePercentage   Float @default(0.15)
+  status                 PayoutStatus     @default(PENDING_PAYMENT)
   adminProofOfPaymentUrl String?
   payoutTransactionRef   String?
   payoutDate             DateTime?
   adminNotes             String?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 }
 
 model TeacherUnavailableDate {
@@ -156,7 +154,7 @@ model ApplicationSetting {
 }
 
 model CourseReview {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
@@ -172,7 +170,7 @@ model CourseReview {
 }
 
 model PaymentOption {
-  id            String   @id @default(cuid())
+  id            String   @id @default(uuid())
   bankName      String
   accountHolder String
   accountNumber String
@@ -183,7 +181,7 @@ model PaymentOption {
 }
 
 model Notification {
-  id          String           @id @default(cuid())
+  id          String           @id @default(uuid())
   recipient   User             @relation("UserNotifications", fields: [recipientId], references: [id])
   recipientId String
   content     String
@@ -194,27 +192,27 @@ model Notification {
 }
 
 model Conversation {
-  id           String        @id @default(cuid())
-  booking      Booking? 
-  participants Participant[] 
+  id           String        @id @default(uuid())
+  booking      Booking?
+  participants Participant[]
   messages     Message[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
 
 model Participant {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   user           User         @relation(fields: [userId], references: [id])
   userId         String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
-  lastReadAt     DateTime? 
+  lastReadAt     DateTime?
 
   @@unique([userId, conversationId])
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   content        String       @db.Text
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
@@ -222,7 +220,6 @@ model Message {
   senderId       String
   createdAt      DateTime     @default(now())
 }
-
 
 enum PayoutStatus {
   PENDING_PAYMENT

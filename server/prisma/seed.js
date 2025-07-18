@@ -4,6 +4,20 @@ import bcrypt from 'bcryptjs';
 import prisma from '../libs/prisma.js';
 
 async function main() {
+
+  const defaultServiceFee = await prisma.applicationSetting.upsert({
+    where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' },
+    update: {}, // Jangan ubah jika sudah ada
+    create: {
+      key: 'DEFAULT_SERVICE_FEE_PERCENTAGE',
+      value: '0.15', // Nilai default 15%
+      description: 'Default service fee percentage charged by the application from teacher revenue per session.',
+      dataType: 'NUMBER',
+    },
+  });
+
+  console.log(`✅ Default setting created/ensured: ${defaultServiceFee.key}`);
+
   // 1) USERS
   const passwordHash = await bcrypt.hash('secret', 10);
 

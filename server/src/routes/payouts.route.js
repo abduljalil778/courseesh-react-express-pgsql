@@ -4,6 +4,7 @@ import {
     getAllTeacherPayouts,
     getTeacherPayoutById,
     updateTeacherPayout,
+    getSessionsByPayoutId,
 } from '../controllers/payouts.controller.js';
 import asyncHandler from 'express-async-handler';
 import { 
@@ -11,14 +12,15 @@ import {
     updatePayoutStatusValidator,
     listPayoutsQueryValidator,
 } from '../validators/teacherPayoutValidators.js';
-import {runValidation} from '../middleware/validate.js';
+import { runValidation } from '../middleware/validate.js';
 import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
+// Semua rute di sini memerlukan otentikasi
 router.use(authenticate);
 
-// List all teacher payouts
+// List semua payout (hanya untuk Admin dan Finance)
 router.get(
     '/teacher-payouts',
     authorize('ADMIN', 'FINANCE'),
@@ -27,17 +29,16 @@ router.get(
     asyncHandler(getAllTeacherPayouts)
 );
 
-// get teacher payout by id
+// Mengambil satu payout berdasarkan ID
 router.get(
     '/teacher-payouts/:payoutId',
-    authorize('ADMIN', 'FINANCE'),
+    authorize('ADMIN', 'FINANCE', 'TEACHER'),
     payoutIdParamValidator,
     runValidation,
     asyncHandler(getTeacherPayoutById)
 )
 
-
-// Update teacher payout (ADMIN or FINANCE)
+// Memperbarui payout
 router.put(
     '/teacher-payouts/:payoutId',
     authorize('ADMIN','FINANCE'),
@@ -48,4 +49,13 @@ router.put(
     asyncHandler(updateTeacherPayout)
 )
 
-export default router
+// mengambil detail sesi dari sebuah payout
+router.get(
+    '/teacher-payouts/:payoutId/sessions',
+    authorize('ADMIN', 'FINANCE', 'TEACHER'),
+    payoutIdParamValidator,
+    runValidation,
+    asyncHandler(getSessionsByPayoutId)
+);
+
+export default router;

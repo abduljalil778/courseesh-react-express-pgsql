@@ -20,6 +20,7 @@ const navItems = [
    items: [
      { name: 'Payment', to: '/admin/payments', icon: CreditCardIcon },
     { name: 'Payouts', to: '/admin/payouts', icon: BanknotesIcon },
+    { name: 'Honorariums', to: '/admin/honorariums', icon: BanknotesIcon },
     { name: 'Payment Options', to: '/admin/payment-options', icon: WalletIcon },
    ],
  },

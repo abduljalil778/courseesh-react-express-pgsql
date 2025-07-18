@@ -63,7 +63,6 @@ export async function getAllBookingsService({ user, filters = {} }) {
       sessions: { select: { id: true, sessionDate: true, status: true, teacherReport: true, studentAttendance: true, isUnlocked: true, sessionCompletedAt: true, updatedAt: true }, orderBy: { sessionDate: 'asc' } },
       payments: { select: { id: true, status: true, amount: true, installmentNumber: true, dueDate: true, proofOfPaymentUrl: true }, orderBy: { installmentNumber: 'asc' } },
       review: true,
-      teacherPayouts: true,
     }
   });
 

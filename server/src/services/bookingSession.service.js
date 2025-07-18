@@ -61,35 +61,35 @@ export async function updateSessionReportService(sessionId, reportData, file, us
       data: dataToUpdate,
     });
 
-    // Jika sesi selesai, buat record payout untuk guru
-    if (status === SessionStatus.COMPLETED) {
-      const existingPayout = await tx.teacherPayout.findFirst({ where: { bookingSessionId: sessionId } });
-      if (!existingPayout) {
-        // Ambil service fee dari settings
-        let serviceFeePercentage = parseFloat(process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15');
-        const feeSetting = await tx.applicationSetting.findUnique({ where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' } });
-        if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
-          serviceFeePercentage = parseFloat(feeSetting.value);
-        }
+    // // Jika sesi selesai, buat record payout untuk guru
+    // if (status === SessionStatus.COMPLETED) {
+    //   const existingPayout = await tx.teacherPayout.findFirst({ where: { bookingSessionId: sessionId } });
+    //   if (!existingPayout) {
+    //     // Ambil service fee dari settings
+    //     let serviceFeePercentage = parseFloat(process.env.DEFAULT_SERVICE_FEE_PERCENTAGE || '0.15');
+    //     const feeSetting = await tx.applicationSetting.findUnique({ where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' } });
+    //     if (feeSetting && !isNaN(parseFloat(feeSetting.value))) {
+    //       serviceFeePercentage = parseFloat(feeSetting.value);
+    //     }
 
-        const pricePerSession = bookingSession.booking.course.price;
-        const serviceFeeAmount = parseFloat((pricePerSession * serviceFeePercentage).toFixed(2));
-        const honorariumAmount = parseFloat((pricePerSession - serviceFeeAmount).toFixed(2));
+    //     const pricePerSession = bookingSession.booking.course.price;
+    //     const serviceFeeAmount = parseFloat((pricePerSession * serviceFeePercentage).toFixed(2));
+    //     const honorariumAmount = parseFloat((pricePerSession - serviceFeeAmount).toFixed(2));
 
-        await tx.teacherPayout.create({
-          data: {
-            bookingId: bookingSession.bookingId,
-            bookingSessionId: sessionId,
-            teacherId: bookingSession.booking.course.teacherId,
-            coursePriceAtBooking: pricePerSession,
-            serviceFeePercentage,
-            serviceFeeAmount,
-            honorariumAmount,
-            status: PayoutStatus.PENDING_PAYMENT,
-          },
-        });
-      }
-    }
+    //     await tx.teacherPayout.create({
+    //       data: {
+    //         bookingId: bookingSession.bookingId,
+    //         bookingSessionId: sessionId,
+    //         teacherId: bookingSession.booking.course.teacherId,
+    //         coursePriceAtBooking: pricePerSession,
+    //         serviceFeePercentage,
+    //         serviceFeeAmount,
+    //         honorariumAmount,
+    //         status: PayoutStatus.PENDING_PAYMENT,
+    //       },
+    //     });
+    //   }
+    // }
     return updatedSession;
   });
 }

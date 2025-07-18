@@ -57,9 +57,7 @@ export default function CustomDateTimePicker({
     // return unavailableDateSet.has(ymd);
   }
 
-  // =================================================================
   // FUNGSI INTI UNTUK MENONAKTIFKAN JAM
-  // =================================================================
   function isTimeDisabled(timeString) {
     if (!selectedDate) return true; // Jika tanggal belum dipilih, semua jam disable
 
@@ -83,7 +81,6 @@ export default function CustomDateTimePicker({
 
     return false; // Jika lolos semua pengecekan, jam ini bisa dipilih
   }
-  // =================================================================
 
   // Fungsi yang dijalankan saat tanggal dan jam sudah final dipilih
   function handleSelect() {

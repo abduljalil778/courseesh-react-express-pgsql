@@ -1,4 +1,5 @@
-import * as teachersService from '../services/teachers.service.js';
+// server/src/controllers/teachers.controller.js
+import * as payoutService from '../services/payout.service.js';
 import * as usersService from '../services/users.service.js';
 import asyncHandler from 'express-async-handler';
 
@@ -7,8 +8,12 @@ import asyncHandler from 'express-async-handler';
  * GET /api/teachers/my-payouts
  */
 export const getMyPayouts = asyncHandler(async (req, res) => {
-  const payouts = await teachersService.getMyPayoutsService(req.user.id);
-  res.status(200).json(payouts);
+  // Panggil service payout utama dengan filter teacherId dari user yang login
+  const result = await payoutService.getAllTeacherPayoutsService({ teacherId: req.user.id });
+  
+  // Halaman frontend 'MyPayouts.jsx' mengharapkan array langsung, 
+  // jadi kita kirim result.payouts
+  res.status(200).json(result.payouts);
 });
 
 /**

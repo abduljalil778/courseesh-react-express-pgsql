@@ -175,6 +175,10 @@ export const getMyPayoutsTeacher = async () => {
   return await api.get('/teachers/my-payouts');
 }
 
+export const getSessionsByPayoutId = async (payoutId) => {
+  return await api.get(`/teacher-payouts/${payoutId}/sessions`);
+}
+
 // handle create course review
 export const createCourseReview = async (bookingId, reviewData) => {
   return await api.post(`/bookings/${bookingId}/review`, reviewData);
@@ -330,3 +334,30 @@ export const getMessagesByConversationId = async (conversationId) => {
 export const markConversationAsRead = async (conversationId) => {
   return await api.post(`/conversations/${conversationId}/mark-as-read`)
 }
+
+/**
+ * Mengambil data agregasi honorarium yang belum dibayar dalam rentang tanggal tertentu.
+ * @param {string} startDate - Tanggal mulai (format ISO YYYY-MM-DD).
+ * @param {string} endDate - Tanggal akhir (format ISO YYYY-MM-DD).
+ * @returns {Promise}
+ */
+export const getPendingHonorariums = (startDate, endDate) => {
+  return api.get('/honorariums/pending', {
+    params: { startDate, endDate }
+  });
+};
+
+/**
+ * Memproses honorarium yang dipilih untuk membuat record TeacherPayout.
+ * @param {Array} payouts - Array dari objek honorarium yang akan diproses.
+ * @param {string} periodStartDate - Tanggal mulai periode.
+ * @param {string} periodEndDate - Tanggal akhir periode.
+ * @returns {Promise}
+ */
+export const processHonorariumPayouts = (payouts, periodStartDate, periodEndDate) => {
+  return api.post('/honorariums/process', { 
+    payouts,
+    periodStartDate,
+    periodEndDate 
+  });
+};

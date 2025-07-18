@@ -25,6 +25,9 @@ import availabilityRoutes from './src/routes/availability.route.js';
 import financeRoutes from './src/routes/finance.route.js';
 import notificationRoutes from './src/routes/notification.route.js';
 import chatRoutes from './src/routes/chat.route.js';
+import { initPayoutScheduler } from './src/jobs/payoutScheduler.js';
+import honorariumRoutes from './src/routes/honorarium.route.js';
+
 
 dotenv.config();
 
@@ -87,6 +90,7 @@ app.use('/api/admin/settings', appSettingRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/conversations', chatRoutes)
+app.use('/api/honorariums', honorariumRoutes)
 
 // ERROR HANDLER
 app.use((req, res, next) => {
@@ -97,6 +101,7 @@ app.use(errorHandler);
 
 // START SERVER
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () =>
+server.listen(PORT, () => {
   console.log(`🚀 Server running with Socket.IO on http://localhost:${PORT}`)
-);
+  
+});
