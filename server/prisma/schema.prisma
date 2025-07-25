@@ -1,0 +1,309 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String                   @id @default(uuid())
+  name              String
+  email             String                   @unique
+  headline          String?
+  bio               String?
+  websiteUrl        String?
+  certifications    String[]
+  education         String[]
+  phone             String?
+  password          String
+  role              Role
+  status            Status                   @default(ACTIVE)
+  avatarUrl         String?
+  bankName          String?
+  bankAccountHolder String?
+  bankAccountNumber String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  courses           Course[]                 @relation("TeacherCourses")
+  bookings          Booking[]                @relation("StudentBookings")
+  payoutsAsTeacher  TeacherPayout[]          @relation("TeacherPayouts")
+  studentReviews    CourseReview[]           @relation("StudentReviews")
+  teacherFeedback   CourseReview[]           @relation("TeacherReviews")
+  unavailableDates  TeacherUnavailableDate[]
+  notifications     Notification[]           @relation("UserNotifications")
+  conversations     Participant[]
+  sentMessages      Message[]                @relation("SentMessages")
+}
+
+model Course {
+  id                 String         @id @default(uuid())
+  title              String
+  description        String
+  price              Float
+  imageUrl           String?
+  category           Category       @relation(fields: [categoryId], references: [id])
+  categoryId         String
+  classLevels        ClassLevel[]
+  curriculum         Curriculum?
+  learningObjectives String[]
+  teacher            User           @relation(fields: [teacherId], references: [id], name: "TeacherCourses")
+  teacherId          String
+  bookings           Booking[]      @relation("CourseBookings")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  reviews            CourseReview[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id                   String           @id @default(uuid())
+  student              User             @relation(fields: [studentId], references: [id], name: "StudentBookings")
+  studentId            String
+  course               Course           @relation(fields: [courseId], references: [id], name: "CourseBookings")
+  courseId             String
+  sessions             BookingSession[]
+  address              String
+  bookingStatus        BookingStatus    @default(PENDING)
+  paymentMethod        PaymentMethod    @default(FULL)
+  totalInstallments    Int?
+  payments             Payment[]
+  overallTeacherReport String?
+  finalGrade           String?
+  courseCompletionDate DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  review               CourseReview?
+  conversation         Conversation?    @relation(fields: [conversationId], references: [id])
+  conversationId       String?          @unique
+}
+
+model BookingSession {
+  id                  String         @id @default(uuid())
+  booking             Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId           String
+  sessionDate         DateTime
+  status              SessionStatus? @default(SCHEDULED)
+  isUnlocked          Boolean        @default(false)
+  teacherReport       String?
+  payoutId            String?
+  payout              TeacherPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  teacherUploadedFile String?
+  studentAttendance   Boolean?
+  sessionCompletedAt  DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId         String
+  installmentNumber Int
+  status            PaymentStatus @default(PENDING)
+  amount            Float
+  dueDate           DateTime?
+  proofOfPaymentUrl String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model TeacherPayout {
+  id                     String           @id @default(uuid())
+  periodStartDate        DateTime
+  periodEndDate          DateTime
+  totalSessions          Int
+  sessions               BookingSession[] // Relasi one-to-many ke banyak sesi
+  teacher                User             @relation("TeacherPayouts", fields: [teacherId], references: [id])
+  teacherId              String
+  honorariumAmount       Float
+  serviceFeePercentage   Float            @default(0.15)
+  status                 PayoutStatus     @default(PENDING_PAYMENT)
+  adminProofOfPaymentUrl String?
+  payoutTransactionRef   String?
+  payoutDate             DateTime?
+  adminNotes             String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+}
+
+model TeacherUnavailableDate {
+  id        String   @id @default(uuid())
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teacherId, date])
+}
+
+model ApplicationSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  dataType    String   @default("STRING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CourseReview {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  bookingId String   @unique
+  student   User     @relation("StudentReviews", fields: [studentId], references: [id])
+  studentId String
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String
+  teacher   User     @relation("TeacherReviews", fields: [teacherId], references: [id])
+  teacherId String
+}
+
+model PaymentOption {
+  id            String   @id @default(uuid())
+  bankName      String
+  accountHolder String
+  accountNumber String
+  logoUrl       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipient   User             @relation("UserNotifications", fields: [recipientId], references: [id])
+  recipientId String
+  content     String
+  type        NotificationType @default(GENERAL)
+  link        String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+}
+
+model Conversation {
+  id           String        @id @default(uuid())
+  booking      Booking?
+  participants Participant[]
+  messages     Message[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Participant {
+  id             String       @id @default(uuid())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  lastReadAt     DateTime?
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String       @db.Text
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  senderId       String
+  createdAt      DateTime     @default(now())
+}
+
+enum PayoutStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  FINANCE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  FULL
+  INSTALLMENT
+}
+
+enum ClassLevel {
+  SD
+  SMP
+  SMA
+  UTBK
+}
+
+enum Curriculum {
+  MERDEKA
+  K13_REVISI
+}
+
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+}
+
+// enum SubjectCategory {
+//   MTK
+//   BAHASA_INGGRIS
+//   BAHASA_INDONESIA
+//   FISIKA
+//   KIMIA
+//   BIOLOGI
+//   SOSIOLOGI
+//   EKONOMI
+//   GEOGRAFI
+//   IPAS
+//   IPA
+//   IPS
+//   UMUM
+// }
+
+enum NotificationType {
+  GENERAL
+  BOOKING_STATUS
+  PAYMENT_STATUS
+  NEW_MESSAGE
+}
