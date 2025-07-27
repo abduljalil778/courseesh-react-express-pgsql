@@ -4,3 +4,7 @@ client/node_modules
 server/.env
 server/node_modules
 server/public/uploads/*
+
+.DS_Store
+*/.DS_Store
+*.DS_Store

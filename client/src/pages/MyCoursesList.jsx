@@ -103,7 +103,7 @@ export default function MyCoursesList() {
                     
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                       <div 
-                          className="bg-green-600 h-2.5 rounded-full" 
+                          className="bg-blue-600 h-2.5 rounded-full" 
                           style={{ width: `${totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0}%` }}
                           title={`${completedSessions} / ${totalSessions} sessions completed`}
                       ></div>

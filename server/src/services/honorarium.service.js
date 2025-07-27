@@ -21,7 +21,12 @@ export async function calculatePendingHonorariumService(startDate, endDate) {
       },
     },
     include: {
-      booking: { include: { course: { select: { teacherId: true, price: true, teacher: { select: { id: true, name: true, email: true } } } } } },
+      booking: { 
+        include: { 
+          course: { select: { teacherId: true, price: true, teacher: { select: { id: true, name: true, email: true } } } },
+          student: { select: { name: true } }
+        }
+      },
     },
   });
 
@@ -42,13 +47,24 @@ export async function calculatePendingHonorariumService(startDate, endDate) {
         totalSessions: 0,
         totalHonorarium: 0,
         sessionIds: [],
+        sessions : [],
       };
     }
 
     const pricePerSession = session.booking.course.price;
+    const honorariumPerSession = pricePerSession * (1 - serviceFeePercentage);
+    
     acc[teacher.id].totalSessions += 1;
-    acc[teacher.id].totalHonorarium += pricePerSession * (1 - serviceFeePercentage);
+    acc[teacher.id].totalHonorarium += honorariumPerSession;
     acc[teacher.id].sessionIds.push(session.id);
+
+    acc[teacher.id].sessions.push({
+        id: session.id,
+        sessionDate: session.sessionDate,
+        courseTitle: session.booking.course.title,
+        studentName: session.booking.student.name,
+        honorarium: honorariumPerSession
+    });
 
     return acc;
   }, {});
@@ -63,7 +79,7 @@ export async function calculatePendingHonorariumService(startDate, endDate) {
  */
 export async function processHonorariumPayoutsService(payoutsToProcess) {
   const feeSetting = await prisma.applicationSetting.findUnique({ where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' }});
-  const serviceFeePercentage = parseFloat(feeSetting?.value || '0.15');
+  const serviceFeePercentage = parseFloat(feeSetting?.value || '0');
 
   return await prisma.$transaction(async (tx) => {
     let createdCount = 0;

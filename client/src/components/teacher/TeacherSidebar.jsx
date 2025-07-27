@@ -9,7 +9,7 @@ const navItems = [
    items: [
     { name: 'Dashboard', to: '/teacher', icon: HomeIcon, end: true },
     { name: 'My Courses', to: '/teacher/courses', icon: UsersIcon },
-    { name: 'My Booking', to: '/teacher/bookings', icon: BookOpenIcon },
+    { name: 'My Bookings', to: '/teacher/bookings', icon: BookOpenIcon },
     { name: 'My Schedules', to: '/teacher/schedules', icon: CalendarIcon },
    ],
  },

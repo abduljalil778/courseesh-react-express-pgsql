@@ -22,7 +22,6 @@ import dashboardRoutes from './src/routes/dashboard.route.js';
 import errorHandler from './src/middleware/error.js';
 import appSettingRoutes from './src/routes/appSettings.route.js';
 import availabilityRoutes from './src/routes/availability.route.js';
-import financeRoutes from './src/routes/finance.route.js';
 import notificationRoutes from './src/routes/notification.route.js';
 import chatRoutes from './src/routes/chat.route.js';
 import { initPayoutScheduler } from './src/jobs/payoutScheduler.js';
@@ -48,7 +47,11 @@ app.use(helmet());
 
 // CORS: allow frontend dev port (change for prod)
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://be-courseesh.vercel.app', 'https://fe-courseesh.vercel.app' ],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.FONTEND_URL,
+    ],
   credentials: true,
 }));
 
@@ -80,7 +83,6 @@ app.use('/api/auth',    authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/finance', financeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookingsessions', bookingSessionRoutes);
 app.use('/api/teachers', teacherRoutes);
@@ -106,4 +108,6 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running with Socket.IO on http://localhost:${PORT}`)
   
+  initPayoutScheduler();
+  console.log('✅ Payout scheduler initialized');
 });

@@ -1,15 +1,15 @@
 // server/src/jobs/payoutScheduler.js
 import cron from 'node-cron';
 import prisma from '../../libs/prisma.js';
-import { subMonths, endOfMonth, startOfMonth } from 'date-fns';
+import { subMonths, endOfMonth, startOfMonth, subWeeks, endOfWeek, startOfWeek } from 'date-fns';
 import { formatCurrencyIDR } from '../utils/formatCurrency.js';
 
 export const calculateTeacherPayouts = async () => {
   console.log(`[Scheduler] Running monthly payout calculation job at ${new Date().toISOString()}`);
 
   const today = new Date();
-  const periodStartDate = startOfMonth(subMonths(today, 1)); // Awal bulan lalu
-  const periodEndDate = endOfMonth(subMonths(today, 1));   // Akhir bulan lalu
+  const periodStartDate = startOfWeek(subWeeks(today, 1)); // Awal minggu lalu
+  const periodEndDate = endOfWeek(subWeeks(today, 1));   // Akhir minggu lalu
 
   console.log(`[Scheduler] Calculating payouts for period: ${periodStartDate.toISOString()} to ${periodEndDate.toISOString()}`);
 
@@ -77,10 +77,9 @@ export const calculateTeacherPayouts = async () => {
 };
 
 export const initPayoutScheduler = () => {
-    // '59 23 * * 2' artinya: jam 23:59 setiap hari jumat.
-    cron.schedule('59 23 * * 2', calculateTeacherPayouts, {
+    // '59 23 * * 6' artinya: jam 23:59 setiap hari sabtu.
+    cron.schedule('00 00 * * 7', calculateTeacherPayouts, {
         scheduled: true,
         timezone: "Asia/Jakarta"
     });
-    console.log('✅ Payout scheduler initialized.');
 };

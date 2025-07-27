@@ -81,18 +81,18 @@ export default function TeacherProfilePage() {
                 <p className="text-md text-indigo-600 font-semibold">{profile.headline || 'Instructor'}</p>
                 <p className="text-xs text-muted-foreground mt-2 flex items-center justify-center gap-2">
                   <CalendarDays className="h-4 w-4" />
-                  Joined Since {format(new Date(profile.createdAt), 'MMMM yyyy')}
+                  Bergabung Sejak {format(new Date(profile.createdAt), 'MMMM yyyy')}
                 </p>
               </div>
               <Separator className="my-6" />
               <div className="flex justify-around text-center">
                 <div>
                   <p className="text-xl font-bold">{stats.totalCourses}</p>
-                  <p className="text-xs text-muted-foreground">Courses</p>
+                  <p className="text-xs text-muted-foreground">Kursus</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold">{stats.totalStudents}</p>
-                  <p className="text-xs text-muted-foreground">Student</p>
+                  <p className="text-xs text-muted-foreground">Siswa</p>
                 </div>
               </div>
               {(profile.websiteUrl || profile.email) && <Separator className="my-6" />}
@@ -109,7 +109,7 @@ export default function TeacherProfilePage() {
           <main className="lg:col-span-8 xl:col-span-9">
             <Card>
               <CardHeader>
-                <CardTitle>About Me</CardTitle>
+                <CardTitle>Tentang Saya</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{profile.bio || 'Informasi biografi belum ditambahkan oleh instruktur.'}</p>
@@ -118,7 +118,7 @@ export default function TeacherProfilePage() {
 
             <Card className="mt-6">
                <CardHeader>
-                <CardTitle>Qualifications</CardTitle>
+                <CardTitle>Kualifikasi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <ProfileListSection title="Pendidikan" items={profile.education} icon={GraduationCap} />
@@ -127,7 +127,7 @@ export default function TeacherProfilePage() {
             </Card>
             
             <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Courses by {profile.name}</h2>
+              <h2 className="text-2xl font-bold mb-4">Kursus Oleh {profile.name}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {courses.map(course => (
                   <CourseCard key={course.id} course={course} />

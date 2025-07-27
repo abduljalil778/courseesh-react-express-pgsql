@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfWeek, endOfWeek } from "date-fns";
 import { getPendingHonorariums, processHonorariumPayouts } from "../../lib/api";
 import { formatCurrencyIDR } from "../../utils/formatCurrency";
 import Spinner from "../../components/Spinner";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 
 // Komponen baru untuk Date Range Picker
 const DateRangePicker = ({ dateRange, setDateRange }) => {
@@ -44,11 +44,45 @@ const DateRangePicker = ({ dateRange, setDateRange }) => {
   );
 };
 
+const DetailRow = ({ sessions }) => (
+  <tr className="bg-gray-50">
+    <td colSpan="5" className="p-0">
+      <div className="p-4">
+        <h4 className="text-xs font-semibold text-gray-600 mb-2">Rincian Sesi:</h4>
+        <div className="max-h-48 overflow-y-auto custom-scrollbar border rounded-md">
+          <table className="min-w-full">
+            {/* Tambahkan thead di sini */}
+            <thead className="bg-gray-100 sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Siswa</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Sesi</th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Honor per Sesi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {sessions.map(session => (
+                <tr key={session.id}>
+                  <td className="px-3 py-2 text-sm text-gray-700">{session.studentName}</td>
+                  <td className="px-3 py-2 text-sm text-gray-500">{format(new Date(session.sessionDate), 'dd MMM yyyy')}</td>
+                  <td className="px-3 py-2 text-sm font-semibold text-right">{formatCurrencyIDR(session.honorarium)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </td>
+  </tr>
+);
 
-export default function PayoutManagementPage() {
+
+
+export default function HonorariumManagementPage() {
   const [honorariums, setHonorariums] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const [expandedRows, setExpandedRows] = useState(new Set());
   
   // State untuk date-range picker dan baris yang dipilih
   const [dateRange, setDateRange] = useState({
@@ -127,6 +161,18 @@ export default function PayoutManagementPage() {
         }
     }
   };
+
+  const handleToggleRow = (teacherId) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(teacherId)) {
+        newSet.delete(teacherId);
+      } else {
+        newSet.add(teacherId);
+      }
+      return newSet;
+    });
+  };
   
   const totalSelectedAmount = useMemo(() => {
     return honorariums
@@ -138,43 +184,53 @@ export default function PayoutManagementPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Pending Honorariums</h1>
-          <p className="text-sm text-gray-500">View and process teacher payouts based on completed sessions.</p>
+          <h1 className="text-2xl font-bold text-gray-800">Management Honorariums</h1>
         </div>
         <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-4 text-left">
-                <Checkbox onCheckedChange={(checked) => handleSelectAll({ target: { checked } })} />
-              </th>
+              <th className="p-4 text-left"><Checkbox onCheckedChange={(checked) => handleSelectAll({ target: { checked } })} /></th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Sesi</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Honorarium Amount</th>
+              <th className="px-6 py-3"></th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200">
             {isLoading ? (
-              <tr><td colSpan="4" className="text-center p-8"><Spinner /></td></tr>
+              <tr><td colSpan="5" className="text-center p-8"><Spinner /></td></tr>
             ) : error ? (
-              <tr><td colSpan="4" className="text-center p-8 text-red-500">{error}</td></tr>
+              <tr><td colSpan="5" className="text-center p-8 text-red-500">{error}</td></tr>
             ) : honorariums.length > 0 ? (
-              honorariums.map((h) => (
-                <tr key={h.teacherId}>
-                  <td className="p-4"><Checkbox checked={selectedRows.has(h.teacherId)} onCheckedChange={() => handleSelectRow(h.teacherId)} /></td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{h.teacherName}</div>
-                    <div className="text-xs text-gray-500">{h.teacherEmail}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{h.totalSessions}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">{formatCurrencyIDR(h.totalHonorarium)}</td>
-                </tr>
-              ))
+              honorariums.flatMap((h) => {
+                const isExpanded = expandedRows.has(h.teacherId);
+                return (
+                  <React.Fragment key={h.teacherId}>
+                    {/* ++ PERBAIKAN UTAMA DI SINI ++ */}
+                    <tr className="cursor-pointer hover:bg-gray-50" onClick={() => handleToggleRow(h.teacherId)}>
+                      <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={selectedRows.has(h.teacherId)} onCheckedChange={() => handleSelectRow(h.teacherId, { stopPropagation: () => {} })} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{h.teacherName}</div>
+                        <div className="text-xs text-gray-500">{h.teacherEmail}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">{h.totalSessions}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">{formatCurrencyIDR(h.totalHonorarium)}</td>
+                      <td className="px-6 py-4 text-right">
+                        {isExpanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+                      </td>
+                    </tr>
+                    {isExpanded && <DetailRow sessions={h.sessions} />}
+                  </React.Fragment>
+                );
+              })
             ) : (
-              <tr><td colSpan="4" className="text-center p-8 text-gray-500">No pending honorariums found for this period.</td></tr>
+              <tr><td colSpan="5" className="text-center p-8 text-gray-500">No pending honorariums found for this period.</td></tr>
             )}
           </tbody>
         </table>

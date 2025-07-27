@@ -248,7 +248,6 @@ enum Role {
   ADMIN
   TEACHER
   STUDENT
-  FINANCE
 }
 
 enum Status {
@@ -285,21 +284,6 @@ enum SessionStatus {
   COMPLETED
 }
 
-// enum SubjectCategory {
-//   MTK
-//   BAHASA_INGGRIS
-//   BAHASA_INDONESIA
-//   FISIKA
-//   KIMIA
-//   BIOLOGI
-//   SOSIOLOGI
-//   EKONOMI
-//   GEOGRAFI
-//   IPAS
-//   IPA
-//   IPS
-//   UMUM
-// }
 
 enum NotificationType {
   GENERAL
