@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "vercel-build": "cd client && npm install && npm run build && cd ../server && npm install"
+    "vercel-build": "cd server && npm install && npx prisma generate && cd ../client && npm install && npm run build"
   }
 }
