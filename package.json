@@ -1,5 +1,12 @@
 {
- "scripts": {
-  "vercel-build": "npm install -g pnpm && pnpm install --prefix client && pnpm --prefix client run build && pnpm install --prefix server && pnpm --prefix server exec prisma generate"
-}
+  "name": "courseesh-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:server": "cd server && npm install && npx prisma generate",
+    "build:client": "cd client && npm install && npm run build",
+    "vercel-build": "npm run build:server && npm run build:client"
+  },
+  "author": "",
+  "license": "ISC"
 }
