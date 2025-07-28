@@ -46,12 +46,25 @@ const __dirname = path.dirname(__filename);
 app.use(helmet());
 
 // CORS: allow frontend dev port (change for prod)
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL
+];
+
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    process.env.CLIENT_URL,
-    CLIENT_URL,
-    ],
+  origin: (origin, callback) => {
+    // Izinkan request tanpa origin (seperti dari Postman atau server-side)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
 }));
 
