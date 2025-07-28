@@ -77,7 +77,7 @@ export const calculateTeacherPayouts = async () => {
 };
 
 export const initPayoutScheduler = () => {
-    // '59 23 * * 6' artinya: jam 23:59 setiap hari sabtu.
+    // '00 00 * * &' artinya: jam 00:00 setiap hari minggu.
     cron.schedule('00 00 * * 7', calculateTeacherPayouts, {
         scheduled: true,
         timezone: "Asia/Jakarta"
