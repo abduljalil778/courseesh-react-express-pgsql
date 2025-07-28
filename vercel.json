@@ -4,13 +4,6 @@
     {
       "src": "server/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
     }
   ],
   "routes": [
@@ -20,9 +13,6 @@
     },
     {
       "src": "/assets/(.*)",
-      "headers": {
-        "cache-control": "s-maxage=31536000, immutable"
-      },
       "dest": "/assets/$1"
     },
     {
