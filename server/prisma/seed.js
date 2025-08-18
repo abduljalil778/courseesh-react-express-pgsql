@@ -1,5 +1,4 @@
 
-import { ClassLevel, Curriculum } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import prisma from '../libs/prisma.js';
 
@@ -7,10 +6,10 @@ async function main() {
 
   const defaultServiceFee = await prisma.applicationSetting.upsert({
     where: { key: 'DEFAULT_SERVICE_FEE_PERCENTAGE' },
-    update: {}, // Jangan ubah jika sudah ada
+    update: {},
     create: {
       key: 'DEFAULT_SERVICE_FEE_PERCENTAGE',
-      value: '0.15', // Nilai default 15%
+      value: '0.15',
       description: 'Default service fee percentage charged by the application from teacher revenue per session.',
       dataType: 'NUMBER',
     },

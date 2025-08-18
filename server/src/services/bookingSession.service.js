@@ -29,7 +29,7 @@ export async function updateSessionReportService(sessionId, reportData, file, us
     throw new AppError('Booking session not found', 404);
   }
 
-  // Otorisasi: Pastikan guru yang login adalah pengajar kursus ini
+  // Pastikan guru yang login adalah pengajar kursus ini
   if (bookingSession.booking.course?.teacherId !== loggedInTeacherId) {
     throw new AppError('You are not authorized to submit a report for this session', 403);
   }

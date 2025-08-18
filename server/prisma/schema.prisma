@@ -284,7 +284,6 @@ enum SessionStatus {
   COMPLETED
 }
 
-
 enum NotificationType {
   GENERAL
   BOOKING_STATUS

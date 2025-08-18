@@ -43,6 +43,8 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
     ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${teacher.avatarUrl}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher?.name || 'T')}&background=random`;
 
+  const discount = course.category?.name === "Matematika" ? course.price * 0.5 : 0;
+
   return (
     <CardWrapper course={course} showActions={showActions}>
       {/* Bagian Gambar */}
@@ -79,10 +81,19 @@ export default function CourseCard({ course, onEdit, onDelete, showActions = fal
           <StarRating rating={course.averageRating} totalReviews={course.totalReviews} size={14} />
         </div>
         <div className="mt-auto pt-2">
+          {course.category?.name === "Matematika" ? 
+            <div>
+              <p className='text-xs text-red-600 font-semibold mb-1'>Diskon 50%</p>
+              <del className='text-lg font-extrabold text-gray-900'>{formatCurrencyIDR(course.price)}</del>
+              <p className='text-lg font-extrabold text-green-800'>{formatCurrencyIDR(course.price - discount.toString())}</p>
+
+            </div>
+          :
           <p className="text-lg font-extrabold text-gray-900">
             {formatCurrencyIDR(course.price)}
             <span className="text-sm font-medium text-muted-foreground"> / sesi</span>
           </p>
+          } 
         </div>
       </div>
 

@@ -67,7 +67,7 @@ export async function getMessagesByConversationIdService(conversationId, user) {
       throw new AppError('Conversation not found', 404);
     }
     
-    // Otorisasi: Pastikan user adalah bagian dari percakapan ini
+    // Pastikan user adalah bagian dari percakapan ini
     const isParticipant = conversation.participants.some(p => p.userId === userId);
     if (!isParticipant) {
       throw new AppError('You are not authorized to view this chat', 403);

@@ -34,6 +34,11 @@ export async function getAllCoursesService(filters = {}, user = null) {
 
     const total = await CourseRepository.count({ where });
 
+
+
+
+
+
     const orderBy = {};
     if (["price", "title", "createdAt"].includes(sortBy)) {
       orderBy[sortBy] = sortDir === "asc" ? "asc" : "desc";

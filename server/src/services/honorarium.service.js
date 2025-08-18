@@ -14,7 +14,7 @@ export async function calculatePendingHonorariumService(startDate, endDate) {
   const completedSessions = await prisma.bookingSession.findMany({
     where: {
       status: 'COMPLETED',
-      payoutId: null, // Penting: Hanya sesi yang belum pernah dibayarkan
+      payoutId: null, // Hanya sesi yang belum pernah dibayarkan
       sessionCompletedAt: {
         gte: startDate,
         lte: endDate,

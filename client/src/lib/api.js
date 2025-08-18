@@ -42,11 +42,8 @@ export const createCourse = async (formData) => {
   return await api.post('/courses', formData, {
   });
 }
-
+// handle update course
 export const updateCourse = async (courseId, formData) => {
-  if (!(formData instanceof FormData)) {
-    console.error('[ERROR] updateCourse: Payload BUKAN FormData!', formData);
-  }
   return await api.put(`/courses/${courseId}/update`, formData, {
   });
 }

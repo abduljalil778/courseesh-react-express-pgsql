@@ -1,4 +1,3 @@
-// src/validators/authValidators.js
 import { body } from 'express-validator';
 
 export const registerValidator = [
@@ -9,8 +8,8 @@ export const registerValidator = [
     .withMessage('password must be at least 6 chars'),
   body('role')
     .optional()
-    .isIn(['ADMIN','TEACHER','STUDENT', 'FINANCE'])
-    .withMessage('role must be one of ADMIN, TEACHER, STUDENT', 'FINANCE'),
+    .isIn(['ADMIN','TEACHER','STUDENT'])
+    .withMessage('role must be one of ADMIN, TEACHER, STUDENT'),
 ];
 
 export const loginValidator = [

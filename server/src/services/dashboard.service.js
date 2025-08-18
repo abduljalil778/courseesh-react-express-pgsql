@@ -80,7 +80,6 @@ export async function getDashboardStatsService() {
     // Agregasi data berdasarkan nama kategori
     const categoryMap = rawCourseData.reduce((acc, item) => {
         const course = coursesInfo.find(c => c.id === item.courseId);
-        // Gunakan nama dari relasi: course.category.name
         const categoryName = course?.category?.name || 'Uncategorized';
         acc[categoryName] = (acc[categoryName] || 0) + item._count.id;
         return acc;
